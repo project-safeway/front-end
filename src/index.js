@@ -8,7 +8,8 @@ import { BrowserRouter } from "react-router-dom";
 const cognitoAuthConfig = {
   authority: "https://cognito-idp.us-east-1.amazonaws.com/us-east-1_jmxJa3MsO",
   client_id: "64vn0omuqsoifksqnujdu89erd",
-  redirect_uri: "https://d84l1y8p4kdic.cloudfront.net",
+  redirect_uri: "http://localhost:3000/",
+  post_logout_redirect_uri: "http://localhost:3000",
   response_type: "code",
   scope: "email openid phone",
 };
