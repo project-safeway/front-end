@@ -1,16 +1,29 @@
 import React from "react";
 import "./Header.css";
+import { Link, useNavigate } from "react-router-dom";
 
 export default function Header() {
+  const navigate = useNavigate();
+  const usuarioLogado = localStorage.getItem("usuario");
+
+  const handleLogout = () => {
+    localStorage.removeItem("usuario");
+    navigate("/login");
+  };
+
   return (
     <header className="header">
       <div className="logo">LOGO</div>
       <nav className="nav">
-        <a href="#">Quem Somos</a>
-        <a href="#">Valores</a>
-        <a href="#">Contate-nos</a>
+        <Link to="/">Quem Somos</Link>
+        <Link to="/">Valores</Link>
+        <Link to="/">Contate-nos</Link>
       </nav>
-      <button className="btn-acessar">Acessar</button>
+      {usuarioLogado ? (
+        <button onClick={handleLogout} className="btn-acessar">Sair</button>
+      ) : (
+        <Link to="/login" className="btn-acessar">Acessar</Link>
+      )}
     </header>
   );
 }

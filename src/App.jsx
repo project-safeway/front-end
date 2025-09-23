@@ -1,16 +1,22 @@
 import React from "react";
+import { useLocation } from "react-router-dom";
 import Header from "./components/Header";
 import Footer from "./components/Footer";
+import { AppRoutes } from "./AppRoutes";
 
 export default function App() {
+  const location = useLocation();
+  
+  // Páginas sem header/footer
+  const somenteFormulario = location.pathname === "/login" || location.pathname === "/cadastroEmpresa";
+
   return (
     <div>
-      <Header />
+      {!somenteFormulario && <Header />}
       <main style={{ minHeight: "70vh", padding: "2rem" }}>
-        <h1>Bem-vindo ao SafeWay</h1>
-        <p>Conteúdo principal aqui...</p>
+        <AppRoutes />
       </main>
-      <Footer />
+      {!somenteFormulario && <Footer />}
     </div>
   );
 }

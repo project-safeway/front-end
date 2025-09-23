@@ -1,76 +1,40 @@
-import React from "react";
+import React, { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import { Botao } from "./Botao";
 
-export function CadastroEmpresaForm(){
+export default function CadastroEmpresaForm() {
+  const navigate = useNavigate();
+  const [nome, setNome] = useState("");
+  const [email, setEmail] = useState("");
+  const [senha, setSenha] = useState("");
 
-    return (
-        <div>
-            <h2>Cadastre sua empresa</h2>
-            <form>
-                <label>
-                    Nome:
-                    <input type="text" placeholder="Nome" name="nome"/>
-                </label>
-                <br />
+  const handleSubmit = (e) => {
+    e.preventDefault();
 
-                <label>
-                    CNPJ:
-                    <input type="text" placeholder="00.000.000/0001-00" name="cnpj" />
-                </label>
-                <br />
+    // Aqui você poderia enviar os dados para backend
+    localStorage.setItem("usuario", JSON.stringify({ email }));
+    navigate("/dashboard");
+  };
 
-                <label>
-                    Razão Social::
-                    <input type="text" placeholder="Empresa Ltda" name="razaoSocial"/>
-                </label>
-                <br />
-
-                <label>
-                    Email:
-                    <input type="email" placeholder="E-mail" name="email"/>
-                </label>
-                <br />
-
-                <label>
-                    Senha:
-                    <input type="password" placeholder="Senha" name="senha"/>
-                </label>
-                <br />
-
-                {/*============ ENDEREÇO ============= */}
-
-                <label>
-                    Rua:
-                    <input type="text" placeholder="Rua" name="rua"/>
-                </label>
-                <br />
-
-                <label>
-                    Número:
-                    <input type="text" placeholder="Número" name="numero"/>
-                </label>
-                <br />
-
-                <label>
-                    CEP:
-                    <input type="text" placeholder="CEP" name="cep"/>
-                </label>
-                <br />
-
-                <label>
-                    Bairro:
-                    <input type="text" placeholder="Bairro" name="bairro" />
-                </label>
-                <br />
-
-                <label>
-                    Telefone:
-                    <input type="text" placeholder="Telefone" name="telefone"/>
-                </label>
-                <br />
-
-                <Botao texto={Cadastrar} type="submit" />
-            </form>
-        </div>
-    );
+  return (
+    <div>
+      <h2>Cadastre sua empresa</h2>
+      <form onSubmit={handleSubmit}>
+        <label>Nome:
+          <input type="text" value={nome} placeholder="Nome" onChange={e => setNome(e.target.value)} />
+        </label>
+        <br />
+        <label>Email:
+          <input type="email" value={email} placeholder="E-mail" onChange={e => setEmail(e.target.value)} />
+        </label>
+        <br />
+        <label>Senha:
+          <input type="password" value={senha} placeholder="Senha" onChange={e => setSenha(e.target.value)} />
+        </label>
+        <br />
+        <Botao texto="Cadastrar" type="submit" />
+      </form>
+       <p>Já tem conta? <Link to="/login">Faça Login</Link></p>
+    </div>
+  );
 }
