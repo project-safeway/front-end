@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route, Navigate, useNavigate } from 'react-route
 import { LoginForm }  from './components/LoginForm';
 import { Menu }  from './components/Menu';
 import { Register } from './components/Register';
+import { Tabela } from './components/Tabela';
 
 function isLoggedIn() {
   return true;
@@ -10,6 +11,12 @@ function isLoggedIn() {
 function PrivateRoute({ children }) {
   return isLoggedIn() ? children : <Navigate to="/login" />;
 }
+
+const tabelaCabecalho = ["Coluna 1", "Coluna 2", "Coluna 3"];
+const tabelaDados = [
+  [1, 2, 3, 'AUSENTE'],
+  [4, 5, 6, 'PRESENTE']
+];
 
 function App() {
   return (
@@ -23,6 +30,9 @@ function App() {
           </PrivateRoute>
         } />
         <Route path="*" element={<Navigate to={isLoggedIn() ? "/menu" : "/login"} />} />
+        <Route path='/tabela' element={
+          <Tabela cabecalho={tabelaCabecalho} dados={tabelaDados} status={true} />
+        } />
       </Routes>
     </BrowserRouter>
   );
