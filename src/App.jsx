@@ -1,16 +1,29 @@
-import React from "react";
-import Header from "./components/Header";
-import Footer from "./components/Footer";
+import { BrowserRouter, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
+import { LoginForm }  from './components/LoginForm';
+import { Menu }  from './components/Menu';
 
-export default function App() {
+function isLoggedIn() {
+  return false;
+}
+
+function PrivateRoute({ children }) {
+  return isLoggedIn() ? children : <Navigate to="/login" />;
+}
+
+function App() {
   return (
-    <div>
-      <Header />
-      <main style={{ minHeight: "2rem", padding: "2rem" }}>
-        <h1>Bem-vindo ao SafeWay</h1>
-        <p>Conteúdo principal aqui...</p>
-      </main>
-      <Footer />
-    </div>
+    <BrowserRouter>
+      <Routes>
+        <Route path="/login" element={<LoginForm />} />
+        <Route path="/menu" element={
+          <PrivateRoute>
+            <Menu />
+          </PrivateRoute>
+        } />
+        <Route path="*" element={<Navigate to={isLoggedIn() ? "/menu" : "/login"} />} />
+      </Routes>
+    </BrowserRouter>
   );
 }
+
+export default App;

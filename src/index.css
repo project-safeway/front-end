@@ -1,16 +1,33 @@
 @import "tailwindcss";
 
+:root{
+  --branco: #F4F5F6;
+  --cinza: #F6F7F9;
+  --azul: #172848;
+  --laranja: #FB923C;
+  --amarelo: #FABD15;
+  --verde: #4CCE5B;
+  --vermelho: #F04848;
+  --preto: #0F172A;
+  --brancoSecundario: #D9D9D9;
+  --cinzaSecundario: #495261;
+  --laranjaSecundario: #FFAB17;
+  --amareloSecundario: #FACC15;
+  --azulSecundario: #34435F;
+}
+
 @theme{
-  --branco-base: #F4F5F6;
-  --cinza-base: #34435F;
-  --azul-base: #172848;
-  --laranja-base: #FB923C;
-  --amarelo-base: #FABD15;
-  --verde-base: #4CCE5B;
-  --vermelho-base: #F04848;
-  --preto-base: #0F172A;
-  --branco-secundario: #D9D9D9;
-  --cinza-secundario: #495261;
-  --laranja-secundario: #FFAB17;
-  --amarelo-secundario: #FACC15;
+  --color-orange: var(--laranja);
+  --color-blue: var(--azul);
+  --color-white: var(--branco);
+  --color-gray: var(--cinza);
+  --color-black: var(--preto);
+  --color-green: var(--verde);
+  --color-yellow: var(--amarelo);
+  --color-red: var(--vermelho);
+  --color-secondary-white: var(--brancoSecundario);
+  --color-secondary-gray: var(--cinzaSecundario);
+  --color-secondary-orange: var(--laranjaSecundario);
+  --color-secondary-yellow: var(--amareloSecundario);
+  --color-secondary-blue: var(--azulSecundario);
 }

@@ -1,9 +1,14 @@
-import React from "react";
+export function Botao(props) {
+    
+    let corClasse = props.cor === "laranja" ? "bg-orange" : "bg-blue";
 
-export function Botao({ texto, onClick, type = "button"}) {
     return (
-        <button type={type} onClick={onClick}>
-            {texto}
+        <button
+            className={`${corClasse} ${props.tamanho} text-white rounded-2xl`}
+            type={props.type}
+            onClick={props.onClick}
+        >
+            {props.texto}
         </button>
     );
-} 
+}
