@@ -8,22 +8,24 @@ export function LoginForm() {
     const [senha, setSenha] = useState("");
     const navigate = useNavigate();
 
-    const handleSubmit = async () => {
+    async function handleSubmit(event){
+        event.preventDefault();
         const response = await fetch("http://localhost:8080/auth/login", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ email, senha })
         });
-        const data = await response.text();
-        alert(data);
+        const data = await response.json();
+        console.log(data);
 
         navigate("/menu");
-    };
+    }
 
     return (
         <div className="relative flex items-center justify-center min-h-screen bg-[url('/public/fundo-form.jpg')] bg-cover bg-center">
             <div className="absolute inset-0 bg-black/70"></div>
-            <form className="relative flex flex-col justify-center items-center w-5/6 max-w-2xl p-10 rounded-3xl bg-orange/20 backdrop-blur-md shadow-lg">
+            <form onSubmit={handleSubmit} 
+                className="relative flex flex-col justify-center items-center w-5/6 max-w-2xl p-10 rounded-3xl bg-orange/20 backdrop-blur-md shadow-lg">
                 <div className="w-full flex flex-col gap-4">
 
                     <h2 className="text-4xl font-bold text-left text-white mb-2">Login</h2>
@@ -47,7 +49,7 @@ export function LoginForm() {
                         <a href="#" className="text-right text-sm text-white hover:underline">Esqueci minha senha</a>
                     </div>
 
-                    <Botao onClick={handleSubmit} cor="laranja" texto="Entrar" type="submit" tamanho="w-full px-3 py-3 text-2xl" />
+                    <Botao cor="laranja" texto="Entrar" type="submit" tamanho="w-full px-3 py-3 text-2xl" />
 
                     <div className="mt-6 text-center">
                         <span className="text-white text-sm">Ainda não possui uma conta? <a href="./register" className="font-bold underline">Cadastre-se</a></span>
