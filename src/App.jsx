@@ -1,9 +1,10 @@
 import { BrowserRouter, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import { LoginForm }  from './components/LoginForm';
 import { Menu }  from './components/Menu';
+import { Register } from './components/Register';
 
 function isLoggedIn() {
-  return false;
+  return true;
 }
 
 function PrivateRoute({ children }) {
@@ -15,6 +16,7 @@ function App() {
     <BrowserRouter>
       <Routes>
         <Route path="/login" element={<LoginForm />} />
+        <Route path="/register" element={<Register />} />
         <Route path="/menu" element={
           <PrivateRoute>
             <Menu />
