@@ -2,7 +2,13 @@ import { BrowserRouter, Routes, Route, Navigate, useNavigate } from 'react-route
 import { LoginForm }  from './components/LoginForm';
 import { Menu }  from './components/Menu';
 import { Register } from './components/Register';
-import { Tabela } from './components/Tabela';
+import { Chamada } from './components/Chamada';
+import { Financeiro } from './components/Financeiro';
+import { Rotas } from './components/Rotas';
+import { Configuracoes } from './components/Configuracoes';
+import { Itinerarios } from './components/itinerarios';
+import { Alunos } from './components/Alunos';
+import { Historico } from './components/Historico';
 
 function isLoggedIn() {
   return true;
@@ -12,27 +18,62 @@ function PrivateRoute({ children }) {
   return isLoggedIn() ? children : <Navigate to="/login" />;
 }
 
-const tabelaCabecalho = ["Coluna 1", "Coluna 2", "Coluna 3"];
-const tabelaDados = [
-  [1, 2, 3, 'AUSENTE'],
-  [4, 5, 6, 'PRESENTE']
-];
-
 function App() {
   return (
     <BrowserRouter>
       <Routes>
         <Route path="/login" element={<LoginForm />} />
         <Route path="/register" element={<Register />} />
+        
         <Route path="/menu" element={
           <PrivateRoute>
             <Menu />
           </PrivateRoute>
         } />
-        <Route path="*" element={<Navigate to={isLoggedIn() ? "/menu" : "/login"} />} />
-        <Route path='/tabela' element={
-          <Tabela cabecalho={tabelaCabecalho} dados={tabelaDados} status={true} />
+
+        <Route path="/chamada" element={
+          <PrivateRoute>
+            <Chamada />
+          </PrivateRoute>
         } />
+
+        <Route path="/financeiro" element={
+          <PrivateRoute>
+            <Financeiro />
+          </PrivateRoute>
+        } />
+
+        <Route path="/rotas" element={
+          <PrivateRoute>
+            <Rotas />
+          </PrivateRoute>
+        } />
+
+        <Route path="/configuracoes" element={
+          <PrivateRoute>
+            <Configuracoes />
+          </PrivateRoute>
+        } />
+
+        <Route path="/itinerarios" element={
+          <PrivateRoute>
+            <Itinerarios />
+          </PrivateRoute>
+        } />
+
+        <Route path="/alunos" element={
+          <PrivateRoute>
+            <Alunos />
+          </PrivateRoute>
+        } />
+
+        <Route path="/historico" element={
+          <PrivateRoute>
+            <Historico />
+          </PrivateRoute>
+        } />
+
+        <Route path="*" element={<Navigate to={isLoggedIn() ? "/menu" : "/login"} />} />
       </Routes>
     </BrowserRouter>
   );
