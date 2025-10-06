@@ -1,7 +1,10 @@
 import { Navbar } from "./Navbar";
 import { Cards } from "./Cards";
+import { useNavigate } from "react-router-dom";
 
 export function Menu(){
+    const navigate = useNavigate();
+
     return (
         <div className="justify-center">
             <h1 className="text-center font-bold mt-4">Menu Principal</h1>
@@ -9,7 +12,11 @@ export function Menu(){
                 <Cards img="/chamada.png" label="Chamada" />
                 <Cards img="/rotas.png" label="Rotas" />
                 <Cards img="/itinerarios.png" label="Itinerários" />
-                <Cards img="/alunos.png" label="Alunos" />
+
+                <Cards img="/alunos.png" label="Alunos"
+                onClick={() => navigate('/alunos')}
+                />
+
                 <Cards img="/financeiro.png" label="Financeiro" />
                 <Cards img="/historico.png" label="Histórico" />
             </div>

@@ -3,6 +3,7 @@ import { LoginForm }  from './components/LoginForm';
 import { Menu }  from './components/Menu';
 import { Register } from './components/Register';
 import { Tabela } from './components/Tabela';
+import { CadastroAluno } from './components/CadastroAluno';
 
 function isLoggedIn() {
   return true;
@@ -33,6 +34,7 @@ function App() {
         <Route path='/tabela' element={
           <Tabela cabecalho={tabelaCabecalho} dados={tabelaDados} status={true} />
         } />
+        <Route path="/alunos" element={<CadastroAluno />} />
       </Routes>
     </BrowserRouter>
   );
