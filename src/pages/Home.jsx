@@ -1,62 +1,62 @@
-import React, { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
-import CalendarWithFilter from "../components/CalendarWithFilter";
-import EventsPanel from "../components/EventsPanel";
+import { useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
+import Calendar from '../components/Calendar'
+import EventsPanel from '../components/EventsPanel'
 
 // Ícones do Material para transporte escolar
-import AssignmentTurnedInIcon from "@mui/icons-material/AssignmentTurnedIn";
-import RouteIcon from "@mui/icons-material/Route";
-import MapIcon from "@mui/icons-material/Map";
-import SchoolIcon from "@mui/icons-material/School";
-import AttachMoneyIcon from "@mui/icons-material/AttachMoney";
-import HistoryIcon from "@mui/icons-material/History";
+import AssignmentTurnedInIcon from '@mui/icons-material/AssignmentTurnedIn'
+import RouteIcon from '@mui/icons-material/Route'
+import MapIcon from '@mui/icons-material/Map'
+import SchoolIcon from '@mui/icons-material/School'
+import AttachMoneyIcon from '@mui/icons-material/AttachMoney'
+import HistoryIcon from '@mui/icons-material/History'
 
 const cards = [
   {
-    name: "Chamada",
-    description: "Registre presença dos alunos",
+    name: 'Chamada',
+    description: 'Registre presença dos alunos',
     icon: <AssignmentTurnedInIcon fontSize="large" />,
-    route: "/chamada",
+    route: '/chamada',
   },
   {
-    name: "Rotas",
-    description: "Gerencie rotas do transporte",
+    name: 'Rotas',
+    description: 'Gerencie rotas do transporte',
     icon: <RouteIcon fontSize="large" />,
-    route: "/rotas",
+    route: '/rotas',
   },
   {
-    name: "Itinerários",
-    description: "Configure itinerários e horários",
+    name: 'Itinerários',
+    description: 'Configure itinerários e horários',
     icon: <MapIcon fontSize="large" />,
-    route: "/itinerarios",
+    route: '/itinerarios',
   },
   {
-    name: "Alunos",
-    description: "Cadastro e gestão de alunos",
+    name: 'Alunos',
+    description: 'Cadastro e gestão de alunos',
     icon: <SchoolIcon fontSize="large" />,
-    route: "/alunos",
+    route: '/alunos',
   },
   {
-    name: "Financeiro",
-    description: "Controle financeiro e pagamentos",
+    name: 'Financeiro',
+    description: 'Controle financeiro e pagamentos',
     icon: <AttachMoneyIcon fontSize="large" />,
-    route: "/financeiro",
+    route: '/financeiro',
   },
   {
-    name: "Histórico",
-    description: "Visualize histórico de atividades",
+    name: 'Histórico',
+    description: 'Visualize histórico de atividades',
     icon: <HistoryIcon fontSize="large" />,
-    route: "/historico",
+    route: '/historico',
   },
-];
+]
 
 export default function Home() {
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
-    const timer = setTimeout(() => setIsLoading(false), 100);
-    return () => clearTimeout(timer);
-  }, []);
+    const timer = setTimeout(() => setIsLoading(false), 100)
+    return () => clearTimeout(timer)
+  }, [])
 
   return (
     <div className="home py-6">
@@ -107,12 +107,12 @@ export default function Home() {
       {/* Calendário e Eventos */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2">
-          <CalendarWithFilter />
+          <Calendar />
         </div>
         <div className="lg:col-span-1">
           <EventsPanel />
         </div>
       </div>
     </div>
-  );
+  )
 }

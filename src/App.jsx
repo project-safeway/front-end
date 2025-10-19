@@ -1,19 +1,18 @@
-import { Routes, Route, Link } from "react-router-dom";
-import { useAuth } from "react-oidc-context";
-import Register from "./pages/Register";
-import ConfirmEmail from "./pages/ConfirmEmail";
-import Home from "./pages/Home";
-import Chamada from "./pages/Chamada";
-import Rotas from "./pages/Rotas";
-import Itinerarios from "./pages/Itinerarios";
-import Alunos from "./pages/Alunos";
-import Financeiro from "./pages/Financeiro";
-import Historico from "./pages/Historico";
-import "./App.css";
-import DirectionsBusIcon from "@mui/icons-material/DirectionsBus";
+import { Routes, Route, Link } from 'react-router-dom'
+import { useAuth } from 'react-oidc-context'
+import Register from './pages/Register'
+import ConfirmEmail from './pages/ConfirmEmail'
+import Home from './pages/Home'
+import Chamada from './pages/Chamada'
+import Rotas from './pages/Rotas'
+import Itinerarios from './pages/Itinerarios'
+import Alunos from './pages/Alunos'
+import Financeiro from './pages/Financeiro'
+import Historico from './pages/Historico'
+import DirectionsBusIcon from '@mui/icons-material/DirectionsBus'
 
 function App() {
-  const auth = useAuth();
+  const auth = useAuth()
 
   if (auth.isLoading) {
     return (
@@ -23,9 +22,9 @@ function App() {
           <div className="text-lg text-navy-600">Carregando...</div>
         </div>
       </div>
-    );
+    )
   }
-  
+
   if (auth.error) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-offwhite-100">
@@ -34,7 +33,7 @@ function App() {
           <div className="text-red-500">{auth.error.message}</div>
         </div>
       </div>
-    );
+    )
   }
 
   return (
@@ -49,27 +48,27 @@ function App() {
                 <DirectionsBusIcon className="text-white text-3xl" />
               </div>
               <div>
-                <h1 className="text-white font-bold text-xl">TransEscolar</h1>
-                <p className="text-navy-300 text-xs">Sistema de Gestão</p>
+                <h1 className="text-white font-bold text-xl">Tio Ricardo & Tia Nelly</h1>
+                <p className="text-navy-300 text-xs">Transporte Escolar</p>
               </div>
             </Link>
 
             {/* Links de Navegação */}
             <div className="flex items-center space-x-6">
-              <Link 
-                to="/" 
+              <Link
+                to="/"
                 className="text-offwhite-100 hover:text-primary-400 font-medium transition-colors"
               >
                 Início
               </Link>
-              <Link 
-                to="/register" 
+              <Link
+                to="/register"
                 className="text-offwhite-100 hover:text-primary-400 font-medium transition-colors"
               >
                 Registrar
               </Link>
-              <Link 
-                to="/confirm" 
+              <Link
+                to="/confirm"
                 className="text-offwhite-100 hover:text-primary-400 font-medium transition-colors"
               >
                 Confirmar
@@ -98,12 +97,12 @@ function App() {
       <footer className="bg-navy-900 text-offwhite-100 mt-12 py-6 border-t-2 border-primary-400">
         <div className="container mx-auto px-4 text-center">
           <p className="text-sm">
-            © 2025 TransEscolar - Sistema de Gestão de Transporte Escolar
+            © 2025 Transporte Escolar Tio Ricardo & Tia Nelly - Sistema de Gestão
           </p>
         </div>
       </footer>
     </div>
-  );
+  )
 }
 
-export default App;
+export default App

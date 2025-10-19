@@ -1,69 +1,69 @@
-import React, { useState } from "react";
-import EventIcon from "@mui/icons-material/Event";
-import NotificationsActiveIcon from "@mui/icons-material/NotificationsActive";
-import BuildIcon from "@mui/icons-material/Build";
-import GroupIcon from "@mui/icons-material/Group";
-import AddCircleOutlineIcon from "@mui/icons-material/AddCircleOutline";
+import { useState } from 'react'
+import EventIcon from '@mui/icons-material/Event'
+import NotificationsActiveIcon from '@mui/icons-material/NotificationsActive'
+import BuildIcon from '@mui/icons-material/Build'
+import GroupIcon from '@mui/icons-material/Group'
+import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline'
 
 export default function EventsPanel() {
   const [eventos] = useState([
     {
       id: 1,
-      titulo: "Manutenção Ônibus 03",
-      data: "20/10/2025",
-      tipo: "manutencao",
-      prioridade: "alta",
+      titulo: 'Manutenção Ônibus 03',
+      data: '20/10/2025',
+      tipo: 'manutencao',
+      prioridade: 'alta',
     },
     {
       id: 2,
-      titulo: "Reunião com Pais - Rota 3",
-      data: "22/10/2025",
-      tipo: "reuniao",
-      prioridade: "media",
+      titulo: 'Reunião com Pais - Rota 3',
+      data: '22/10/2025',
+      tipo: 'reuniao',
+      prioridade: 'media',
     },
     {
       id: 3,
-      titulo: "Vencimento Seguro",
-      data: "25/10/2025",
-      tipo: "vencimento",
-      prioridade: "alta",
+      titulo: 'Vencimento Seguro',
+      data: '25/10/2025',
+      tipo: 'vencimento',
+      prioridade: 'alta',
     },
     {
       id: 4,
-      titulo: "Treinamento Motoristas",
-      data: "28/10/2025",
-      tipo: "treinamento",
-      prioridade: "baixa",
+      titulo: 'Treinamento Motoristas',
+      data: '28/10/2025',
+      tipo: 'treinamento',
+      prioridade: 'baixa',
     },
-  ]);
+  ])
 
   const getIconByType = (tipo) => {
     switch (tipo) {
-      case "manutencao":
-        return <BuildIcon className="text-primary-400" />;
-      case "reuniao":
-        return <GroupIcon className="text-navy-500" />;
-      case "vencimento":
-        return <NotificationsActiveIcon className="text-red-500" />;
-      case "treinamento":
-        return <EventIcon className="text-green-500" />;
-      default:
-        return <EventIcon />;
+    case 'manutencao':
+      return <BuildIcon className="text-primary-400" />
+    case 'reuniao':
+      return <GroupIcon className="text-navy-500" />
+    case 'vencimento':
+      return <NotificationsActiveIcon className="text-red-500" />
+    case 'treinamento':
+      return <EventIcon className="text-green-500" />
+    default:
+      return <EventIcon />
     }
-  };
+  }
 
   const getPriorityColor = (prioridade) => {
     switch (prioridade) {
-      case "alta":
-        return "bg-red-100 text-red-700 border-red-300";
-      case "media":
-        return "bg-yellow-100 text-yellow-700 border-yellow-300";
-      case "baixa":
-        return "bg-green-100 text-green-700 border-green-300";
-      default:
-        return "bg-gray-100 text-gray-700 border-gray-300";
+    case 'alta':
+      return 'bg-red-100 text-red-700 border-red-300'
+    case 'media':
+      return 'bg-yellow-100 text-yellow-700 border-yellow-300'
+    case 'baixa':
+      return 'bg-green-100 text-green-700 border-green-300'
+    default:
+      return 'bg-gray-100 text-gray-700 border-gray-300'
     }
-  };
+  }
 
   return (
     <div className="bg-offwhite-50 border border-offwhite-200 rounded-xl shadow-sm p-6 h-full flex flex-col">
@@ -92,14 +92,14 @@ export default function EventsPanel() {
                   <p className="text-xs text-navy-600 mb-2">{evento.data}</p>
                   <span
                     className={`text-xs px-2 py-1 rounded-full border ${getPriorityColor(
-                      evento.prioridade
+                      evento.prioridade,
                     )}`}
                   >
-                    {evento.prioridade === "alta"
-                      ? "Alta Prioridade"
-                      : evento.prioridade === "media"
-                      ? "Média Prioridade"
-                      : "Baixa Prioridade"}
+                    {evento.prioridade === 'alta'
+                      ? 'Alta Prioridade'
+                      : evento.prioridade === 'media'
+                        ? 'Média Prioridade'
+                        : 'Baixa Prioridade'}
                   </span>
                 </div>
               </div>
@@ -119,5 +119,5 @@ export default function EventsPanel() {
         </button>
       </div>
     </div>
-  );
+  )
 }

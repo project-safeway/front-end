@@ -1,14 +1,13 @@
-import React from "react";
-import { Link } from "react-router-dom";
-import RouteIcon from "@mui/icons-material/Route";
-import ArrowBackIcon from "@mui/icons-material/ArrowBack";
+import { Link } from 'react-router-dom'
+import RouteIcon from '@mui/icons-material/Route'
+import ArrowBackIcon from '@mui/icons-material/ArrowBack'
 
 export default function Rotas() {
   return (
     <div className="py-6">
       {/* Breadcrumb */}
-      <Link 
-        to="/" 
+      <Link
+        to="/"
         className="inline-flex items-center gap-2 text-navy-600 hover:text-primary-400 mb-6 transition-colors"
       >
         <ArrowBackIcon fontSize="small" />
@@ -47,5 +46,5 @@ export default function Rotas() {
         </div>
       </div>
     </div>
-  );
+  )
 }

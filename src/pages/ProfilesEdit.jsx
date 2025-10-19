@@ -1,5 +1,4 @@
 // ProfilesEdit.jsx
-import React from "react";
 
 export default function ProfilesEdit() {
   return (
@@ -86,5 +85,5 @@ export default function ProfilesEdit() {
         </div>
       </div>
     </div>
-  );
+  )
 }
