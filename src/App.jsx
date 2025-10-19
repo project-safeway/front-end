@@ -1,5 +1,7 @@
-import { Routes, Route, Link } from 'react-router-dom'
-import { useAuth } from 'react-oidc-context'
+import { Routes, Route, Link, useNavigate } from 'react-router-dom'
+import { AuthProvider, useAuth } from './contexts/AuthContext'
+import { ProtectedRoute } from './components/ProtectedRoute'
+import Login from './pages/Login'
 import Register from './pages/Register'
 import ConfirmEmail from './pages/ConfirmEmail'
 import Home from './pages/Home'
@@ -10,30 +12,16 @@ import Alunos from './pages/Alunos'
 import Financeiro from './pages/Financeiro'
 import Historico from './pages/Historico'
 import DirectionsBusIcon from '@mui/icons-material/DirectionsBus'
+import LogoutIcon from '@mui/icons-material/Logout'
+import PersonIcon from '@mui/icons-material/Person'
 
-function App() {
-  const auth = useAuth()
+function AppContent() {
+  const { isAuthenticated, user, logout } = useAuth()
+  const navigate = useNavigate()
 
-  if (auth.isLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen bg-offwhite-100">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-primary-400 mx-auto mb-4"></div>
-          <div className="text-lg text-navy-600">Carregando...</div>
-        </div>
-      </div>
-    )
-  }
-
-  if (auth.error) {
-    return (
-      <div className="flex items-center justify-center min-h-screen bg-offwhite-100">
-        <div className="bg-red-50 border border-red-200 rounded-lg p-6 max-w-md">
-          <div className="text-lg text-red-600 font-semibold mb-2">Erro de Autenticação</div>
-          <div className="text-red-500">{auth.error.message}</div>
-        </div>
-      </div>
-    )
+  const handleLogout = () => {
+    logout()
+    navigate('/login')
   }
 
   return (
@@ -55,24 +43,75 @@ function App() {
 
             {/* Links de Navegação */}
             <div className="flex items-center space-x-6">
-              <Link
-                to="/"
-                className="text-offwhite-100 hover:text-primary-400 font-medium transition-colors"
-              >
-                Início
-              </Link>
-              <Link
-                to="/register"
-                className="text-offwhite-100 hover:text-primary-400 font-medium transition-colors"
-              >
-                Registrar
-              </Link>
-              <Link
-                to="/confirm"
-                className="text-offwhite-100 hover:text-primary-400 font-medium transition-colors"
-              >
-                Confirmar
-              </Link>
+              {isAuthenticated ? (
+                <>
+                  <Link
+                    to="/"
+                    className="text-offwhite-100 hover:text-primary-400 font-medium transition-colors"
+                  >
+                    Início
+                  </Link>
+                  <Link
+                    to="/chamada"
+                    className="text-offwhite-100 hover:text-primary-400 font-medium transition-colors"
+                  >
+                    Chamada
+                  </Link>
+                  <Link
+                    to="/rotas"
+                    className="text-offwhite-100 hover:text-primary-400 font-medium transition-colors"
+                  >
+                    Rotas
+                  </Link>
+                  <Link
+                    to="/alunos"
+                    className="text-offwhite-100 hover:text-primary-400 font-medium transition-colors"
+                  >
+                    Alunos
+                  </Link>
+                  <Link
+                    to="/financeiro"
+                    className="text-offwhite-100 hover:text-primary-400 font-medium transition-colors"
+                  >
+                    Financeiro
+                  </Link>
+                  <Link
+                    to="/historico"
+                    className="text-offwhite-100 hover:text-primary-400 font-medium transition-colors"
+                  >
+                    Histórico
+                  </Link>
+                  
+                  <div className="flex items-center gap-3 border-l border-navy-700 pl-6">
+                    <div className="flex items-center gap-2 text-offwhite-100">
+                      <PersonIcon fontSize="small" />
+                      <span className="text-sm">{user?.role || 'Usuário'}</span>
+                    </div>
+                    <button
+                      onClick={handleLogout}
+                      className="flex items-center gap-2 bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg transition-colors"
+                    >
+                      <LogoutIcon fontSize="small" />
+                      Sair
+                    </button>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <Link
+                    to="/login"
+                    className="text-offwhite-100 hover:text-primary-400 font-medium transition-colors"
+                  >
+                    Login
+                  </Link>
+                  <Link
+                    to="/register"
+                    className="bg-primary-400 hover:bg-primary-500 text-white font-medium px-4 py-2 rounded-lg transition-colors"
+                  >
+                    Registrar
+                  </Link>
+                </>
+              )}
             </div>
           </div>
         </div>
@@ -81,15 +120,46 @@ function App() {
       {/* Conteúdo Principal */}
       <main className="container mx-auto px-4 py-6">
         <Routes>
-          <Route path="/" element={<Home />} />
+          <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route path="/confirm" element={<ConfirmEmail />} />
-          <Route path="/chamada" element={<Chamada />} />
-          <Route path="/rotas" element={<Rotas />} />
-          <Route path="/itinerarios" element={<Itinerarios />} />
-          <Route path="/alunos" element={<Alunos />} />
-          <Route path="/financeiro" element={<Financeiro />} />
-          <Route path="/historico" element={<Historico />} />
+          
+          {/* Rotas Protegidas */}
+          <Route path="/" element={
+            <ProtectedRoute>
+              <Home />
+            </ProtectedRoute>
+          } />
+          <Route path="/chamada" element={
+            <ProtectedRoute>
+              <Chamada />
+            </ProtectedRoute>
+          } />
+          <Route path="/rotas" element={
+            <ProtectedRoute>
+              <Rotas />
+            </ProtectedRoute>
+          } />
+          <Route path="/itinerarios" element={
+            <ProtectedRoute>
+              <Itinerarios />
+            </ProtectedRoute>
+          } />
+          <Route path="/alunos" element={
+            <ProtectedRoute>
+              <Alunos />
+            </ProtectedRoute>
+          } />
+          <Route path="/financeiro" element={
+            <ProtectedRoute>
+              <Financeiro />
+            </ProtectedRoute>
+          } />
+          <Route path="/historico" element={
+            <ProtectedRoute>
+              <Historico />
+            </ProtectedRoute>
+          } />
         </Routes>
       </main>
 
@@ -102,6 +172,14 @@ function App() {
         </div>
       </footer>
     </div>
+  )
+}
+
+function App() {
+  return (
+    <AuthProvider>
+      <AppContent />
+    </AuthProvider>
   )
 }
 

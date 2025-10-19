@@ -15,6 +15,7 @@
     "@emotion/styled": "^11.11.0",
     "@mui/icons-material": "^5.15.0",
     "@mui/material": "^5.15.0",
+    "axios": "^1.12.2",
     "oidc-client-ts": "^3.3.0",
     "react": "^18.2.0",
     "react-calendar": "^4.6.1",
