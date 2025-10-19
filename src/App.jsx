@@ -1,4 +1,4 @@
-import { Routes, Route, Link, useNavigate } from 'react-router-dom'
+import { Routes, Route, Link, useNavigate, useLocation } from 'react-router-dom'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
 import { ProtectedRoute } from './components/ProtectedRoute'
 import Login from './pages/Login'
@@ -18,6 +18,9 @@ import PersonIcon from '@mui/icons-material/Person'
 function AppContent() {
   const { isAuthenticated, user, logout } = useAuth()
   const navigate = useNavigate()
+  const location = useLocation()
+
+  const isAuthPage = location.pathname === '/login' || location.pathname === '/register'
 
   const handleLogout = () => {
     logout()
@@ -25,7 +28,7 @@ function AppContent() {
   }
 
   return (
-    <div className="min-h-screen bg-offwhite-100">
+    <div className="min-h-screen bg-offwhite-100 flex flex-col">
       {/* Navbar */}
       <nav className="bg-navy-900 shadow-lg border-b-4 border-primary-400">
         <div className="container mx-auto px-4 py-4">
@@ -81,7 +84,7 @@ function AppContent() {
                   >
                     Histórico
                   </Link>
-                  
+
                   <div className="flex items-center gap-3 border-l border-navy-700 pl-6">
                     <div className="flex items-center gap-2 text-offwhite-100">
                       <PersonIcon fontSize="small" />
@@ -118,12 +121,12 @@ function AppContent() {
       </nav>
 
       {/* Conteúdo Principal */}
-      <main className="container mx-auto px-4 py-6">
+      <main className={`container mx-auto px-6 md:px-10 py-4 md:py-6 flex-1 ${isAuthPage ? 'flex items-center justify-center' : ''}`}>
         <Routes>
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route path="/confirm" element={<ConfirmEmail />} />
-          
+
           {/* Rotas Protegidas */}
           <Route path="/" element={
             <ProtectedRoute>
@@ -164,7 +167,7 @@ function AppContent() {
       </main>
 
       {/* Footer */}
-      <footer className="bg-navy-900 text-offwhite-100 mt-12 py-6 border-t-2 border-primary-400">
+      <footer className={`bg-navy-900 text-offwhite-100 ${isAuthPage ? 'mt-6' : 'mt-12'} py-6 border-t-2 border-primary-400`}>
         <div className="container mx-auto px-4 text-center">
           <p className="text-sm">
             © 2025 Transporte Escolar Tio Ricardo & Tia Nelly - Sistema de Gestão

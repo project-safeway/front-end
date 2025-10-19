@@ -2,7 +2,7 @@
 const config = {
   // URL base da API do backend
   API_BASE_URL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080',
-  
+
   // Endpoints de autenticação
   AUTH_ENDPOINTS: {
     LOGIN: '/auth/login',

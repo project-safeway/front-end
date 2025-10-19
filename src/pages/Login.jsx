@@ -2,7 +2,7 @@ import { LoginForm } from '../components/LoginForm'
 
 function Login() {
   return (
-    <div className="min-h-screen bg-offwhite-100 flex items-center justify-center py-12 px-4">
+    <div className="w-full flex justify-center py-4 md:py-8 px-4">
       <LoginForm />
     </div>
   )

@@ -22,10 +22,10 @@ class AuthService {
   async login(email, senha) {
     try {
       console.log('[AuthService] Tentando fazer login...')
-      
+
       const response = await authAxios.post('/login', { email, senha })
       const data = response.data
-      
+
       // Salva o token e a data de expiração no localStorage
       if (data.accessToken) {
         localStorage.setItem('token', data.accessToken)
@@ -36,7 +36,7 @@ class AuthService {
       return data
     } catch (error) {
       console.error('[AuthService] Erro no login:', error.message)
-      
+
       // Trata erro do axios
       if (error.response) {
         // Servidor respondeu com erro (4xx, 5xx)
@@ -60,7 +60,7 @@ class AuthService {
   async register(userData) {
     try {
       console.log('[AuthService] Tentando registrar usuário...')
-      
+
       const response = await authAxios.post('/register', userData)
 
       console.log('[AuthService] Usuário registrado com sucesso')
@@ -131,7 +131,7 @@ class AuthService {
         atob(base64)
           .split('')
           .map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
-          .join('')
+          .join(''),
       )
 
       return JSON.parse(jsonPayload)

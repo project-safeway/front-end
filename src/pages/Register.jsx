@@ -35,17 +35,17 @@ function Register() {
   }
 
   return (
-    <div className="max-w-md mx-auto mt-10">
-      <div className="bg-offwhite-50 border border-offwhite-200 rounded-xl shadow-md p-8">
-        <div className="text-center mb-6">
-          <div className="inline-block p-4 bg-primary-50 rounded-full mb-4">
+    <div className="w-full flex justify-center py-4 md:py-8 px-4">
+      <div className="w-full max-w-md bg-offwhite-50 border border-offwhite-200 rounded-xl shadow-md p-5 md:p-8">
+        <div className="text-center mb-3 md:mb-5">
+          <div className="inline-block p-3 bg-primary-50 rounded-full mb-3">
             <PersonIcon className="text-primary-400 text-4xl" />
           </div>
           <h2 className="text-2xl font-bold text-navy-900">Registrar Novo Usuário</h2>
           <p className="text-navy-600 text-sm">Preencha os dados para criar sua conta</p>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-3">
           {error && (
             <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
               {error}
@@ -167,7 +167,7 @@ function Register() {
             )}
           </button>
 
-          <div className="text-center mt-4">
+          <div className="text-center mt-3">
             <Link to="/login" className="text-sm text-primary-400 hover:text-primary-500">
               Já tem uma conta? Faça login
             </Link>

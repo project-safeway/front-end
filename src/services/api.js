@@ -15,7 +15,7 @@ const api = axios.create({
  * INTERCEPTOR DE REQUISIÇÃO
  * ===============================================
  * Executado ANTES de cada requisição ser enviada ao servidor
- * 
+ *
  * Responsabilidades:
  * 1. Pegar o token do authService
  * 2. Verificar se o token ainda é válido
@@ -24,21 +24,21 @@ const api = axios.create({
 api.interceptors.request.use(
   (config) => {
     const token = authService.getToken()
-    
+
     // Se houver token válido, adiciona no header
     if (token && authService.isAuthenticated()) {
       config.headers.Authorization = `Bearer ${token}`
     }
-    
+
     // Log de debug (remova em produção)
     console.log(`[API] ${config.method.toUpperCase()} ${config.url}`)
-    
+
     return config
   },
   (error) => {
     console.error('[API] Erro ao configurar requisição:', error)
     return Promise.reject(error)
-  }
+  },
 )
 
 /**
@@ -46,7 +46,7 @@ api.interceptors.request.use(
  * INTERCEPTOR DE RESPOSTA
  * ===============================================
  * Executado DEPOIS de receber a resposta do servidor
- * 
+ *
  * Responsabilidades:
  * 1. Tratar erro 401 (token inválido/expirado)
  * 2. Fazer logout automático
@@ -63,14 +63,14 @@ api.interceptors.response.use(
     // Erro na resposta
     if (error.response) {
       const { status, config: requestConfig } = error.response
-      
+
       console.error(`[API] ${requestConfig.method.toUpperCase()} ${requestConfig.url} - ${status}`)
 
       // ERRO 401: Token inválido ou expirado
       if (status === 401) {
         console.warn('[API] Token inválido ou expirado. Fazendo logout...')
         authService.logout()
-        
+
         // Evita loop infinito se já estiver na página de login
         if (window.location.pathname !== '/login') {
           window.location.href = '/login'
@@ -100,7 +100,7 @@ api.interceptors.response.use(
     }
 
     return Promise.reject(error)
-  }
+  },
 )
 
 /**
@@ -115,11 +115,11 @@ const apiService = {
    * @param {string} endpoint - Endpoint da API (ex: '/alunos', '/rotas/1')
    * @param {Object} config - Configurações adicionais do axios (params, headers, etc)
    * @returns {Promise<any>} Dados da resposta
-   * 
+   *
    * @example
    * // Buscar todos os alunos
    * const alunos = await api.get('/alunos')
-   * 
+   *
    * // Buscar com query params
    * const alunos = await api.get('/alunos', { params: { nome: 'João' } })
    */
@@ -138,7 +138,7 @@ const apiService = {
    * @param {Object} data - Dados a serem enviados
    * @param {Object} config - Configurações adicionais do axios
    * @returns {Promise<any>} Dados da resposta
-   * 
+   *
    * @example
    * const novoAluno = await api.post('/alunos', { nome: 'João', idade: 10 })
    */
@@ -157,7 +157,7 @@ const apiService = {
    * @param {Object} data - Dados completos do recurso
    * @param {Object} config - Configurações adicionais do axios
    * @returns {Promise<any>} Dados da resposta
-   * 
+   *
    * @example
    * const alunoAtualizado = await api.put('/alunos/1', { nome: 'João Silva', idade: 11 })
    */
@@ -176,7 +176,7 @@ const apiService = {
    * @param {Object} data - Campos a serem atualizados
    * @param {Object} config - Configurações adicionais do axios
    * @returns {Promise<any>} Dados da resposta
-   * 
+   *
    * @example
    * const alunoAtualizado = await api.patch('/alunos/1', { idade: 11 })
    */
@@ -194,7 +194,7 @@ const apiService = {
    * @param {string} endpoint - Endpoint da API
    * @param {Object} config - Configurações adicionais do axios
    * @returns {Promise<any>} Dados da resposta
-   * 
+   *
    * @example
    * await api.delete('/alunos/1')
    */
@@ -215,13 +215,13 @@ const apiService = {
   handleError(error) {
     if (error.response) {
       // Servidor respondeu com status de erro (4xx, 5xx)
-      const message = error.response.data?.message 
+      const message = error.response.data?.message
         || error.response.data?.error
-        || error.response.data 
+        || error.response.data
         || error.message
-      
+
       const status = error.response.status
-      
+
       return new Error(`[${status}] ${message}`)
     } else if (error.request) {
       // Requisição foi feita mas não houve resposta

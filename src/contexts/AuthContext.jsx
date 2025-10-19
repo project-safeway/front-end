@@ -30,24 +30,16 @@ export const AuthProvider = ({ children }) => {
   }, [])
 
   const login = async (email, senha) => {
-    try {
-      const response = await authService.login(email, senha)
-      const userId = authService.getUserId()
-      const role = authService.getUserRole()
-      setUser({ id: userId, role })
-      return response
-    } catch (error) {
-      throw error
-    }
+    const response = await authService.login(email, senha)
+    const userId = authService.getUserId()
+    const role = authService.getUserRole()
+    setUser({ id: userId, role })
+    return response
   }
 
   const register = async (userData) => {
-    try {
-      const response = await authService.register(userData)
-      return response
-    } catch (error) {
-      throw error
-    }
+    const response = await authService.register(userData)
+    return response
   }
 
   const logout = () => {
