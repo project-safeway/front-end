@@ -3,7 +3,10 @@ import { LoginForm }  from './components/LoginForm';
 import { Menu }  from './components/Menu';
 import { Register } from './components/Register';
 import { Chamada } from './components/Chamada';
+<<<<<<< HEAD
 import { CadastroAluno } from './components/CadastroAluno';
+=======
+>>>>>>> 18196026221075928923c412f0fb36c9782ddfbc
 import { Financeiro } from './components/Financeiro';
 import { Rotas } from './components/Rotas';
 import { Configuracoes } from './components/Configuracoes';
@@ -68,21 +71,29 @@ function App() {
           </PrivateRoute>
         } />
 
+<<<<<<< HEAD
         <Route path="/alunos/cadastrar" element={
           <PrivateRoute>
             <CadastroAluno />
           </PrivateRoute>
         } />
 
+=======
+>>>>>>> 18196026221075928923c412f0fb36c9782ddfbc
         <Route path="/historico" element={
           <PrivateRoute>
             <Historico />
           </PrivateRoute>
         } />
+<<<<<<< HEAD
         
 
         <Route path="*" element={<Navigate to={isLoggedIn() ? "/menu" : "/login"} />} />
         <Route path="/alunos" element={<CadastroAluno />} />
+=======
+
+        <Route path="*" element={<Navigate to={isLoggedIn() ? "/menu" : "/login"} />} />
+>>>>>>> 18196026221075928923c412f0fb36c9782ddfbc
       </Routes>
     </BrowserRouter>
   );

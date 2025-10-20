@@ -2,6 +2,7 @@ import { Botao } from "./Botao";
 import { Input } from "./Input";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import axios from "axios";
 
 export function LoginForm() {
     const [email, setEmail] = useState("");
@@ -10,15 +11,20 @@ export function LoginForm() {
 
     async function handleSubmit(event){
         event.preventDefault();
-        const response = await fetch("http://localhost:8080/auth/login", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ email, senha })
-        });
-        const data = await response.json();
-        console.log(data);
-
-        navigate("/menu");
+        try {
+            const response = await axios.post("/auth/login", {
+                email,
+                senha
+            });
+            console.log(response.data);
+            navigate("/menu");
+        } catch (error) {
+            if (error.response) {
+                alert(error.response.data);
+            } else {
+                alert("Erro ao realizar login. Tente novamente mais tarde.");
+            }
+        }
     }
 
     return (
