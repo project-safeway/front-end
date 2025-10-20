@@ -68,11 +68,18 @@ function App() {
           </PrivateRoute>
         } />
 
+        <Route path="/alunos/cadastrar" element={
+          <PrivateRoute>
+            <CadastroAluno />
+          </PrivateRoute>
+        } />
+
         <Route path="/historico" element={
           <PrivateRoute>
             <Historico />
           </PrivateRoute>
         } />
+        
 
         <Route path="*" element={<Navigate to={isLoggedIn() ? "/menu" : "/login"} />} />
         <Route path="/alunos" element={<CadastroAluno />} />
