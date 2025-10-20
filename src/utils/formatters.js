@@ -106,3 +106,45 @@ export function formatPhone(phone) {
 
   return phone
 }
+
+/**
+ * Formata placa de veículo brasileira
+ * @param {string} placa - Placa sem formatação
+ * @returns {string} Placa formatada (AAA-0000 ou AAA-0A00)
+ */
+export function formatPlaca(placa) {
+  if (!placa) return ''
+
+  const cleanPlaca = placa.replace(/[-\s]/g, '').toUpperCase()
+
+  // Se tiver 7 caracteres, adiciona o hífen após os 3 primeiros
+  if (cleanPlaca.length <= 7) {
+    return cleanPlaca.replace(/^([A-Z]{0,3})([A-Z0-9]*)$/, (match, p1, p2) => {
+      return p2 ? `${p1}-${p2}` : p1
+    })
+  }
+
+  return cleanPlaca
+}
+
+/**
+ * Máscara de input para placa (atualiza conforme digitação)
+ * @param {string} value - Valor atual do input
+ * @returns {string} Valor com máscara aplicada
+ */
+export function maskPlaca(value) {
+  if (!value) return ''
+
+  // Remove tudo que não é letra ou número
+  let clean = value.replace(/[^A-Za-z0-9]/g, '').toUpperCase()
+
+  // Limita a 7 caracteres
+  clean = clean.slice(0, 7)
+
+  // Adiciona hífen após 3 caracteres
+  if (clean.length > 3) {
+    return `${clean.slice(0, 3)}-${clean.slice(3)}`
+  }
+
+  return clean
+}

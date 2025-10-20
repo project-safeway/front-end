@@ -30,7 +30,7 @@ api.interceptors.request.use(
       config.headers.Authorization = `Bearer ${token}`
     }
 
-    // Log de debug (remova em produção)
+    // Log de debug (remover em produção)
     console.log(`[API] ${config.method.toUpperCase()} ${config.url}`)
 
     return config
@@ -77,17 +77,14 @@ api.interceptors.response.use(
         }
       }
 
-      // ERRO 403: Sem permissão
       if (status === 403) {
         console.error('[API] Acesso negado. Usuário sem permissão.')
       }
 
-      // ERRO 404: Recurso não encontrado
       if (status === 404) {
         console.error('[API] Recurso não encontrado.')
       }
 
-      // ERRO 500: Erro no servidor
       if (status >= 500) {
         console.error('[API] Erro no servidor.')
       }
