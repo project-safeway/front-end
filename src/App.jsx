@@ -11,8 +11,8 @@ import Chamada from './pages/Chamada'
 import Rotas from './pages/Rotas'
 import Itinerarios from './pages/Itinerarios'
 import Alunos from './pages/Alunos'
-import Financeiro from './pages/Financeiro'
 import Historico from './pages/Historico'
+import Financeiro from './pages/Financeiro'
 
 function AppContent() {
   const location = useLocation()
