@@ -28,19 +28,31 @@ export default function EventModal({ isOpen, onClose, onSave, onDelete, event, s
 
   useEffect(() => {
     if (event) {
-      // Modo edição: preenche com dados do evento
+      let eventDate = event.date
+      if (typeof eventDate === 'string') {
+        const [year, month, day] = eventDate.split('T')[0].split('-')
+        eventDate = new Date(year, month - 1, day, 12, 0, 0)
+      } else if (eventDate instanceof Date) {
+        eventDate = new Date(eventDate.getFullYear(), eventDate.getMonth(), eventDate.getDate(), 12, 0, 0)
+      }
+      
       setFormData({
         title: event.title || '',
-        date: event.date ? new Date(event.date) : new Date(),
+        date: eventDate || new Date(),
         type: event.type || 'manutencao',
         priority: event.priority || 'media',
         description: event.description || '',
       })
     } else if (selectedDate) {
-      // Modo criação: usa data selecionada
+      const localDate = new Date(
+        selectedDate.getFullYear(),
+        selectedDate.getMonth(),
+        selectedDate.getDate(),
+        12, 0, 0
+      )
       setFormData({
         title: '',
-        date: selectedDate,
+        date: localDate,
         type: 'manutencao',
         priority: 'media',
         description: '',
@@ -58,7 +70,10 @@ export default function EventModal({ isOpen, onClose, onSave, onDelete, event, s
   }
 
   const handleDateChange = (e) => {
-    setFormData((prev) => ({ ...prev, date: new Date(e.target.value) }))
+    // Cria a data no horário local para evitar problemas de timezone
+    const [year, month, day] = e.target.value.split('-')
+    const localDate = new Date(year, month - 1, day, 12, 0, 0) // Meio-dia para evitar problemas de timezone
+    setFormData((prev) => ({ ...prev, date: localDate }))
   }
 
   const validate = () => {

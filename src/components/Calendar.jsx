@@ -25,10 +25,21 @@ export default function Calendar() {
       setError(null)
       const data = await eventService.getEvents()
       
-      const eventsWithDates = data.map((event) => ({
-        ...event,
-        date: new Date(event.date),
-      }))
+      const eventsWithDates = data.map((event) => {
+        // Converte a data string para Date no horário local
+        let eventDate
+        if (typeof event.date === 'string') {
+          const [year, month, day] = event.date.split('T')[0].split('-')
+          eventDate = new Date(year, month - 1, day, 12, 0, 0)
+        } else {
+          eventDate = new Date(event.date)
+        }
+        
+        return {
+          ...event,
+          date: eventDate,
+        }
+      })
       
       setEventos(eventsWithDates)
     } catch (err) {

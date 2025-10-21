@@ -56,7 +56,14 @@ const eventService = {
    */
   async createEvent(eventData) {
     try {
-      const response = await api.post('/eventos', eventData)
+      // Formata a data como YYYY-MM-DD para enviar ao backend sem timezone
+      const formattedData = {
+        ...eventData,
+        date: eventData.date instanceof Date 
+          ? eventData.date.toISOString().split('T')[0]
+          : eventData.date
+      }
+      const response = await api.post('/eventos', formattedData)
       return response.data || response
     } catch (error) {
       console.error('[EventService] Erro ao criar evento:', error)
@@ -72,7 +79,14 @@ const eventService = {
    */
   async updateEvent(eventId, eventData) {
     try {
-      const response = await api.put(`/eventos/${eventId}`, eventData)
+      // Formata a data como YYYY-MM-DD para enviar ao backend sem timezone
+      const formattedData = {
+        ...eventData,
+        date: eventData.date instanceof Date 
+          ? eventData.date.toISOString().split('T')[0]
+          : eventData.date
+      }
+      const response = await api.put(`/eventos/${eventId}`, formattedData)
       return response.data || response
     } catch (error) {
       console.error('[EventService] Erro ao atualizar evento:', error)
