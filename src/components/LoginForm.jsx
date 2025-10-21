@@ -1,67 +1,113 @@
-import { Botao } from "./Botao";
-import { Input } from "./Input";
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import axios from "axios";
+import { useState } from 'react'
+import { useNavigate, Link } from 'react-router-dom'
+import LockIcon from '@mui/icons-material/Lock'
+import EmailIcon from '@mui/icons-material/Email'
+import PersonIcon from '@mui/icons-material/Person'
+import { useAuth } from '../contexts/AuthContext'
 
 export function LoginForm() {
-    const [email, setEmail] = useState("");
-    const [senha, setSenha] = useState("");
-    const navigate = useNavigate();
+  const [email, setEmail] = useState('')
+  const [senha, setSenha] = useState('')
+  const [error, setError] = useState('')
+  const [loading, setLoading] = useState(false)
+  const navigate = useNavigate()
+  const { login } = useAuth()
 
-    async function handleSubmit(event){
-        event.preventDefault();
-        try {
-            const response = await axios.post("/auth/login", {
-                email,
-                senha
-            });
-            console.log(response.data);
-            navigate("/menu");
-        } catch (error) {
-            if (error.response) {
-                alert(error.response.data);
-            } else {
-                alert("Erro ao realizar login. Tente novamente mais tarde.");
-            }
-        }
+  const handleSubmit = async (e) => {
+    e.preventDefault()
+    setError('')
+    setLoading(true)
+
+    try {
+      await login(email, senha)
+      navigate('/')
+    } catch (error) {
+      setError(error.message || 'Erro ao fazer login. Verifique suas credenciais.')
+    } finally {
+      setLoading(false)
     }
+  }
 
-    return (
-        <div className="relative flex items-center justify-center min-h-screen bg-[url('/public/fundo-form.jpg')] bg-cover bg-center">
-            <div className="absolute inset-0 bg-black/70"></div>
-            <form onSubmit={handleSubmit} 
-                className="relative flex flex-col justify-center items-center w-5/6 max-w-2xl p-10 rounded-3xl bg-orange/20 backdrop-blur-md shadow-lg">
-                <div className="w-full flex flex-col gap-4">
-
-                    <h2 className="text-4xl font-bold text-left text-white mb-2">Login</h2>
-                    <h3 className="text-lg text-left text-white mb-6 font-normal">
-                        Seja bem vindo novamente,<br />
-                        Realize o login em sua conta!
-                    </h3>
-
-                    <label className="text-white text-sm text-left" htmlFor="email">Email</label>
-                    <Input onChange={e => setEmail(e.target.value)}
-                        id="email" placeholder="Email" type="email"
-                        className="w-full bg-orange-100/80 rounded-xl px-4 py-3 text-base" />
-
-                    <label className="text-white text-sm text-left" htmlFor="senha">Senha</label>
-                    <Input onChange={e => setSenha(e.target.value)}
-                        id="senha" placeholder="Senha" type="password"
-                        className="w-full bg-orange-100/80 rounded-xl px-4 py-3 text-base" />
-
-                    <div className="flex justify-between items-center mb-4">
-                        <span></span>
-                        <a href="#" className="text-right text-sm text-white hover:underline">Esqueci minha senha</a>
-                    </div>
-
-                    <Botao cor="laranja" texto="Entrar" type="submit" tamanho="w-full px-3 py-3 text-2xl" />
-
-                    <div className="mt-6 text-center">
-                        <span className="text-white text-sm">Ainda não possui uma conta? <a href="./register" className="font-bold underline">Cadastre-se</a></span>
-                    </div>
-                </div>
-            </form>
+  return (
+    <div className="w-full max-w-md mx-auto">
+      <div className="bg-offwhite-50 border border-offwhite-200 rounded-xl shadow-md p-5 md:p-8">
+        <div className="text-center mb-3 md:mb-5">
+          <div className="inline-block p-3 bg-primary-50 rounded-full mb-3">
+            <PersonIcon className="text-primary-400 text-4xl" />
+          </div>
+          <h2 className="text-2xl font-bold text-navy-900">Bem-vindo de volta!</h2>
+          <p className="text-navy-600 text-sm">Acesse sua conta - Tio Ricardo & Tia Nelly</p>
         </div>
-    );
+
+        <form onSubmit={handleSubmit} className="space-y-3">
+          {error && (
+            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
+              {error}
+            </div>
+          )}
+
+          <div>
+            <label className="block text-sm font-medium text-navy-700 mb-1">
+              E-mail
+            </label>
+            <div className="relative">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <EmailIcon className="text-navy-400" fontSize="small" />
+              </div>
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="Digite seu e-mail"
+                required
+                disabled={loading}
+                className="w-full pl-10 pr-4 py-2 border border-offwhite-300 rounded-lg focus:ring-2 focus:ring-primary-400 focus:border-transparent outline-none bg-white text-navy-900 disabled:opacity-50 disabled:cursor-not-allowed"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-navy-700 mb-1">
+              Senha
+            </label>
+            <div className="relative">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <LockIcon className="text-navy-400" fontSize="small" />
+              </div>
+              <input
+                type="password"
+                value={senha}
+                onChange={(e) => setSenha(e.target.value)}
+                placeholder="Digite sua senha"
+                required
+                disabled={loading}
+                className="w-full pl-10 pr-4 py-2 border border-offwhite-300 rounded-lg focus:ring-2 focus:ring-primary-400 focus:border-transparent outline-none bg-white text-navy-900 disabled:opacity-50 disabled:cursor-not-allowed"
+              />
+            </div>
+          </div>
+
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full bg-primary-400 hover:bg-primary-500 text-white font-medium py-3 px-4 rounded-lg transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+          >
+            {loading ? (
+              <>
+                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
+                Entrando...
+              </>
+            ) : (
+              'Entrar'
+            )}
+          </button>
+
+          <div className="text-center mt-3">
+            <Link to="/register" className="text-sm text-primary-400 hover:text-primary-500">
+              Não tem uma conta? Registre-se
+            </Link>
+          </div>
+        </form>
+      </div>
+    </div>
+  )
 }

@@ -7,23 +7,23 @@
 
 export function formatDate(date, options = {}) {
   try {
-    const dateObj = date instanceof Date ? date : new Date(date);
-    
+    const dateObj = date instanceof Date ? date : new Date(date)
+
     if (isNaN(dateObj.getTime())) {
-      throw new Error('Data inválida');
+      throw new Error('Data inválida')
     }
 
     const defaultOptions = {
       day: '2-digit',
       month: '2-digit',
       year: 'numeric',
-      ...options
-    };
+      ...options,
+    }
 
-    return new Intl.DateTimeFormat("pt-BR", defaultOptions).format(dateObj);
+    return new Intl.DateTimeFormat('pt-BR', defaultOptions).format(dateObj)
   } catch (error) {
-    console.error('Erro ao formatar data:', error);
-    return 'Data inválida';
+    console.error('Erro ao formatar data:', error)
+    return 'Data inválida'
   }
 }
 
@@ -35,10 +35,10 @@ export function formatDate(date, options = {}) {
  */
 export function formatDateTime(iso, options = {}) {
   try {
-    const date = iso instanceof Date ? iso : new Date(iso);
-    
+    const date = iso instanceof Date ? iso : new Date(iso)
+
     if (isNaN(date.getTime())) {
-      throw new Error('Data/hora inválida');
+      throw new Error('Data/hora inválida')
     }
 
     const defaultOptions = {
@@ -47,13 +47,13 @@ export function formatDateTime(iso, options = {}) {
       year: 'numeric',
       hour: '2-digit',
       minute: '2-digit',
-      ...options
-    };
+      ...options,
+    }
 
-    return date.toLocaleString("pt-BR", defaultOptions);
+    return date.toLocaleString('pt-BR', defaultOptions)
   } catch (error) {
-    console.error('Erro ao formatar data/hora:', error);
-    return 'Data/hora inválida';
+    console.error('Erro ao formatar data/hora:', error)
+    return 'Data/hora inválida'
   }
 }
 
@@ -64,19 +64,19 @@ export function formatDateTime(iso, options = {}) {
  */
 export function formatCurrency(value) {
   try {
-    const numValue = typeof value === 'string' ? parseFloat(value) : value;
-    
+    const numValue = typeof value === 'string' ? parseFloat(value) : value
+
     if (isNaN(numValue)) {
-      throw new Error('Valor inválido para moeda');
+      throw new Error('Valor inválido para moeda')
     }
 
     return new Intl.NumberFormat('pt-BR', {
       style: 'currency',
-      currency: 'BRL'
-    }).format(numValue);
+      currency: 'BRL',
+    }).format(numValue)
   } catch (error) {
-    console.error('Erro ao formatar moeda:', error);
-    return 'R$ 0,00';
+    console.error('Erro ao formatar moeda:', error)
+    return 'R$ 0,00'
   }
 }
 
@@ -86,8 +86,8 @@ export function formatCurrency(value) {
  * @returns {string} CPF formatado (000.000.000-00)
  */
 export function formatCPF(cpf) {
-  const cleanCPF = cpf.replace(/\D/g, '');
-  return cleanCPF.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
+  const cleanCPF = cpf.replace(/\D/g, '')
+  return cleanCPF.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4')
 }
 
 /**
@@ -96,13 +96,55 @@ export function formatCPF(cpf) {
  * @returns {string} Telefone formatado
  */
 export function formatPhone(phone) {
-  const cleanPhone = phone.replace(/\D/g, '');
-  
+  const cleanPhone = phone.replace(/\D/g, '')
+
   if (cleanPhone.length === 11) {
-    return cleanPhone.replace(/(\d{2})(\d{5})(\d{4})/, '($1) $2-$3');
+    return cleanPhone.replace(/(\d{2})(\d{5})(\d{4})/, '($1) $2-$3')
   } else if (cleanPhone.length === 10) {
-    return cleanPhone.replace(/(\d{2})(\d{4})(\d{4})/, '($1) $2-$3');
+    return cleanPhone.replace(/(\d{2})(\d{4})(\d{4})/, '($1) $2-$3')
   }
-  
-  return phone;
+
+  return phone
+}
+
+/**
+ * Formata placa de veículo brasileira
+ * @param {string} placa - Placa sem formatação
+ * @returns {string} Placa formatada (AAA-0000 ou AAA-0A00)
+ */
+export function formatPlaca(placa) {
+  if (!placa) return ''
+
+  const cleanPlaca = placa.replace(/[-\s]/g, '').toUpperCase()
+
+  // Se tiver 7 caracteres, adiciona o hífen após os 3 primeiros
+  if (cleanPlaca.length <= 7) {
+    return cleanPlaca.replace(/^([A-Z]{0,3})([A-Z0-9]*)$/, (match, p1, p2) => {
+      return p2 ? `${p1}-${p2}` : p1
+    })
+  }
+
+  return cleanPlaca
+}
+
+/**
+ * Máscara de input para placa (atualiza conforme digitação)
+ * @param {string} value - Valor atual do input
+ * @returns {string} Valor com máscara aplicada
+ */
+export function maskPlaca(value) {
+  if (!value) return ''
+
+  // Remove tudo que não é letra ou número
+  let clean = value.replace(/[^A-Za-z0-9]/g, '').toUpperCase()
+
+  // Limita a 7 caracteres
+  clean = clean.slice(0, 7)
+
+  // Adiciona hífen após 3 caracteres
+  if (clean.length > 3) {
+    return `${clean.slice(0, 3)}-${clean.slice(3)}`
+  }
+
+  return clean
 }
