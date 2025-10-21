@@ -1,13 +1,23 @@
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
+import { useAuth } from '../contexts/AuthContext'
 import DirectionsBusIcon from '@mui/icons-material/DirectionsBus'
+import LogoutIcon from '@mui/icons-material/Logout'
 import PersonIcon from '@mui/icons-material/Person'
 
 export default function Header() {
+  const { isAuthenticated, user, logout } = useAuth()
+  const navigate = useNavigate()
+
+  const handleLogout = () => {
+    logout()
+    navigate('/login')
+  }
+
   return (
-    <header className="bg-navy-900 shadow-lg border-b-4 border-primary-400">
-      <div className="container mx-auto px-4 py-4">
+    <nav className="bg-navy-900 shadow-lg border-b-4 border-primary-400">
+      <div className="container mx-auto px-4 md:px-32 py-4">
         <div className="flex items-center justify-between">
-          {/* Logo */}
+          {/* Logo e Título */}
           <Link to="/" className="flex items-center gap-3 group">
             <div className="p-2 bg-primary-400 rounded-lg group-hover:bg-primary-500 transition-colors">
               <DirectionsBusIcon className="text-white text-3xl" />
@@ -18,33 +28,80 @@ export default function Header() {
             </div>
           </Link>
 
-          {/* Navegação */}
-          <nav className="flex items-center space-x-6">
-            <Link
-              to="/"
-              className="text-offwhite-100 hover:text-primary-400 font-medium transition-colors"
-            >
-              Início
-            </Link>
-            <Link
-              to="/sobre"
-              className="text-offwhite-100 hover:text-primary-400 font-medium transition-colors"
-            >
-              Quem Somos
-            </Link>
-            <Link
-              to="/contato"
-              className="text-offwhite-100 hover:text-primary-400 font-medium transition-colors"
-            >
-              Contato
-            </Link>
-            <button className="flex items-center gap-2 px-4 py-2 bg-primary-400 hover:bg-primary-500 text-white font-medium rounded-lg transition-colors">
-              <PersonIcon />
-              Acessar
-            </button>
-          </nav>
+          {/* Links de Navegação */}
+          <div className="flex items-center space-x-6">
+            {isAuthenticated ? (
+              <>
+                <Link
+                  to="/"
+                  className="text-offwhite-100 hover:text-primary-400 font-medium transition-colors"
+                >
+                  Início
+                </Link>
+                <Link
+                  to="/chamada"
+                  className="text-offwhite-100 hover:text-primary-400 font-medium transition-colors"
+                >
+                  Chamada
+                </Link>
+                <Link
+                  to="/rotas"
+                  className="text-offwhite-100 hover:text-primary-400 font-medium transition-colors"
+                >
+                  Rotas
+                </Link>
+                <Link
+                  to="/alunos"
+                  className="text-offwhite-100 hover:text-primary-400 font-medium transition-colors"
+                >
+                  Alunos
+                </Link>
+                <Link
+                  to="/financeiro"
+                  className="text-offwhite-100 hover:text-primary-400 font-medium transition-colors"
+                >
+                  Financeiro
+                </Link>
+                <Link
+                  to="/historico"
+                  className="text-offwhite-100 hover:text-primary-400 font-medium transition-colors"
+                >
+                  Histórico
+                </Link>
+
+                <div className="flex items-center gap-3 border-l border-navy-700 pl-6">
+                  <div className="flex items-center gap-2 text-offwhite-100">
+                    <PersonIcon fontSize="small" />
+                    <span className="text-sm">{user?.role || 'Usuário'}</span>
+                  </div>
+                  <button
+                    onClick={handleLogout}
+                    className="flex items-center gap-2 bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg transition-colors"
+                  >
+                    <LogoutIcon fontSize="small" />
+                    Sair
+                  </button>
+                </div>
+              </>
+            ) : (
+              <>
+                <Link
+                  to="/login"
+                  className="text-offwhite-100 hover:text-primary-400 font-medium transition-colors"
+                >
+                  Login
+                </Link>
+                <Link
+                  to="/register"
+                  className="bg-primary-400 hover:bg-primary-500 text-white font-medium px-4 py-2 rounded-lg transition-colors"
+                >
+                  Registrar
+                </Link>
+              </>
+            )}
+          </div>
         </div>
       </div>
-    </header>
+    </nav>
   )
 }
