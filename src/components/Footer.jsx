@@ -1,44 +1,16 @@
-import React from "react";
-import "./Footer.css";
+import { useLocation } from 'react-router-dom'
 
 export default function Footer() {
+  const location = useLocation()
+  const isAuthPage = location.pathname === '/login' || location.pathname === '/register'
+
   return (
-    <footer className="footer">
-      <div className="footer-content">
-        <div className="footer-left">
-          <div className="footer-logo"></div>
-          <div>
-            <h3>SafeWay</h3>
-            <p>Conectando famílias à tranquilidade.</p>
-          </div>
-        </div>
-
-        <div className="footer-links">
-          <div>
-            <h4>Informação</h4>
-            <a href="#">Link</a>
-            <a href="#">Link</a>
-            <a href="#">Link</a>
-          </div>
-          <div>
-            <h4>Informação</h4>
-            <a href="#">Link</a>
-            <a href="#">Link</a>
-            <a href="#">Link</a>
-          </div>
-          <div>
-            <h4>Informação</h4>
-            <a href="#">Link</a>
-            <a href="#">Link</a>
-            <a href="#">Link</a>
-          </div>
-        </div>
+    <footer className={`bg-navy-900 text-offwhite-100 ${isAuthPage ? 'mt-6' : 'mt-12'} py-6 border-t-2 border-primary-400`}>
+      <div className="container mx-auto px-4 md:px-6 text-center">
+        <p className="text-sm">
+          © 2025 Transporte Escolar Tio Ricardo & Tia Nelly - Sistema de Gestão
+        </p>
       </div>
-
-      <hr />
-      <p className="footer-copy">
-        SPTECH - SafeWay © Todos os direitos reservados
-      </p>
     </footer>
-  );
+  )
 }

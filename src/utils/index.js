@@ -4,8 +4,8 @@ export {
   formatDateTime,
   formatCurrency,
   formatCPF,
-  formatPhone
-} from './formatter.js';
+  formatPhone,
+} from './formatter.js'
 
 // Validators
 export {
@@ -15,5 +15,5 @@ export {
   isValidCPF,
   isValidPhone,
   isRequired,
-  isInRange
-} from './validator.js';
+  isInRange,
+} from './validator.js'

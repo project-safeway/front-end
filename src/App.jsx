@@ -1,89 +1,86 @@
-import { BrowserRouter, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
-import { LoginForm }  from './components/LoginForm';
-import { Menu }  from './components/Menu';
-import { Register } from './components/Register';
-import { Chamada } from './components/Chamada';
-import { CadastroAluno } from './components/CadastroAluno';
-import { Financeiro } from './components/Financeiro';
-import { Rotas } from './components/Rotas';
-import { Configuracoes } from './components/Configuracoes';
-import { Itinerarios } from './components/itinerarios';
-import { Alunos } from './components/Alunos';
-import { Historico } from './components/Historico';
+import { Routes, Route, useLocation } from 'react-router-dom'
+import { AuthProvider } from './contexts/AuthContext'
+import { ProtectedRoute } from './components/ProtectedRoute'
+import Header from './components/Header'
+import Footer from './components/Footer'
+import Login from './pages/Login'
+import Register from './pages/Register'
+import ConfirmEmail from './pages/ConfirmEmail'
+import Home from './pages/Home'
+import Chamada from './pages/Chamada'
+import Rotas from './pages/Rotas'
+import Itinerarios from './pages/Itinerarios'
+import Alunos from './pages/Alunos'
+import Historico from './pages/Historico'
+import Financeiro from './pages/Financeiro'
 
-function isLoggedIn() {
-  return true;
-}
+function AppContent() {
+  const location = useLocation()
+  const isAuthPage = location.pathname === '/login' || location.pathname === '/register'
 
-function PrivateRoute({ children }) {
-  return isLoggedIn() ? children : <Navigate to="/login" />;
+  return (
+    <div className="min-h-screen bg-offwhite-100 flex flex-col">
+      {/* Header */}
+      <Header />
+
+      {/* Conteúdo Principal */}
+      <main className={`container mx-auto px-4 md:px-32 py-3 md:py-4 flex-1 ${isAuthPage ? 'flex items-center justify-center' : ''}`}>
+        <Routes>
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
+          <Route path="/confirm" element={<ConfirmEmail />} />
+
+          {/* Rotas Protegidas */}
+          <Route path="/" element={
+            <ProtectedRoute>
+              <Home />
+            </ProtectedRoute>
+          } />
+          <Route path="/chamada" element={
+            <ProtectedRoute>
+              <Chamada />
+            </ProtectedRoute>
+          } />
+          <Route path="/rotas" element={
+            <ProtectedRoute>
+              <Rotas />
+            </ProtectedRoute>
+          } />
+          <Route path="/itinerarios" element={
+            <ProtectedRoute>
+              <Itinerarios />
+            </ProtectedRoute>
+          } />
+          <Route path="/alunos" element={
+            <ProtectedRoute>
+              <Alunos />
+            </ProtectedRoute>
+          } />
+          <Route path="/financeiro" element={
+            <ProtectedRoute>
+              <Financeiro />
+            </ProtectedRoute>
+          } />
+          <Route path="/historico" element={
+            <ProtectedRoute>
+              <Historico />
+            </ProtectedRoute>
+          } />
+        </Routes>
+      </main>
+
+      {/* Footer */}
+      <Footer />
+    </div>
+  )
 }
 
 function App() {
   return (
-    <BrowserRouter>
-      <Routes>
-        <Route path="/login" element={<LoginForm />} />
-        <Route path="/register" element={<Register />} />
-        
-        <Route path="/menu" element={
-          <PrivateRoute>
-            <Menu />
-          </PrivateRoute>
-        } />
-
-        <Route path="/chamada" element={
-          <PrivateRoute>
-            <Chamada />
-          </PrivateRoute>
-        } />
-
-        <Route path="/financeiro" element={
-          <PrivateRoute>
-            <Financeiro />
-          </PrivateRoute>
-        } />
-
-        <Route path="/rotas" element={
-          <PrivateRoute>
-            <Rotas />
-          </PrivateRoute>
-        } />
-
-        <Route path="/configuracoes" element={
-          <PrivateRoute>
-            <Configuracoes />
-          </PrivateRoute>
-        } />
-
-        <Route path="/itinerarios" element={
-          <PrivateRoute>
-            <Itinerarios />
-          </PrivateRoute>
-        } />
-
-        <Route path="/alunos" element={
-          <PrivateRoute>
-            <Alunos />
-          </PrivateRoute>
-        } />
-
-        <Route path="/alunos/cadastrar" element={
-          <PrivateRoute>
-            <CadastroAluno />
-          </PrivateRoute>
-        } />
-        <Route path="/historico" element={
-          <PrivateRoute>
-            <Historico />
-          </PrivateRoute>
-        } />
-        <Route path="*" element={<Navigate to={isLoggedIn() ? "/menu" : "/login"} />} />
-        <Route path="/alunos" element={<CadastroAluno />} />
-
-      </Routes>
-    </BrowserRouter>
-  );
+    <AuthProvider>
+      <AppContent />
+    </AuthProvider>
+  )
 }
 
-export default App;
+export default App
