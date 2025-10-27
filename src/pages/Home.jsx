@@ -52,11 +52,18 @@ const cards = [
 
 export default function Home() {
   const [isLoading, setIsLoading] = useState(true)
+  const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1)
+  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear())
 
   useEffect(() => {
     const timer = setTimeout(() => setIsLoading(false), 100)
     return () => clearTimeout(timer)
   }, [])
+
+  const handleMonthChange = (month, year) => {
+    setSelectedMonth(month)
+    setSelectedYear(year)
+  }
 
   return (
     <div className="home py-6">
@@ -106,11 +113,11 @@ export default function Home() {
 
       {/* Calendário e Eventos - Usando o mesmo grid de 3 colunas */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 items-stretch">
-        <div className="md:col-span-2 lg:col-span-2">
-          <Calendar />
+        <div className="md:col-span-2 lg:col-span-2 lg:max-h-[608px] max-h-[80vh]">
+          <Calendar onMonthChange={handleMonthChange} />
         </div>
-        <div className="md:col-span-2 lg:col-span-1">
-          <EventsPanel />
+        <div className="md:col-span-2 lg:col-span-1 lg:max-h-[608px] max-h-[80vh]">
+          <EventsPanel selectedMonth={selectedMonth} selectedYear={selectedYear} />
         </div>
       </div>
     </div>

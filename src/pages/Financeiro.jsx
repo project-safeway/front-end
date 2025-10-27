@@ -1,11 +1,16 @@
 import React, { useEffect, useState } from "react";
+import { useLocation } from "react-router-dom";
 import axios from "axios";
 import { Tabela } from "../components/Tabela";
 
 export default function Financeiro() {
+  const location = useLocation();
+  const filtroStatusInicial = location.state?.filtroStatus || null;
+  
   const [recebimentos, setRecebimentos] = useState([]);
   const [clients, setClients] = useState([]); // lista de clientes para o select
   const [filter, setFilter] = useState("");
+  const [statusFilter, setStatusFilter] = useState(filtroStatusInicial); // Novo filtro de status
 
   // date filters
   const [dateFilterCombinada, setDateFilterCombinada] = useState({ from: "", to: "" });
@@ -66,6 +71,18 @@ export default function Financeiro() {
     }
     load();
   }, []);
+
+  // --- Notifica quando chega com filtro de status ---
+  useEffect(() => {
+    if (filtroStatusInicial) {
+      const statusLabels = {
+        'PENDENTE': 'Pendentes',
+        'ATRASADO': 'Em Atraso',
+        'PAGO': 'Pagos'
+      };
+      console.log(`Filtro aplicado: ${statusLabels[filtroStatusInicial] || filtroStatusInicial}`);
+    }
+  }, [filtroStatusInicial]);
 
   // --- populate clients for the pagamento select ---
   useEffect(() => {

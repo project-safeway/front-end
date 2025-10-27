@@ -6,7 +6,7 @@ import EditIcon from '@mui/icons-material/Edit'
 import EventModal from './EventModal'
 import eventService from '../services/eventService'
 
-export default function Calendar() {
+export default function Calendar({ onMonthChange }) {
   const [selectedDate, setSelectedDate] = useState(new Date())
   const [filter, setFilter] = useState('todos')
   const [eventos, setEventos] = useState([])
@@ -52,11 +52,22 @@ export default function Calendar() {
 
   const handleDateChange = (date) => {
     setSelectedDate(date)
+    // Notifica mudança de mês
+    if (onMonthChange) {
+      onMonthChange(date.getMonth() + 1, date.getFullYear())
+    }
   }
 
   const handleDateClick = (date) => {
     setSelectedDate(date)
     setSelectedEvent(null) // Limpa evento selecionado
+  }
+
+  const handleActiveStartDateChange = ({ activeStartDate }) => {
+    // Notifica mudança de mês quando usuário navega no calendário
+    if (onMonthChange && activeStartDate) {
+      onMonthChange(activeStartDate.getMonth() + 1, activeStartDate.getFullYear())
+    }
   }
 
   const handleCreateEvent = () => {
@@ -318,6 +329,7 @@ export default function Calendar() {
                 value={selectedDate}
                 locale="pt-BR"
                 onClickDay={handleDateClick}
+                onActiveStartDateChange={handleActiveStartDateChange}
                 tileClassName={({ date }) => {
                   const hasEvent = eventosFiltrados.some(
                     (e) => e.date.toDateString() === date.toDateString(),
