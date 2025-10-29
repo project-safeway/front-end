@@ -13,18 +13,6 @@ import HistoryIcon from '@mui/icons-material/History'
 
 const cards = [
   {
-    name: 'Chamada',
-    description: 'Registre presença dos alunos',
-    icon: <AssignmentTurnedInIcon fontSize="large" />,
-    route: '/chamada',
-  },
-  {
-    name: 'Rotas',
-    description: 'Gerencie rotas do transporte',
-    icon: <RouteIcon fontSize="large" />,
-    route: '/rotas',
-  },
-  {
     name: 'Itinerários',
     description: 'Configure itinerários e horários',
     icon: <MapIcon fontSize="large" />,
@@ -41,13 +29,7 @@ const cards = [
     description: 'Controle financeiro e pagamentos',
     icon: <AttachMoneyIcon fontSize="large" />,
     route: '/financeiro',
-  },
-  {
-    name: 'Histórico',
-    description: 'Visualize histórico de atividades',
-    icon: <HistoryIcon fontSize="large" />,
-    route: '/historico',
-  },
+  }
 ]
 
 export default function Home() {

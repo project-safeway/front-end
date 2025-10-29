@@ -76,20 +76,14 @@ export default function Header() {
       <Link to="/" className="menu-item hover:text-primary-400 font-medium transition-colors">
         Início
       </Link>
-      <Link to="/chamada" className="menu-item hover:text-primary-400 font-medium transition-colors">
-        Chamada
-      </Link>
-      <Link to="/rotas" className="menu-item hover:text-primary-400 font-medium transition-colors">
-        Rotas
+      <Link to="/itinerarios" className="menu-item hover:text-primary-400 font-medium transition-colors">
+        Itinerários
       </Link>
       <Link to="/alunos" className="menu-item hover:text-primary-400 font-medium transition-colors">
         Alunos
       </Link>
       <Link to="/financeiro" className="menu-item hover:text-primary-400 font-medium transition-colors">
         Financeiro
-      </Link>
-      <Link to="/historico" className="menu-item hover:text-primary-400 font-medium transition-colors">
-        Histórico
       </Link>
     </>
   )
