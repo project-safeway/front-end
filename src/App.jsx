@@ -13,6 +13,7 @@ import Itinerarios from './pages/Itinerarios'
 import Alunos from './pages/Alunos'
 import Historico from './pages/Historico'
 import Financeiro from './pages/Financeiro'
+import EditarItinerario from './pages/EditarItinerario'
 import { useState, useEffect } from 'react'
 
 function AppContent() {
@@ -72,6 +73,11 @@ function AppContent() {
           <Route path="/historico" element={
             <ProtectedRoute>
               <Historico />
+            </ProtectedRoute>
+          } />
+          <Route path="/editar-itinerario" element={
+            <ProtectedRoute>
+              <EditarItinerario />
             </ProtectedRoute>
           } />
         </Routes>

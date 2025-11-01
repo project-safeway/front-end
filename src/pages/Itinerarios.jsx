@@ -64,7 +64,7 @@ export default function Itinerarios() {
         </div>
         <div>
           <h1 className="text-3xl font-bold text-navy-900">Itinerários</h1>
-          <p className="text-navy-600">Configure itinerários e horários das rotas</p>
+          <p className="text-navy-600">Gerencie seus itinerários</p>
         </div>
       </div>
 
@@ -87,11 +87,10 @@ export default function Itinerarios() {
 
       {/* Lista de Itinerários */}
       <div
-        className={`grid gap-4 py-4 ${
-          isMobile
+        className={`grid gap-4 py-4 ${isMobile
             ? "grid-cols-1 place-items-center"
             : "grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
-        }`}
+          }`}
       >
         {itinerarios.map((itinerario) => (
           <CardItinerario
@@ -101,7 +100,7 @@ export default function Itinerarios() {
             horarioInicio={itinerario.horarioInicio}
             horarioFim={itinerario.horarioFim}
             tipoViagem={itinerario.tipoViagem}
-            onEdit={() => setItinerarioSelecionado(itinerario)}
+            onEdit={() => navigate(`/editar-itinerario?itinerarioId=${itinerario.id}`)}
             onDelete={() => handleDeleteItinerario(itinerario.id)}
             onHistorico={() => navigate(`/historico?itinerarioId=${itinerario.id}`)}
             onIniciarPresenca={() => navigate(`/chamada?itinerarioId=${itinerario.id}`)}
