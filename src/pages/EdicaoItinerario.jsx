@@ -5,7 +5,7 @@ import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import { TabelaEdicaoItinerario } from "../components/TabelaEdicaoItinerario";
 import { Botao } from "../components/Botao";
 
-export default function EditarItinerario() {
+export default function EdicaoItinerario() {
     const [searchParams] = useSearchParams();
     const itinerarioId = Number(searchParams.get("itinerarioId"));
 
