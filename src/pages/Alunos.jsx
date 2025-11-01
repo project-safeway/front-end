@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom'
 import SchoolIcon from '@mui/icons-material/School'
 import ArrowBackIcon from '@mui/icons-material/ArrowBack'
 
-export default function Alunos() {
+export function Alunos() {
   return (
     <div className="py-6">
       {/* Breadcrumb */}

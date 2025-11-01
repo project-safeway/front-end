@@ -10,7 +10,9 @@ import Home from './pages/Home'
 import Chamada from './pages/Chamada'
 import Rotas from './pages/Rotas'
 import Itinerarios from './pages/Itinerarios'
-import Alunos from './pages/Alunos'
+import {Alunos} from './pages/Alunos'
+import {CadastroAlunos} from './pages/CadastroAluno'
+import {EdicaoAlunos} from './pages/EdicaoAluno'
 import Historico from './pages/Historico'
 import Financeiro from './pages/Financeiro'
 
@@ -56,6 +58,15 @@ function AppContent() {
               <Alunos />
             </ProtectedRoute>
           } />
+
+          <Route path="/cadastro-alunos" element={
+              <CadastroAlunos />
+          } />
+
+          <Route path="/edicao-alunos/:id/editar" element={
+              <EdicaoAlunos />
+          } />
+
           <Route path="/financeiro" element={
             <ProtectedRoute>
               <Financeiro />
