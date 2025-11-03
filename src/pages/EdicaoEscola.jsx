@@ -75,11 +75,11 @@ export function EdicaoEscola() {
     <div className="py-6">
       {/* Breadcrumb */}
       <Link
-        to="/escolas"
+        to="/alunos"
         className="inline-flex items-center gap-2 text-navy-600 hover:text-primary-400 mb-6 transition-colors"
       >
         <ArrowBackIcon fontSize="small" />
-        <span>Voltar para Escolas</span>
+        <span>Voltar para Alunos</span>
       </Link>
 
       {/* Header */}
