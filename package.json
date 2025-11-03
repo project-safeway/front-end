@@ -22,7 +22,7 @@
     "react-calendar": "^6.0.0",
     "react-dom": "^19.1.1",
     "react-oidc-context": "^3.3.0",
-    "react-router-dom": "^7.9.3",
+    "react-router-dom": "^7.9.5",
     "tailwindcss": "^4.1.13"
   },
   "devDependencies": {
