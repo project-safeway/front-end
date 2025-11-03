@@ -17,6 +17,8 @@ import ListaAlunos from './pages/ListaAlunos'
 import AlunoDetalhe from './pages/AlunoDetalhe'
 import Historico from './pages/Historico'
 import Financeiro from './pages/Financeiro'
+import { CadastroEscola } from './pages/CadastroEscola'
+import { EdicaoEscola } from './pages/EdicaoEscola'
 
 function AppContent() {
   const location = useLocation()
@@ -86,6 +88,18 @@ function AppContent() {
               <ProtectedRoute>
                 <AlunoDetalhe />
               </ProtectedRoute>
+          } />
+
+          <Route path="/escolas/cadastrar" element={
+            <ProtectedRoute>
+                <CadastroEscola />
+            </ProtectedRoute>
+          } />
+
+          <Route path="/escolas/:id/editar" element={
+            <ProtectedRoute>
+                <EdicaoEscola />
+            </ProtectedRoute>
           } />
 
           <Route path="/financeiro" element={
