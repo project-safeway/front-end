@@ -13,6 +13,8 @@ import Itinerarios from './pages/Itinerarios'
 import {Alunos} from './pages/Alunos'
 import {CadastroAlunos} from './pages/CadastroAluno'
 import {EdicaoAlunos} from './pages/EdicaoAluno'
+import ListaAlunos from './pages/ListaAlunos'
+import AlunoDetalhe from './pages/AlunoDetalhe'
 import Historico from './pages/Historico'
 import Financeiro from './pages/Financeiro'
 
@@ -53,18 +55,37 @@ function AppContent() {
               <Itinerarios />
             </ProtectedRoute>
           } />
+
+          {/* 
           <Route path="/alunos" element={
             <ProtectedRoute>
               <Alunos />
             </ProtectedRoute>
           } />
+          */}
 
-          <Route path="/cadastro-alunos" element={
-              <CadastroAlunos />
+          <Route path="/alunos" element={
+            <ProtectedRoute>
+              <ListaAlunos />
+            </ProtectedRoute>
           } />
 
-          <Route path="/edicao-alunos/:id/editar" element={
-              <EdicaoAlunos />
+          <Route path="/alunos/cadastrar" element={
+              <ProtectedRoute>
+                <CadastroAlunos />
+              </ProtectedRoute>
+          } />
+
+          <Route path="/alunos/:id/editar" element={
+              <ProtectedRoute>
+                <EdicaoAlunos />
+              </ProtectedRoute>
+          } />
+
+          <Route path="/alunos/:id" element={
+              <ProtectedRoute>
+                <AlunoDetalhe />
+              </ProtectedRoute>
           } />
 
           <Route path="/financeiro" element={

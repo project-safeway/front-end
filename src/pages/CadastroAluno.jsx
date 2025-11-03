@@ -1,53 +1,82 @@
 import { useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import SchoolIcon from '@mui/icons-material/School'
 import ArrowBackIcon from '@mui/icons-material/ArrowBack'
+import escolasService from '../services/escolasService'
+import alunosService from '../services/alunosService'
 
 export function CadastroAlunos() {
+  const navigate = useNavigate()
+
   const [escolas, setEscolas] = useState([])
   const [responsaveis, setResponsaveis] = useState([
-    { nome: '', telefone: '', endereco: '', bairro: '', cidade: '', cep: '' }
+    { nome: '', telefone: '', endereco: '', bairro: '', cidade: '', cep: '' },
   ])
 
-  // Carrega escolas do backend (simulado aqui)
   useEffect(() => {
-    async function carregarEscolas() {
+    let alive = true
+    ;(async () => {
       try {
-        // const resp = await fetch('/api/escolas')
-        // const data = await resp.json()
-        const data = [
-          { id: 1, nome: 'Escola Municipal Tiradentes' },
-          { id: 2, nome: 'Colégio Dom Bosco' },
-          { id: 3, nome: 'Escola Estadual Monteiro Lobato' },
-        ]
-        setEscolas(data)
-      } catch (err) {
-        console.error('Erro ao carregar escolas', err)
+        const lista = await escolasService.getEscolas()
+        if (!alive) return
+        setEscolas(Array.isArray(lista) ? lista : (lista?.items ?? []))
+      } catch (e) {
+        console.error('[CadastroAlunos] Erro ao carregar escolas:', e)
       }
-    }
-    carregarEscolas()
+    })()
+    return () => { alive = false }
   }, [])
 
   function adicionarResponsavel() {
-    setResponsaveis([
-      ...responsaveis,
-      { nome: '', telefone: '', endereco: '', bairro: '', cidade: '', cep: '' }
+    setResponsaveis(prev => [
+      ...prev,
+      { nome: '', telefone: '', endereco: '', bairro: '', cidade: '', cep: '' },
     ])
   }
 
-  function atualizarResponsavel(index, campo, valor) {
-    const clone = [...responsaveis]
-    clone[index][campo] = valor
-    setResponsaveis(clone)
+  function atualizarResponsavel(i, campo, valor) {
+    const novo = [...responsaveis]
+    novo[i][campo] = valor
+    setResponsaveis(novo)
   }
 
-  function handleSubmit(e) {
+  function removerResponsavel(index) {
+    if (responsaveis.length <= 1) return
+    setResponsaveis(prev => prev.filter((_, i) => i !== index))
+  }
+
+  async function handleSubmit(e) {
     e.preventDefault()
-    const formData = new FormData(e.currentTarget)
-    const dadosAluno = Object.fromEntries(formData.entries())
-    // Envie responsaveis separado, pois não entra no FormData automaticamente
-    console.log('Payload:', { ...dadosAluno, responsaveis })
-    // TODO: fetch('/api/alunos', { method:'POST', body: JSON.stringify({ ...dadosAluno, responsaveis }) })
+    const f = e.currentTarget
+
+    const payload = {
+      nomeAluno: f.nomeAluno.value,
+      nascimento: f.nascimento.value, // YYYY-MM-DD
+      escolaId: f.escola.value || null, // select usa ID
+      sala: f.sala?.value || '',
+      serie: f.serie.value,
+      turno: f.turno.value,
+      professor: f.professor?.value || '',
+      endereco: f.endereco.value,
+      bairro: f.bairro.value,
+      cidade: f.cidade.value,
+      cep: f.cep.value,
+      mensalidade: f.mensalidade?.value || '',
+      vencimentoDia: f.vencimentoDia?.value || '',
+      pontoEmbarque: f.pontoEmbarque.value,
+      horarioIda: f.horarioIda.value,
+      horarioVolta: f.horarioVolta.value,
+      observacoes: f.observacoes.value,
+      responsaveis,
+    }
+
+    try {
+      const criado = await alunosService.createAluno(payload)
+      const novoId = criado?.id ?? criado?.aluno?.id
+      navigate(novoId ? `/alunos/${novoId}` : '/alunos')
+    } catch (e) {
+      console.error('[CadastroAlunos] Erro ao criar aluno:', e)
+    }
   }
 
   return (
@@ -97,13 +126,13 @@ export function CadastroAlunos() {
                 </select>
               </div>
 
-              {/* Escola (dinâmica) */}
+              {/* Escolares */}
               <div>
                 <label className="block text-sm font-medium text-navy-700 mb-1">Escola</label>
                 <select name="escola" className="w-full rounded-lg border border-offwhite-300 bg-white px-3 py-2">
                   <option value="">Selecione</option>
-                  {escolas.map(e => (
-                    <option key={e.id} value={e.nome}>{e.nome}</option>
+                  {escolas.map((e) => (
+                    <option key={e.id} value={e.id}>{e.nome}</option>
                   ))}
                 </select>
               </div>
@@ -126,15 +155,26 @@ export function CadastroAlunos() {
                 </select>
               </div>
 
-              {/* RESPONSÁVEIS + ENDEREÇO POR RESPONSÁVEL */}
+              {/* RESPONSÁVEIS */}
               {responsaveis.map((r, i) => (
                 <div key={i} className="md:col-span-2 border-t border-offwhite-300 pt-4">
-                  <p className="text-navy-800 font-semibold mb-3">Responsável {i + 1}</p>
+                  <div className="flex items-center justify-between mb-2">
+                    <p className="text-navy-800 font-semibold">Responsável {i + 1}</p>
+                    {responsaveis.length > 1 && (
+                      <button
+                        type="button"
+                        onClick={() => removerResponsavel(i)}
+                        className="text-red-600 hover:text-red-700 text-sm font-medium"
+                      >
+                        Remover
+                      </button>
+                    )}
+                  </div>
+
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-medium text-navy-700 mb-1">Nome</label>
                       <input
-                        name={`responsavel_${i}`}
                         value={r.nome}
                         onChange={(e) => atualizarResponsavel(i, 'nome', e.target.value)}
                         className="w-full rounded-lg border border-offwhite-300 bg-white px-3 py-2"
@@ -143,7 +183,6 @@ export function CadastroAlunos() {
                     <div>
                       <label className="block text-sm font-medium text-navy-700 mb-1">Telefone</label>
                       <input
-                        name={`telResponsavel_${i}`}
                         value={r.telefone}
                         onChange={(e) => atualizarResponsavel(i, 'telefone', e.target.value)}
                         className="w-full rounded-lg border border-offwhite-300 bg-white px-3 py-2"
@@ -151,13 +190,9 @@ export function CadastroAlunos() {
                       />
                     </div>
 
-                    {/* Endereço do Responsável */}
                     <div className="md:col-span-2">
-                      <label className="block text-sm font-medium text-navy-700 mb-1">
-                        Endereço do Responsável {i + 1}
-                      </label>
+                      <label className="block text-sm font-medium text-navy-700 mb-1">Endereço</label>
                       <input
-                        name={`enderecoResp_${i}`}
                         value={r.endereco}
                         onChange={(e) => atualizarResponsavel(i, 'endereco', e.target.value)}
                         className="w-full rounded-lg border border-offwhite-300 bg-white px-3 py-2"
@@ -167,7 +202,6 @@ export function CadastroAlunos() {
                     <div>
                       <label className="block text-sm font-medium text-navy-700 mb-1">Bairro</label>
                       <input
-                        name={`bairroResp_${i}`}
                         value={r.bairro}
                         onChange={(e) => atualizarResponsavel(i, 'bairro', e.target.value)}
                         className="w-full rounded-lg border border-offwhite-300 bg-white px-3 py-2"
@@ -176,7 +210,6 @@ export function CadastroAlunos() {
                     <div>
                       <label className="block text-sm font-medium text-navy-700 mb-1">Cidade</label>
                       <input
-                        name={`cidadeResp_${i}`}
                         value={r.cidade}
                         onChange={(e) => atualizarResponsavel(i, 'cidade', e.target.value)}
                         className="w-full rounded-lg border border-offwhite-300 bg-white px-3 py-2"
@@ -185,7 +218,6 @@ export function CadastroAlunos() {
                     <div>
                       <label className="block text-sm font-medium text-navy-700 mb-1">CEP</label>
                       <input
-                        name={`cepResp_${i}`}
                         value={r.cep}
                         onChange={(e) => atualizarResponsavel(i, 'cep', e.target.value)}
                         className="w-full rounded-lg border border-offwhite-300 bg-white px-3 py-2"
@@ -202,11 +234,11 @@ export function CadastroAlunos() {
                   onClick={adicionarResponsavel}
                   className="mt-2 px-4 py-2 bg-offwhite-200 hover:bg-offwhite-300 rounded-lg text-navy-800 text-sm font-medium transition-colors"
                 >
-                  + Adicionar outro responsável
+                  + Adicionar responsável
                 </button>
               </div>
 
-              {/* Endereço base do Aluno (se necessário manter) */}
+              {/* Endereço do aluno */}
               <div className="md:col-span-2">
                 <label className="block text-sm font-medium text-navy-700 mb-1">Endereço do Aluno</label>
                 <input name="endereco" className="w-full rounded-lg border border-offwhite-300 bg-white px-3 py-2" />

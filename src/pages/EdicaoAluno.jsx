@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react'
 import { Link, useParams, useNavigate } from 'react-router-dom'
 import SchoolIcon from '@mui/icons-material/School'
 import ArrowBackIcon from '@mui/icons-material/ArrowBack'
+import escolasService from '../services/escolasService'
+import alunosService from '../services/alunosService'
 
 export function EdicaoAlunos() {
   const { id } = useParams() // /alunos/:id/editar
@@ -14,7 +16,7 @@ export function EdicaoAlunos() {
   const [aluno, setAluno] = useState({
     nomeAluno: '',
     nascimento: '',
-    escola: '',
+    escola: '',      // mantendo como NOME (sem mudar sua estrutura)
     sala: '',
     serie: '',
     turno: '',
@@ -35,64 +37,57 @@ export function EdicaoAlunos() {
     { nome: '', telefone: '', endereco: '', bairro: '', cidade: '', cep: '' },
   ])
 
-  // carregar dados (aluno + escolas)
+  // carregar dados (aluno + escolas) via services
   useEffect(() => {
+    let alive = true
     async function bootstrap() {
       try {
-        // 1) escolas (troque por fetch('/api/escolas'))
-        const escolasMock = [
-          { id: 1, nome: 'EMEB Arco-Íris Dourado' },
-          { id: 2, nome: 'Colégio Dom Bosco' },
-          { id: 3, nome: 'E.E. Monteiro Lobato' },
-        ]
-        setEscolas(escolasMock)
+        setCarregando(true)
 
-        // 2) dados do aluno (troque por fetch(`/api/alunos/${id}`))
-        const alunoMock = {
-          nomeAluno: 'LUCAS SILVESTRE MOREIRA',
-          nascimento: '2015-02-10',
-          escola: 'EMEB Arco-Íris Dourado',
-          sala: '20, 2º Andar',
-          serie: '5ª Série',
-          turno: 'Manhã',
-          professor: 'Carlos Eduardo',
-          endereco: 'Rua dos Anjinhos, Nº 000',
-          bairro: '',
-          cidade: 'São Bernardo, SP',
-          cep: '09975-979',
-          mensalidade: '200',
-          vencimentoDia: '10',
-          pontoEmbarque: 'Rua dos Anjinhos, próximo ao nº 000',
-          horarioIda: '07:00',
-          horarioVolta: '12:00',
-          observacoes: '',
-        }
-        const responsaveisMock = [
-          {
-            nome: 'CLAUDIO SILVESTRE MOREIRA',
-            telefone: '(11) 97658-5298',
-            endereco: 'Rua dos Anjinhos, Nº 000',
-            bairro: '',
-            cidade: 'São Bernardo, SP',
-            cep: '09975-979',
-          },
-          {
-            nome: 'Responsável Secundário',
-            telefone: '(11) 90000-0000',
-            endereco: 'Rua B, 123',
-            bairro: 'Centro',
-            cidade: 'São Bernardo, SP',
-            cep: '09000-000',
-          },
-        ]
+        const [listaEscolas, dadosAluno] = await Promise.all([
+          escolasService.getEscolas(),
+          alunosService.getAlunoById(id),
+        ])
 
-        setAluno(alunoMock)
-        setResponsaveis(responsaveisMock)
+        if (!alive) return
+
+        // lista de escolas (suporta API que retorna array direto ou {items: []})
+        setEscolas(Array.isArray(listaEscolas) ? listaEscolas : (listaEscolas?.items ?? []))
+
+        // normalização mínima para não mudar seus campos
+        setAluno({
+          nomeAluno: dadosAluno?.nomeAluno ?? '',
+          nascimento: (dadosAluno?.nascimento || '').slice(0, 10), // YYYY-MM-DD
+          escola: dadosAluno?.escola ?? dadosAluno?.escolaNome ?? '', // mantendo como nome
+          sala: dadosAluno?.sala ?? '',
+          serie: dadosAluno?.serie ?? '',
+          turno: dadosAluno?.turno ?? '',
+          professor: dadosAluno?.professor ?? '',
+          endereco: dadosAluno?.endereco ?? '',
+          bairro: dadosAluno?.bairro ?? '',
+          cidade: dadosAluno?.cidade ?? '',
+          cep: dadosAluno?.cep ?? '',
+          mensalidade: String(dadosAluno?.mensalidade ?? ''),
+          vencimentoDia: String(dadosAluno?.vencimentoDia ?? ''),
+          pontoEmbarque: dadosAluno?.pontoEmbarque ?? '',
+          horarioIda: dadosAluno?.horarioIda ?? '',
+          horarioVolta: dadosAluno?.horarioVolta ?? '',
+          observacoes: dadosAluno?.observacoes ?? '',
+        })
+
+        setResponsaveis(
+          Array.isArray(dadosAluno?.responsaveis) && dadosAluno.responsaveis.length
+            ? dadosAluno.responsaveis
+            : [{ nome: '', telefone: '', endereco: '', bairro: '', cidade: '', cep: '' }]
+        )
+      } catch (err) {
+        console.error('[EdicaoAlunos] Erro ao carregar dados:', err)
       } finally {
-        setCarregando(false)
+        if (alive) setCarregando(false)
       }
     }
     bootstrap()
+    return () => { alive = false }
   }, [id])
 
   function setCampo(campo, valor) {
@@ -117,12 +112,18 @@ export function EdicaoAlunos() {
     setResponsaveis(prev => prev.filter((_, i) => i !== index))
   }
 
-  function handleSubmit(e) {
+  async function handleSubmit(e) {
     e.preventDefault()
-    const payload = { id, ...aluno, responsaveis }
-    // TODO: await fetch(`/api/alunos/${id}`, { method: 'PUT', headers: { 'Content-Type':'application/json' }, body: JSON.stringify(payload) })
-    console.log('Salvar edição:', payload)
-    // navigate('/alunos') // opcional após salvar
+    try {
+      // payload preservando a sua estrutura atual (escola por nome)
+      const payload = { ...aluno, responsaveis }
+      await alunosService.updateAluno(id, payload)
+      // opcional: redirecionar para visualização/lista
+      // navigate(`/alunos/${id}`)
+      console.log('Salvar edição (OK):', payload)
+    } catch (err) {
+      console.error('[EdicaoAlunos] Erro ao salvar edição:', err)
+    }
   }
 
   if (carregando) {
