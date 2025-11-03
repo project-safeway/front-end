@@ -13,10 +13,14 @@ import Itinerarios from './pages/Itinerarios'
 import {Alunos} from './pages/Alunos'
 import {CadastroAlunos} from './pages/CadastroAluno'
 import {EdicaoAlunos} from './pages/EdicaoAluno'
+import ListaAlunos from './pages/ListaAlunos'
+import AlunoDetalhe from './pages/AlunoDetalhe'
 import Historico from './pages/Historico'
 import Financeiro from './pages/Financeiro'
 import EdicaoItinerario from './pages/EdicaoItinerario'
 import { useState, useEffect } from 'react'
+import { CadastroEscola } from './pages/CadastroEscola'
+import { EdicaoEscola } from './pages/EdicaoEscola'
 
 function AppContent() {
   const location = useLocation()
@@ -62,18 +66,49 @@ function AppContent() {
               <Itinerarios />
             </ProtectedRoute>
           } />
+
+          {/* 
           <Route path="/alunos" element={
             <ProtectedRoute>
               <Alunos />
             </ProtectedRoute>
           } />
+          */}
 
-          <Route path="/cadastro-alunos" element={
-              <CadastroAlunos />
+          <Route path="/alunos" element={
+            <ProtectedRoute>
+              <ListaAlunos />
+            </ProtectedRoute>
           } />
 
-          <Route path="/edicao-alunos/:id/editar" element={
-              <EdicaoAlunos />
+          <Route path="/alunos/cadastrar" element={
+              <ProtectedRoute>
+                <CadastroAlunos />
+              </ProtectedRoute>
+          } />
+
+          <Route path="/alunos/:id/editar" element={
+              <ProtectedRoute>
+                <EdicaoAlunos />
+              </ProtectedRoute>
+          } />
+
+          <Route path="/alunos/:id" element={
+              <ProtectedRoute>
+                <AlunoDetalhe />
+              </ProtectedRoute>
+          } />
+
+          <Route path="/escolas/cadastrar" element={
+            <ProtectedRoute>
+                <CadastroEscola />
+            </ProtectedRoute>
+          } />
+
+          <Route path="/escolas/:id/editar" element={
+            <ProtectedRoute>
+                <EdicaoEscola />
+            </ProtectedRoute>
           } />
 
           <Route path="/financeiro" element={
