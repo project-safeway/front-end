@@ -1,17 +1,51 @@
-import { Link } from 'react-router-dom'
-import AssignmentTurnedInIcon from '@mui/icons-material/AssignmentTurnedIn'
-import ArrowBackIcon from '@mui/icons-material/ArrowBack'
+import React, { useState } from "react"
+import { Link } from "react-router-dom"
+import AssignmentTurnedInIcon from "@mui/icons-material/AssignmentTurnedIn"
+import ArrowBackIcon from "@mui/icons-material/ArrowBack"
+import { CardChamada } from "../components/CardChamada"
+import { Tabela } from "../components/Tabela"
 
 export default function Chamada() {
+  const [alunos, setAlunos] = useState([
+    { id: 1, nomeAluno: "João Silva", presente: false, responsavel: "Maria Silva", escola: "Escola A", sala: "101" },
+    { id: 2, nomeAluno: "Ana Souza", presente: false, responsavel: "Carlos Souza", escola: "Escola B", sala: "202" },
+    { id: 3, nomeAluno: "Pedro Oliveira", presente: false, responsavel: "Ana Oliveira", escola: "Escola C", sala: "303" },
+    { id: 4, nomeAluno: "Lucas Santos", presente: false, responsavel: "Fernanda Santos", escola: "Escola D", sala: "404" },
+    { id: 5, nomeAluno: "Mariana Lima", presente: false, responsavel: "João Lima", escola: "Escola E", sala: "505" },
+    { id: 6, nomeAluno: "Gabriel Costa", presente: false, responsavel: "Roberto Costa", escola: "Escola F", sala: "606" },
+    { id: 7, nomeAluno: "Beatriz Fernandes", presente: false, responsavel: "Cláudia Fernandes", escola: "Escola G", sala: "707" },
+    { id: 8, nomeAluno: "Rafael Almeida", presente: false, responsavel: "Sônia Almeida", escola: "Escola H", sala: "808" }
+  ])
+
+  const [indiceAtual, setIndiceAtual] = useState(0)
+
+  const marcarPresenca = (presente) => {
+    const alunoAtual = alunos[indiceAtual]
+    const atualizados = alunos.map(a =>
+      a.id === alunoAtual.id ? { ...a, presente } : a
+    )
+    setAlunos(atualizados)
+    proximoAluno()
+  }
+
+  const proximoAluno = () => {
+    if (indiceAtual < alunos.length - 1) setIndiceAtual(indiceAtual + 1)
+    else alert("Chamada finalizada!")
+  }
+
+  const alunoAtual = alunos[indiceAtual]
+  const cabecalho = ["ID", "Nome", "Escola", "Sala"]
+  const fields = ["id", "nomeAluno", "escola", "sala"]
+
   return (
     <div className="py-6">
       {/* Breadcrumb */}
       <Link
-        to="/"
+        to="/itinerarios"
         className="inline-flex items-center gap-2 text-navy-600 hover:text-primary-400 mb-6 transition-colors"
       >
         <ArrowBackIcon fontSize="small" />
-        <span>Voltar ao Início</span>
+        <span>Voltar</span>
       </Link>
 
       {/* Header */}
@@ -25,25 +59,39 @@ export default function Chamada() {
         </div>
       </div>
 
-      {/* Content */}
-      <div className="bg-offwhite-50 border border-offwhite-200 rounded-xl shadow-sm p-8">
-        <div className="text-center py-12">
+      {/* Card do Aluno Atual */}
+      {alunoAtual ? (
+        <CardChamada
+          aluno={alunoAtual}
+          onPresente={() => marcarPresenca(true)}
+          onAusente={() => marcarPresenca(false)}
+          onProximo={proximoAluno}
+        />
+      ) : (
+        <div className="text-center py-12 bg-white rounded-xl shadow-sm border border-offwhite-200">
           <AssignmentTurnedInIcon className="text-navy-300 text-6xl mb-4" />
-          <h2 className="text-2xl font-semibold text-navy-800 mb-2">
-            Módulo de Chamada
-          </h2>
-          <p className="text-navy-600 mb-6">
-            Em breve: Sistema de registro de presença dos alunos
-          </p>
-          <div className="flex gap-4 justify-center">
-            <button className="px-6 py-3 bg-primary-400 hover:bg-primary-500 text-white font-medium rounded-lg transition-colors">
-              Nova Chamada
-            </button>
-            <button className="px-6 py-3 bg-offwhite-200 hover:bg-offwhite-300 text-navy-800 font-medium rounded-lg transition-colors">
-              Ver Histórico
-            </button>
-          </div>
+          <h2 className="text-2xl font-semibold text-navy-800 mb-2">Chamada finalizada!</h2>
+          <p className="text-navy-600 mb-6">Todos os alunos foram registrados.</p>
+          <button
+            onClick={() => setIndiceAtual(0)}
+            className="px-6 py-3 bg-primary-400 hover:bg-primary-500 text-white font-medium rounded-lg transition-colors"
+          >
+            Nova Chamada
+          </button>
         </div>
+      )}
+
+      {/* Resumo / Tabela */}
+      <div className="mt-10">
+        <Tabela
+          cabecalho={cabecalho}
+          dados={alunos}
+          fields={fields}
+          renderCell={(row, key) => row[key]}
+          status={true}
+          statusField="presente"
+          onRowClick={(row, index) => setIndiceAtual(index)}
+        />
       </div>
     </div>
   )
