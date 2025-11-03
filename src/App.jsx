@@ -13,10 +13,19 @@ import Itinerarios from './pages/Itinerarios'
 import Alunos from './pages/Alunos'
 import Historico from './pages/Historico'
 import Financeiro from './pages/Financeiro'
+import EdicaoItinerario from './pages/EdicaoItinerario'
+import { useState, useEffect } from 'react'
 
 function AppContent() {
   const location = useLocation()
   const isAuthPage = location.pathname === '/login' || location.pathname === '/register'
+  const [isMobile, setIsMobile] = useState(false)
+
+  useEffect(() => { 
+    const handleResize = () => setIsMobile(window.innerWidth < 896)
+    window.addEventListener('resize', handleResize)
+    return () => window.removeEventListener('resize', handleResize)
+  }, [])
 
   return (
     <div className="min-h-screen bg-offwhite-100 flex flex-col">
@@ -24,7 +33,7 @@ function AppContent() {
       <Header />
 
       {/* Conteúdo Principal */}
-      <main className={`container mx-auto px-4 md:px-32 py-3 md:py-4 flex-1 ${isAuthPage ? 'flex items-center justify-center' : ''}`}>
+      <main className={`container ${isMobile ? '' : 'mx-auto px-4 md:px-32 py-3 md:py-4'} flex-1 ${isAuthPage ? 'flex items-center justify-center' : ''}`}>
         <Routes>
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
@@ -64,6 +73,11 @@ function AppContent() {
           <Route path="/historico" element={
             <ProtectedRoute>
               <Historico />
+            </ProtectedRoute>
+          } />
+          <Route path="/edicao-itinerario" element={
+            <ProtectedRoute>
+              <EdicaoItinerario />
             </ProtectedRoute>
           } />
         </Routes>
