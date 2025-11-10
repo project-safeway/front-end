@@ -33,6 +33,39 @@ export default function Financeiro() {
     data: ""
   });
 
+  const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:8080";
+
+  // === Funções de API isoladas (pagamentos) ===
+  const registrarPagamentoAPI = async (payload) => {
+    const res = await axios.post(`${API_BASE}/pagamentos`, payload);
+    return res.data;
+  };
+
+  const buscarPagamentoAPI = async (id) => {
+    const res = await axios.get(`${API_BASE}/pagamentos/${id}`);
+    return res.data;
+  };
+
+  const atualizarPagamentoAPI = async (id, payload) => {
+    const res = await axios.put(`${API_BASE}/pagamentos/${id}`, payload);
+    return res.data;
+  };
+
+  const deletarPagamentoAPI = async (id) => {
+    await axios.delete(`${API_BASE}/pagamentos/${id}`);
+    return;
+  };
+
+  const buscarPagamentosPorIdAPI = async (id) => {
+    const res = await axios.get(`${API_BASE}/pagamentos/todos/${id}`);
+    return res.data;
+  };
+
+  const listarPagamentosPorCobradorAPI = async (id) => {
+    const res = await axios.get(`${API_BASE}/pagamentos/cobrador/${id}`);
+    return res.data;
+  };
+
   const sample = [
     {
       id: 1,
@@ -54,16 +87,21 @@ export default function Financeiro() {
     }
   ];
 
-  // --- load recebimentos (backend-ready) ---
+  // --- load recebimentos (tenta backend, fallback local) ---
   useEffect(() => {
     async function load() {
       try {
-        // futuro: const res = await axios.get("/api/recebimentos");
-        // setRecebimentos(res.data);
+        const res = await axios.get(`${API_BASE}/recebimentos`);
+        if (res?.data && Array.isArray(res.data) && res.data.length) {
+          setRecebimentos(res.data);
+          return;
+        }
+        // se backend existir mas retorno vazio, tenta localStorage
         const stored = localStorage.getItem("recebimentos");
         if (stored) setRecebimentos(JSON.parse(stored));
         else setRecebimentos(sample);
       } catch (err) {
+        // fallback: localStorage ou sample
         const stored = localStorage.getItem("recebimentos");
         if (stored) setRecebimentos(JSON.parse(stored));
         else setRecebimentos(sample);
@@ -88,10 +126,9 @@ export default function Financeiro() {
   useEffect(() => {
     async function loadClients() {
       try {
-        // ajustar endpoint quando a API estiver pronta
-        const res = await axios.get("/api/clientes");
-        // espera [{ id, nome }] ou similar; tenta mapear campos comuns
-        const mapped = res.data.map(c => ({
+        // tenta carregar clientes do backend se existir
+        const res = await axios.get(`${API_BASE}/clientes`);
+        const mapped = (res.data || []).map(c => ({
           id: c.id ?? c.clientId ?? c.idCliente ?? c.id,
           nome: c.nome ?? c.nomeCliente ?? c.nome_completo ?? c.clientName ?? String(c)
         }));
@@ -119,13 +156,14 @@ export default function Financeiro() {
 
   const nextId = () => (recebimentos.length ? Math.max(...recebimentos.map(r => r.id)) + 1 : 1);
 
-  // delete (prepared for backend)
+  // delete (prepared for backend) - para recebimentos
   const handleDelete = async (id) => {
     if (!window.confirm("Confirma exclusão deste recebimento?")) return;
     try {
-      // futuro: await axios.delete(`/api/recebimentos/${id}`);
+      await axios.delete(`${API_BASE}/recebimentos/${id}`);
       setRecebimentos(prev => prev.filter(r => r.id !== id));
     } catch (err) {
+      // fallback local
       setRecebimentos(prev => prev.filter(r => r.id !== id));
     }
   };
@@ -198,7 +236,7 @@ export default function Financeiro() {
     setModalForm(prev => ({ ...prev, [name]: value }));
   };
 
-  // save novo via modal (prepared for backend)
+  // save novo via modal (tenta backend)
   const handleSaveNewModal = async (e) => {
     e.preventDefault();
     const novo = {
@@ -211,9 +249,8 @@ export default function Financeiro() {
       pagamentos: modalForm.valorRecebido ? [{ id: 1, valor: parseFloat(modalForm.valorRecebido), data: modalForm.diaRecebimento || "" }] : []
     };
     try {
-      // futuro: const res = await axios.post("/api/recebimentos", novo);
-      // setRecebimentos(prev => [res.data, ...prev]);
-      setRecebimentos(prev => [novo, ...prev]);
+      const res = await axios.post(`${API_BASE}/recebimentos`, novo);
+      setRecebimentos(prev => [res.data, ...prev]);
       closeModal();
     } catch (err) {
       setRecebimentos(prev => [novo, ...prev]);
@@ -221,7 +258,7 @@ export default function Financeiro() {
     }
   };
 
-  // save edit via modal (prepared for backend)
+  // save edit via modal (tenta backend)
   const handleSaveEditModal = async (e) => {
     e.preventDefault();
     if (!modalData) return;
@@ -232,12 +269,11 @@ export default function Financeiro() {
       dataCombinada: modalForm.dataCombinada ?? modalData.dataCombinada,
       valorAReceber: parseFloat(modalForm.valorAReceber) || 0,
       valorRecebido: parseFloat(modalForm.valorRecebido) || 0,
-      diaRecebimento: modalForm.diaRecebimento || ""
+      diaRecebimento: modalForm.diaRecebimento ?? ""
     };
     try {
-      // futuro: const res = await axios.put(`/api/recebimentos/${id}`, updatedItem);
-      // setRecebimentos(prev => prev.map(r => r.id === id ? res.data : r));
-      setRecebimentos(prev => prev.map(r => r.id === id ? updatedItem : r));
+      const res = await axios.put(`${API_BASE}/recebimentos/${id}`, updatedItem);
+      setRecebimentos(prev => prev.map(r => r.id === id ? res.data : r));
       closeModal();
     } catch (err) {
       setRecebimentos(prev => prev.map(r => r.id === id ? updatedItem : r));
@@ -245,39 +281,39 @@ export default function Financeiro() {
     }
   };
 
-  // add pagamento via modal (prepared for backend)
+  // aplicar pagamento local helper
+  const aplicarPagamentoLocal = (targetId, pagamento) => {
+    setRecebimentos(prev => prev.map(r => {
+      if (r.id === targetId) {
+        const nextPagamentoId = pagamento.id ?? ((r.pagamentos && r.pagamentos.length) ? Math.max(...r.pagamentos.map(p => p.id)) + 1 : 1);
+        const novoPagamento = { id: nextPagamentoId, valor: pagamento.valor, data: pagamento.data };
+        const pagamentos = [...(r.pagamentos || []), novoPagamento];
+        const valorRecebido = (r.valorRecebido || 0) + (novoPagamento.valor || 0);
+        return { ...r, pagamentos, valorRecebido, diaRecebimento: novoPagamento.data };
+      }
+      return r;
+    }));
+  };
+
+  // add pagamento via modal (agora chama backend /pagamentos)
   const handleSavePagamentoModal = async (e) => {
     e.preventDefault();
-    // targetId vem do select clientId; se vazio, usa modalData.id
     const targetId = parseInt(modalForm.clientId, 10) || modalData?.id;
     if (!targetId) return alert("Selecione um cliente válido");
     const valor = parseFloat(modalForm.valor);
     const data = modalForm.data || new Date().toISOString().slice(0, 10);
     if (isNaN(valor) || valor <= 0) return alert("Informe um valor válido");
+
+    const payload = { recebimentoId: targetId, valor, data };
+
     try {
-      // futuro: const res = await axios.post(`/api/recebimentos/${targetId}/pagamento`, { valor, data });
-      setRecebimentos(prev => prev.map(r => {
-        if (r.id === targetId) {
-          const nextPagamentoId = (r.pagamentos && r.pagamentos.length) ? Math.max(...r.pagamentos.map(p => p.id)) + 1 : 1;
-          const novoPagamento = { id: nextPagamentoId, valor, data };
-          const pagamentos = [...(r.pagamentos || []), novoPagamento];
-          const valorRecebido = (r.valorRecebido || 0) + valor;
-          return { ...r, pagamentos, valorRecebido, diaRecebimento: data };
-        }
-        return r;
-      }));
+      const criado = await registrarPagamentoAPI(payload);
+      // sincroniza com o pagamento retornado pelo backend
+      aplicarPagamentoLocal(targetId, { id: criado?.id, valor: criado?.valor ?? valor, data: criado?.data ?? data });
       closeModal();
     } catch (err) {
-      setRecebimentos(prev => prev.map(r => {
-        if (r.id === targetId) {
-          const nextPagamentoId = (r.pagamentos && r.pagamentos.length) ? Math.max(...r.pagamentos.map(p => p.id)) + 1 : 1;
-          const novoPagamento = { id: nextPagamentoId, valor, data };
-          const pagamentos = [...(r.pagamentos || []), novoPagamento];
-          const valorRecebido = (r.valorRecebido || 0) + valor;
-          return { ...r, pagamentos, valorRecebido, diaRecebimento: data };
-        }
-        return r;
-      }));
+      // fallback local se a chamada falhar
+      aplicarPagamentoLocal(targetId, { valor, data });
       closeModal();
     }
   };
