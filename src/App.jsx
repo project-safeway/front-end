@@ -21,6 +21,8 @@ import EdicaoItinerario from './pages/EdicaoItinerario'
 import { useState, useEffect } from 'react'
 import { CadastroEscola } from './pages/CadastroEscola'
 import { EdicaoEscola } from './pages/EdicaoEscola'
+import { ToastContainer } from 'react-toastify'
+import 'react-toastify/dist/ReactToastify.css'
 
 function AppContent() {
   const location = useLocation()
@@ -131,6 +133,20 @@ function AppContent() {
 
       {/* Footer */}
       <Footer />
+
+      {/* Toast para retornos ao usuário */}
+            <ToastContainer
+        theme="colored"
+        position="top-right"
+        autoClose={3000}
+        hideProgressBar={false}
+        newestOnTop
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+      />
     </div>
   )
 }

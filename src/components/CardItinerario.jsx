@@ -26,12 +26,12 @@ export function CardItinerario({
                 <div className="flex flex-col">
                     <span className="font-semibold text-lg text-gray-800">{label}</span>
                     <span
-                        className={`text-xs max-w-fit mt-1 px-3 py-1 rounded-full ${tipoViagem === "Ida"
+                        className={`text-xs max-w-fit mt-1 px-3 py-1 rounded-full ${tipoViagem === "SO_IDA"
                                 ? "bg-green-100 text-green-700"
                                 : "bg-yellow-100 text-yellow-700"
                             }`}
                     >
-                        {tipoViagem}
+                        {tipoViagem === "SO_IDA" ? "Ida" : "Volta"}
                     </span>
                 </div>
 
