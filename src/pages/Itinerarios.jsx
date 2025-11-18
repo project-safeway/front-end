@@ -32,7 +32,10 @@ export default function Itinerarios() {
       const data = await ItinerarioService.listarTodos();
 
       if (data.length === 0) {
-        toast.info("Nenhum itinerário cadastrado. Clique em \"Cadastrar Itinerário\" para começar!", { theme: "colored" });
+        toast.info(
+          'Nenhum itinerário cadastrado. Clique em "Cadastrar Itinerário" para começar!',
+          { theme: "colored", toastId: "sem-itinerarios" }
+        );
       }
 
       setItinerarios(data);

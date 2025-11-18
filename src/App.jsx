@@ -135,17 +135,17 @@ function AppContent() {
       <Footer />
 
       {/* Toast para retornos ao usuário */}
-            <ToastContainer
-        theme="colored"
-        position="top-right"
-        autoClose={3000}
-        hideProgressBar={false}
-        newestOnTop
-        closeOnClick
-        rtl={false}
-        pauseOnFocusLoss
-        draggable
-        pauseOnHover
+        <ToastContainer
+          theme="colored"
+          position="top-right"
+          autoClose={3000}
+          hideProgressBar={false}
+          newestOnTop
+          closeOnClick
+          rtl={false}
+          pauseOnFocusLoss
+          draggable
+          pauseOnHover
       />
     </div>
   )
