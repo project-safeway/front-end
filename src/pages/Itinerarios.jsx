@@ -100,6 +100,7 @@ export default function Itinerarios() {
             horarioInicio={itinerario.horarioInicio}
             horarioFim={itinerario.horarioFim}
             tipoViagem={itinerario.tipoViagem}
+            onVisualizarRota={() => navigate(`/rotas-otimizadas?itinerarioId=${itinerario.id}`)}
             onEdit={() => navigate(`/edicao-itinerario?itinerarioId=${itinerario.id}`)}
             onDelete={() => handleDeleteItinerario(itinerario.id)}
             onHistorico={() => navigate(`/historico?itinerarioId=${itinerario.id}`)}

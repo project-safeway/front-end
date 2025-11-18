@@ -3,6 +3,7 @@ import DeleteIcon from "@mui/icons-material/Delete";
 import HistoryIcon from "@mui/icons-material/History";
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import PlayCircleFilledWhiteIcon from "@mui/icons-material/PlayCircleFilledWhite";
+import RouteIcon from "@mui/icons-material/Route";
 import Tooltip from "@mui/material/Tooltip";
 
 export function CardItinerario({
@@ -16,6 +17,7 @@ export function CardItinerario({
     onDelete,
     onHistorico,
     onIniciarPresenca,
+    onVisualizarRota,
 }) {
     return (
         <div
@@ -36,6 +38,15 @@ export function CardItinerario({
                 </div>
 
                 <div className="flex gap-2">
+                    <Tooltip title="Ver Rota" arrow>
+                        <button
+                            onClick={onVisualizarRota}
+                            className="text-purple-500 hover:text-purple-700 transition"
+                        >
+                            <RouteIcon fontSize="small" />
+                        </button>
+                    </Tooltip>
+
                     <Tooltip title="Editar" arrow>
                         <button
                             onClick={onEdit}

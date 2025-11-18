@@ -9,6 +9,7 @@ import ConfirmEmail from './pages/ConfirmEmail'
 import Home from './pages/Home'
 import Chamada from './pages/Chamada'
 import Rotas from './pages/Rotas'
+import RotasOtimizadas from './pages/RotasOtimizadas'
 import Itinerarios from './pages/Itinerarios'
 import {Alunos} from './pages/Alunos'
 import {CadastroAlunos} from './pages/CadastroAluno'
@@ -61,6 +62,12 @@ function AppContent() {
               <Rotas />
             </ProtectedRoute>
           } />
+          <Route path="/rotas-otimizadas" element={
+            <ProtectedRoute>
+              <RotasOtimizadas />
+            </ProtectedRoute>
+          } />
+
           <Route path="/itinerarios" element={
             <ProtectedRoute>
               <Itinerarios />

@@ -1,11 +1,16 @@
 import React, { useState } from "react"
-import { Link } from "react-router-dom"
+import { Link, useSearchParams, useNavigate } from "react-router-dom"
 import AssignmentTurnedInIcon from "@mui/icons-material/AssignmentTurnedIn"
 import ArrowBackIcon from "@mui/icons-material/ArrowBack"
+import RouteIcon from "@mui/icons-material/Route"
 import { CardChamada } from "../components/CardChamada"
 import { Tabela } from "../components/Tabela"
 
 export default function Chamada() {
+  const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
+  const itinerarioId = searchParams.get('itinerarioId')
+  
   const [alunos, setAlunos] = useState([
     { id: 1, nomeAluno: "João Silva", presente: false, responsavel: "Maria Silva", escola: "Escola A", sala: "101" },
     { id: 2, nomeAluno: "Ana Souza", presente: false, responsavel: "Carlos Souza", escola: "Escola B", sala: "202" },
@@ -49,14 +54,27 @@ export default function Chamada() {
       </Link>
 
       {/* Header */}
-      <div className="flex items-center gap-4 mb-6">
-        <div className="p-4 bg-primary-50 rounded-xl">
-          <AssignmentTurnedInIcon className="text-primary-400 text-4xl" />
+      <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center gap-4">
+          <div className="p-4 bg-primary-50 rounded-xl">
+            <AssignmentTurnedInIcon className="text-primary-400 text-4xl" />
+          </div>
+          <div>
+            <h1 className="text-3xl font-bold text-navy-900">Chamada</h1>
+            <p className="text-navy-600">Registre a presença dos alunos nas rotas</p>
+          </div>
         </div>
-        <div>
-          <h1 className="text-3xl font-bold text-navy-900">Chamada</h1>
-          <p className="text-navy-600">Registre a presença dos alunos nas rotas</p>
-        </div>
+        
+        {/* Botão de Visualizar Rota */}
+        {itinerarioId && (
+          <button
+            onClick={() => navigate(`/rotas-otimizadas?itinerarioId=${itinerarioId}`)}
+            className="flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors shadow-md"
+          >
+            <RouteIcon fontSize="small" />
+            <span>Ver Rota</span>
+          </button>
+        )}
       </div>
 
       {/* Card do Aluno Atual */}
