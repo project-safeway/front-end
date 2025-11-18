@@ -9,6 +9,7 @@ import ConfirmEmail from './pages/ConfirmEmail'
 import Home from './pages/Home'
 import Chamada from './pages/Chamada'
 import Rotas from './pages/Rotas'
+import RotasOtimizadas from './pages/RotasOtimizadas'
 import Itinerarios from './pages/Itinerarios'
 import {Alunos} from './pages/Alunos'
 import {CadastroAlunos} from './pages/CadastroAluno'
@@ -63,6 +64,12 @@ function AppContent() {
               <Rotas />
             </ProtectedRoute>
           } />
+          <Route path="/rotas-otimizadas" element={
+            <ProtectedRoute>
+              <RotasOtimizadas />
+            </ProtectedRoute>
+          } />
+
           <Route path="/itinerarios" element={
             <ProtectedRoute>
               <Itinerarios />
@@ -134,18 +141,19 @@ function AppContent() {
       {/* Footer */}
       <Footer />
 
-      {/* Toast para retornos ao usuário */}
-        <ToastContainer
-          theme="colored"
-          position="top-right"
-          autoClose={3000}
-          hideProgressBar={false}
-          newestOnTop
-          closeOnClick
-          rtl={false}
-          pauseOnFocusLoss
-          draggable
-          pauseOnHover
+      {/* Toast Container Global - Funciona em toda aplicação */}
+      <ToastContainer
+        theme="colored"
+        position="top-right"
+        autoClose={3000}
+        hideProgressBar={false}
+        newestOnTop
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+        style={{ zIndex: 9999 }}
       />
     </div>
   )
