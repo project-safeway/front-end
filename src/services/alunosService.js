@@ -62,6 +62,26 @@ const alunosService = {
     const data = await api.delete(`/alunos/${id}`)
     return data
   },
+
+  /**
+   * Busca os endereços de um aluno
+   * @param {number|string} alunoId - ID do aluno
+   * @returns {Promise<Array>} Lista de endereços do aluno
+   */
+  async getEnderecosByAluno(alunoId) {
+    const data = await api.get(`/alunos/${alunoId}/enderecos`)
+    return data
+  },
+
+  /**
+   * Busca um endereço específico por ID
+   * @param {number|string} enderecoId - ID do endereço
+   * @returns {Promise<Object>} Dados do endereço incluindo latitude e longitude
+   */
+  async getEnderecoById(enderecoId) {
+    const data = await api.get(`/enderecos/${enderecoId}`)
+    return data
+  },
 }
 
 export default alunosService

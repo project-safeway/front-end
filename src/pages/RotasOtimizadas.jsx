@@ -1,108 +1,156 @@
 import { GoogleMap, Marker, Polyline, useJsApiLoader } from '@react-google-maps/api';
 import { useState, useEffect } from 'react';
-import { useSearchParams, useNavigate, Link } from 'react-router-dom';
-import { useEnderecos, useAlunos, useItinerarios, useAlunosItinerario } from './hooks';
+import { useSearchParams, Link } from 'react-router-dom';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+import RouteIcon from '@mui/icons-material/Route';
+import DirectionsCarIcon from '@mui/icons-material/DirectionsCar';
+import AccessTimeIcon from '@mui/icons-material/AccessTime';
+import PlaceIcon from '@mui/icons-material/Place';
+import rotasService from '../services/rotasService';
+import alunosService from '../services/alunosService';
+import { toast } from 'react-toastify';
 
-function MapaRotaEscolar() {
-  const navigate = useNavigate();
+function RotasOtimizadas() {
   const [searchParams] = useSearchParams();
   const itinerarioIdUrl = searchParams.get('itinerarioId');
   
   const [rota, setRota] = useState(null);
-  const [itinerarioSelecionado, setItinerarioSelecionado] = useState(itinerarioIdUrl || null);
+  const [itinerario, setItinerario] = useState(null);
+  const [alunosItinerario, setAlunosItinerario] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [erro, setErro] = useState('');
   const [center, setCenter] = useState({ lat: -23.55, lng: -46.63 });
-  
-  // Modal de adicionar aluno
-  const [modalAberto, setModalAberto] = useState(false);
-  const [alunoSelecionado, setAlunoSelecionado] = useState('');
-  const [enderecoSelecionado, setEnderecoSelecionado] = useState('');
-  
-  // Hooks customizados
-  const { itinerarios, loading: loadingItinerarios } = useItinerarios();
-  const { alunos, loading: loadingAlunos } = useAlunos();
-  const { alunos: alunosItinerario, refresh: refreshAlunosItinerario } = useAlunosItinerario(itinerarioSelecionado);
-  const { enderecos, loading: loadingEnderecos, error: erroEnderecos } = useEnderecos(alunoSelecionado);
 
   const { isLoaded } = useJsApiLoader({
-    googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY || "SUA_API_KEY_AQUI"
+    googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY || "SUA_API_KEY_AQUI",
+    libraries: ['places', 'geometry']
   });
 
-  // Carrega itinerário da URL automaticamente
   useEffect(() => {
     if (itinerarioIdUrl) {
-      setItinerarioSelecionado(itinerarioIdUrl);
+      carregarDadosItinerario();
     }
   }, [itinerarioIdUrl]);
 
-  // Otimiza rota automaticamente quando há alunos e itinerário selecionado
-  useEffect(() => {
-    if (itinerarioSelecionado && alunosItinerario && alunosItinerario.length > 0 && !rota) {
-      otimizarRotaDoItinerario();
-    }
-  }, [itinerarioSelecionado, alunosItinerario]);
-
-  const adicionarAlunoAoItinerario = async () => {
-    if (!alunoSelecionado || !enderecoSelecionado) {
-      alert('Selecione aluno e endereço');
-      return;
-    }
+  const carregarDadosItinerario = async () => {
+    setLoading(true);
+    setErro('');
 
     try {
-      const response = await fetch(`http://localhost:8080/itinerarios/${itinerarioSelecionado}/alunos`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          alunoId: parseInt(alunoSelecionado),
-          enderecoId: parseInt(enderecoSelecionado),
-          ordem: null
-        })
-      });
+      // Busca dados do itinerário
+      const itData = await rotasService.buscarItinerario(itinerarioIdUrl);
+      setItinerario(itData);
 
-      if (!response.ok) {
-        throw new Error('Erro ao adicionar aluno');
+      // Busca alunos do itinerário
+      const alunosData = await rotasService.buscarAlunosDoItinerario(itinerarioIdUrl);
+      setAlunosItinerario(alunosData);
+
+      if (alunosData.length === 0) {
+        setErro('Este itinerário não possui alunos cadastrados');
+        toast.warning('Adicione alunos ao itinerário antes de visualizar a rota', { theme: 'colored' });
+        return;
       }
 
-      alert('✅ Aluno adicionado ao itinerário!');
-      
-      // Atualiza a lista de alunos do itinerário
-      refreshAlunosItinerario();
-      
-      // Fecha o modal e limpa seleções
-      setModalAberto(false);
-      setAlunoSelecionado('');
-      setEnderecoSelecionado('');
+      // Otimiza a rota automaticamente
+      await otimizarRota(alunosData);
     } catch (error) {
-      console.error('Erro ao adicionar aluno:', error);
-      alert('❌ Erro ao adicionar aluno: ' + error.message);
+      console.error('Erro ao carregar dados:', error);
+      setErro(error.message || 'Erro ao carregar dados do itinerário');
+      toast.error('Erro ao carregar dados do itinerário', { theme: 'colored' });
+    } finally {
+      setLoading(false);
     }
   };
 
-  const otimizarRotaDoItinerario = async () => {
-    if (!itinerarioSelecionado) {
-      alert('Selecione um itinerário');
-      return;
-    }
-
-    if (!alunosItinerario || alunosItinerario.length === 0) {
-      alert('⚠️ Adicione alunos ao itinerário antes de otimizar a rota');
-      return;
-    }
-
-    setLoading(true);
+  const otimizarRota = async (alunos) => {
     try {
+      console.log('[RotasOtimizadas] Dados dos alunos recebidos:', alunos);
 
-      const pontosParada = alunosItinerario.map(aluno => ({
-        id: `${aluno.nome} - ${aluno.enderecoCompleto}`,
-        localizacao: {
-          lat: aluno.enderecoLatitude,
-          lng: aluno.enderecoLongitude
-        }
-      }));
+      // Buscar coordenadas para cada aluno usando o enderecoId
+      const alunosComCoordenadas = await Promise.all(
+        alunos.map(async (aluno) => {
+          try {
+            if (!aluno.enderecoId) {
+              console.error(`[RotasOtimizadas] Aluno ${aluno.nomeAluno} não possui enderecoId`);
+              return null;
+            }
 
+            // Buscar dados do endereço incluindo coordenadas
+            const endereco = await alunosService.getEnderecoById(aluno.enderecoId);
+            console.log(`[RotasOtimizadas] Endereço do aluno ${aluno.nomeAluno}:`, endereco);
+
+            return {
+              ...aluno,
+              endereco: endereco,
+              enderecoCompleto: `${endereco.logradouro}, ${endereco.numero} - ${endereco.bairro}`,
+              latitude: endereco.latitude,
+              longitude: endereco.longitude
+            };
+          } catch (error) {
+            console.error(`[RotasOtimizadas] Erro ao buscar endereço do aluno ${aluno.nomeAluno}:`, error);
+            toast.error(`Não foi possível obter o endereço de ${aluno.nomeAluno}`, { theme: 'colored' });
+            return null;
+          }
+        })
+      );
+
+      // Filtrar alunos que não conseguiram obter coordenadas
+      const alunosValidos = alunosComCoordenadas.filter(a => a !== null);
+
+      if (alunosValidos.length === 0) {
+        throw new Error('Nenhum aluno possui endereço com coordenadas válidas');
+      }
+
+      console.log('[RotasOtimizadas] Alunos com coordenadas:', alunosValidos);
+
+      // Valida e prepara os pontos de parada
+      const pontosParada = alunosValidos
+        .map(aluno => {
+          const lat = parseFloat(aluno.latitude);
+          const lng = parseFloat(aluno.longitude);
+
+          console.log(`[RotasOtimizadas] Aluno ${aluno.nomeAluno}:`, {
+            latitude: aluno.latitude,
+            longitude: aluno.longitude,
+            lat_parsed: lat,
+            lng_parsed: lng,
+            isValidLat: !isNaN(lat) && lat >= -90 && lat <= 90,
+            isValidLng: !isNaN(lng) && lng >= -180 && lng <= 180
+          });
+
+          return {
+            aluno,
+            id: `${aluno.nomeAluno}`,
+            endereco: aluno.enderecoCompleto,
+            localizacao: { lat, lng }
+          };
+        })
+        .filter(ponto => {
+          // Remove pontos com coordenadas inválidas
+          const isValid = 
+            !isNaN(ponto.localizacao.lat) && 
+            !isNaN(ponto.localizacao.lng) &&
+            ponto.localizacao.lat >= -90 && 
+            ponto.localizacao.lat <= 90 &&
+            ponto.localizacao.lng >= -180 && 
+            ponto.localizacao.lng <= 180;
+
+          if (!isValid) {
+            console.error(`[RotasOtimizadas] Aluno ${ponto.aluno.nomeAluno} tem coordenadas inválidas:`, ponto.localizacao);
+            toast.error(`Aluno ${ponto.aluno.nomeAluno} não possui endereço com coordenadas válidas`, { theme: 'colored' });
+          }
+
+          return isValid;
+        });
+
+      if (pontosParada.length === 0) {
+        throw new Error('Nenhum aluno possui coordenadas válidas para traçar a rota');
+      }
+
+      // Adiciona a escola como destino final
       pontosParada.push({
         id: 'Escola',
+        endereco: 'Escola Destino',
         localizacao: { lat: -23.574434, lng: -46.623934 }
       });
 
@@ -110,140 +158,210 @@ function MapaRotaEscolar() {
         veiculo: {
           id: "VAN-ESCOLAR-01",
           localizacaoInicial: pontosParada[0].localizacao,
-          localizacaoFinal: pontosParada[0].localizacao
+          localizacaoFinal: pontosParada[pontosParada.length - 1].localizacao
         },
         pontosParada: pontosParada,
         otimizarOrdem: true
       };
 
-      const response = await fetch('http://localhost:8080/rotas/otimizar', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(request)
+      console.log('[RotasOtimizadas] Request para API:', request);
+
+      const resultado = await rotasService.otimizarRota(request);
+      console.log('[RotasOtimizadas] Resultado da API:', resultado);
+
+      // O backend retorna: { distanciaTotal, tempoTotal, paradas, metricas, provedor }
+      // Mas as coordenadas das paradas estão zeradas, então precisamos preenchê-las
+      
+      const paradasComCoordenadas = resultado.paradas.map(parada => {
+        // Encontrar o ponto original correspondente pelo ID
+        const pontoOriginal = pontosParada.find(p => p.id === parada.idParada);
+        
+        return {
+          ...parada,
+          localizacao: pontoOriginal ? pontoOriginal.localizacao : parada.localizacao
+        };
       });
 
-      if (!response.ok) throw new Error('Erro ao otimizar rota');
+      // Montar estrutura de rota com coordenadas corretas
+      const rotaOtimizada = {
+        distanciaTotal: resultado.distanciaTotal,
+        distanciaKm: resultado.distanciaTotal / 1000,
+        tempoTotal: resultado.tempoTotal,
+        duracaoMinutos: Math.round(resultado.tempoTotal / 60),
+        paradas: paradasComCoordenadas,
+        metricas: resultado.metricas,
+        provedor: resultado.provedor
+      };
 
-      const data = await response.json();
-      setRota(data);
+      console.log('[RotasOtimizadas] Rota otimizada montada:', rotaOtimizada);
 
-      if (data.paradas.length > 0) {
-        setCenter(data.paradas[0].localizacao);
+      setRota(rotaOtimizada);
+
+      // Centraliza o mapa no primeiro ponto
+      if (rotaOtimizada.paradas && rotaOtimizada.paradas.length > 0) {
+        const primeiroPonto = rotaOtimizada.paradas[0].localizacao;
+        if (primeiroPonto.lat !== 0 || primeiroPonto.lng !== 0) {
+          setCenter(primeiroPonto);
+        }
       }
+
+      toast.success(`Rota otimizada! ${rotaOtimizada.distanciaKm.toFixed(2)} km em ${rotaOtimizada.duracaoMinutos} min`, { 
+        theme: 'colored' 
+      });
     } catch (error) {
-      console.error('Erro:', error);
-      alert('Erro ao otimizar rota: ' + error.message);
-    } finally {
-      setLoading(false);
+      console.error('[RotasOtimizadas] Erro ao otimizar rota:', error);
+      setErro(error.message || 'Erro ao calcular rota otimizada');
+      toast.error(error.message || 'Erro ao calcular rota otimizada', { theme: 'colored' });
     }
   };
 
   if (!isLoaded) {
-    return <div style={styles.loading}>Carregando mapa...</div>;
+    return (
+      <div className="flex justify-center items-center h-screen">
+        <div className="text-[#34435F] text-xl">Carregando mapa...</div>
+      </div>
+    );
   }
 
   return (
-    <div style={styles.container}>
-      <div style={styles.sidebar}>
+    <div className="flex h-screen w-full">
+      {/* Sidebar */}
+      <div className="w-[350px] p-5 bg-[#F4F5F6] overflow-y-auto border-r border-gray-300">
         {/* Breadcrumb */}
         <Link
           to="/itinerarios"
-          style={styles.breadcrumb}
+          className="inline-flex items-center gap-2 text-[#FB923C] no-underline mb-5 text-sm hover:text-[#172848] transition-colors"
         >
           <ArrowBackIcon fontSize="small" />
           <span>Voltar aos Itinerários</span>
         </Link>
         
-        <h2>Otimização de Rotas</h2>
+        <h2 className="text-[#172848] text-2xl font-bold mb-5">Rota Otimizada</h2>
 
-        <div style={styles.formGroup}>
-          <label>Selecione o Itinerário:</label>
-          <select
-            value={itinerarioSelecionado || ''}
-            onChange={(e) => setItinerarioSelecionado(e.target.value)}
-            style={styles.select}
-          >
-            <option value="">-- Escolha um itinerário --</option>
-            {itinerarios.map(it => (
-              <option key={it.id} value={it.id}>
-                {it.nome} - {it.turno}
-              </option>
-            ))}
-          </select>
-        </div>
+        {/* Info do Itinerário */}
+        {itinerario && (
+          <div className="mb-5 p-4 bg-white rounded-lg shadow">
+            <div className="flex items-center gap-2 mb-2">
+              <RouteIcon className="text-[#FB923C]" />
+              <h3 className="text-[#34435F] font-semibold">{itinerario.nome}</h3>
+            </div>
+            <p className="text-[#34435F] text-sm">
+              <strong>Turno:</strong> {itinerario.turno}
+            </p>
+            <p className="text-[#34435F] text-sm">
+              <strong>Alunos:</strong> {alunosItinerario.length}
+            </p>
+          </div>
+        )}
 
-        <button
-          onClick={() => setModalAberto(true)}
-          disabled={!itinerarioSelecionado}
-          style={styles.buttonSecondary}
-        >
-          ➕ Adicionar Aluno
-        </button>
+        {/* Loading/Error States */}
+        {loading && (
+          <div className="mb-5 p-4 bg-blue-50 text-blue-700 rounded-lg text-center">
+            <p>Otimizando rota...</p>
+          </div>
+        )}
 
-        <button
-          onClick={otimizarRotaDoItinerario}
-          disabled={loading || !itinerarioSelecionado}
-          style={styles.button}
-        >
-          {loading ? 'Otimizando...' : '🚀 Otimizar Rota'}
-        </button>
+        {erro && (
+          <div className="mb-5 p-4 bg-red-50 text-[#F04848] rounded-lg text-center">
+            <p>{erro}</p>
+          </div>
+        )}
 
+        {/* Resumo da Rota */}
         {rota && (
-          <div style={styles.info}>
-            <h3>📊 Resumo da Rota</h3>
-            <p><strong>🛣️ Distância:</strong> {(rota.distanciaTotal / 1000).toFixed(2)} km</p>
-            <p><strong>⏱️ Tempo:</strong> {Math.floor(rota.tempoTotal / 60)} min</p>
-            <p><strong>📍 Paradas:</strong> {rota.paradas.length}</p>
+          <div className="mt-5 p-4 bg-white rounded-lg shadow">
+            <h3 className="text-[#172848] font-semibold mb-3 text-lg">Resumo da Rota</h3>
+            
+            <div className="flex items-center gap-2 mb-2">
+              <DirectionsCarIcon className="text-[#FB923C]" fontSize="small" />
+              <p className="text-[#34435F]">
+                <strong>Distância:</strong> {rota.distanciaKm ? rota.distanciaKm.toFixed(2) : (rota.distanciaTotal / 1000).toFixed(2)} km
+              </p>
+            </div>
 
-            <h4>🚏 Ordem de Embarque:</h4>
-            <ol style={styles.list}>
+            <div className="flex items-center gap-2 mb-2">
+              <AccessTimeIcon className="text-[#FB923C]" fontSize="small" />
+              <p className="text-[#34435F]">
+                <strong>Tempo:</strong> {rota.duracaoMinutos || Math.floor(rota.tempoTotal / 60)} min
+              </p>
+            </div>
+
+            <div className="flex items-center gap-2 mb-4">
+              <PlaceIcon className="text-[#FB923C]" fontSize="small" />
+              <p className="text-[#34435F]">
+                <strong>Paradas:</strong> {rota.paradas.length}
+              </p>
+            </div>
+
+            <h4 className="text-[#34435F] font-semibold mb-2">Ordem de Embarque:</h4>
+            <ol className="pl-5 mt-2 space-y-1">
               {rota.paradas.map((parada, idx) => (
-                <li key={idx}>
+                <li key={idx} className="text-[#34435F]">
                   {parada.idParada}
-                  <small style={styles.small}>
-                    {parada.horarioChegada ? ` - ${parada.horarioChegada}` : ''}
-                  </small>
+                  {parada.horarioChegada && (
+                    <small className="block text-xs text-gray-500">
+                      {parada.horarioChegada}
+                    </small>
+                  )}
                 </li>
               ))}
             </ol>
 
             <button
               onClick={() => window.open(gerarLinkGoogleMaps(rota), '_blank')}
-              style={styles.buttonGoogle}
+              className="w-full mt-4 px-4 py-3 bg-[#4CCE5B] hover:bg-[#3cb54a] text-white font-medium rounded-lg transition-colors"
             >
-              🗺️ Abrir no Google Maps
+              Abrir no Google Maps
             </button>
             
             <button
               onClick={() => window.open(gerarLinkWaze(rota), '_blank')}
-              style={styles.buttonWaze}
+              className="w-full mt-2 px-4 py-3 bg-[#00d4ff] hover:bg-[#00bfea] text-white font-medium rounded-lg transition-colors"
             >
-              🚗 Abrir no Waze
+              Abrir no Waze
             </button>
           </div>
         )}
       </div>
 
-      <div style={styles.mapContainer}>
+      {/* Mapa */}
+      <div className="flex-1">
         <GoogleMap
           mapContainerStyle={{ width: '100%', height: '100%' }}
           center={center}
           zoom={13}
         >
-          {rota?.paradas.map((parada, idx) => (
-            <Marker
-              key={idx}
-              position={parada.localizacao}
-              label={`${idx + 1}`}
-              title={parada.idParada}
-            />
-          ))}
+          {rota?.paradas.map((parada, idx) => {
+            const isFirst = idx === 0;
+            const isLast = idx === rota.paradas.length - 1;
+            
+            return (
+              <Marker
+                key={idx}
+                position={parada.localizacao}
+                label={{
+                  text: `${idx + 1}`,
+                  color: 'white',
+                  fontWeight: 'bold'
+                }}
+                title={parada.idParada}
+                icon={{
+                  path: window.google.maps.SymbolPath.CIRCLE,
+                  scale: 12,
+                  fillColor: isFirst ? '#4CCE5B' : isLast ? '#F04848' : '#FB923C',
+                  fillOpacity: 1,
+                  strokeColor: 'white',
+                  strokeWeight: 2
+                }}
+              />
+            );
+          })}
 
           {rota && (
             <Polyline
               path={rota.paradas.map(p => p.localizacao)}
               options={{
-                strokeColor: '#2196F3',
+                strokeColor: '#FB923C',
                 strokeWeight: 4,
                 strokeOpacity: 0.8
               }}
@@ -251,86 +369,6 @@ function MapaRotaEscolar() {
           )}
         </GoogleMap>
       </div>
-
-      {/* Modal de Adicionar Aluno */}
-      {modalAberto && (
-        <div style={styles.modalOverlay}>
-          <div style={styles.modal}>
-            <h3>➕ Adicionar Aluno ao Itinerário</h3>
-
-            <div style={styles.formGroup}>
-              <label>Selecione o Aluno:</label>
-              <select
-                value={alunoSelecionado}
-                onChange={(e) => {
-                  setAlunoSelecionado(e.target.value);
-                  setEnderecoSelecionado('');
-                }}
-                style={styles.select}
-              >
-                <option value="">-- Escolha um aluno --</option>
-                {alunos.map(aluno => (
-                  <option key={aluno.idAluno} value={aluno.idAluno}>
-                    {aluno.nome}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {alunoSelecionado && (
-              <div style={styles.formGroup}>
-                <label>Selecione o Endereço:</label>
-                {loadingEnderecos ? (
-                  <div style={styles.loadingBox}>
-                    <p>⏳ Carregando endereços...</p>
-                  </div>
-                ) : erroEnderecos ? (
-                  <div style={styles.errorBox}>
-                    <p>❌ {erroEnderecos}</p>
-                  </div>
-                ) : enderecos.length === 0 ? (
-                  <div style={styles.warningBox}>
-                    <p>⚠️ Nenhum endereço cadastrado para este aluno</p>
-                    <small>Cadastre um endereço primeiro</small>
-                  </div>
-                ) : (
-                  <>
-                    <select
-                      value={enderecoSelecionado}
-                      onChange={(e) => setEnderecoSelecionado(e.target.value)}
-                      style={styles.select}
-                    >
-                      <option value="">-- Escolha um endereço --</option>
-                      {enderecos.map(end => (
-                        <option key={end.id} value={end.id}>
-                          📍 {end.logradouro}, {end.numero} - {end.bairro}
-                          {end.principal && ' ⭐ (Principal)'}
-                        </option>
-                      ))}
-                    </select>
-                    <small style={styles.hint}>
-                      💡 {enderecos.length} endereço(s) disponível(is)
-                    </small>
-                  </>
-                )}
-              </div>
-            )}
-
-            <div style={styles.modalButtons}>
-              <button onClick={() => setModalAberto(false)} style={styles.buttonCancel}>
-                ❌ Cancelar
-              </button>
-              <button
-                onClick={adicionarAlunoAoItinerario}
-                disabled={!alunoSelecionado || !enderecoSelecionado}
-                style={styles.buttonConfirm}
-              >
-                ✅ Adicionar
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
@@ -348,176 +386,4 @@ function gerarLinkWaze(rota) {
   return `https://waze.com/ul?ll=${firstPoint.localizacao.lat},${firstPoint.localizacao.lng}&navigate=yes`;
 }
 
-const styles = {
-  container: {
-    display: 'flex',
-    height: '100vh',
-    width: '100%'
-  },
-  sidebar: {
-    width: '350px',
-    padding: '20px',
-    backgroundColor: '#f5f5f5',
-    overflowY: 'auto',
-    borderRight: '1px solid #ddd'
-  },
-  mapContainer: {
-    flex: 1
-  },
-  formGroup: {
-    marginBottom: '15px'
-  },
-  select: {
-    width: '100%',
-    padding: '10px',
-    marginTop: '5px',
-    borderRadius: '4px',
-    border: '1px solid #ccc'
-  },
-  button: {
-    width: '100%',
-    padding: '12px',
-    backgroundColor: '#2196F3',
-    color: 'white',
-    border: 'none',
-    borderRadius: '4px',
-    cursor: 'pointer',
-    fontSize: '16px',
-    marginBottom: '10px'
-  },
-  buttonSecondary: {
-    width: '100%',
-    padding: '10px',
-    backgroundColor: '#4CAF50',
-    color: 'white',
-    border: 'none',
-    borderRadius: '4px',
-    cursor: 'pointer',
-    marginBottom: '10px'
-  },
-  buttonGoogle: {
-    width: '100%',
-    padding: '10px',
-    backgroundColor: '#34A853',
-    color: 'white',
-    border: 'none',
-    borderRadius: '4px',
-    cursor: 'pointer',
-    marginTop: '10px'
-  },
-  buttonWaze: {
-    width: '100%',
-    padding: '10px',
-    backgroundColor: '#00d4ff',
-    color: 'white',
-    border: 'none',
-    borderRadius: '4px',
-    cursor: 'pointer',
-    marginTop: '10px'
-  },
-  breadcrumb: {
-    display: 'inline-flex',
-    alignItems: 'center',
-    gap: '8px',
-    color: '#1976d2',
-    textDecoration: 'none',
-    marginBottom: '20px',
-    fontSize: '14px',
-    cursor: 'pointer'
-  },
-  info: {
-    marginTop: '20px',
-    padding: '15px',
-    backgroundColor: 'white',
-    borderRadius: '4px',
-    boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
-  },
-  list: {
-    paddingLeft: '20px',
-    marginTop: '10px'
-  },
-  small: {
-    fontSize: '12px',
-    color: '#666',
-    display: 'block'
-  },
-  loading: {
-    display: 'flex',
-    justifyContent: 'center',
-    alignItems: 'center',
-    height: '100vh'
-  },
-  modalOverlay: {
-    position: 'fixed',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    display: 'flex',
-    justifyContent: 'center',
-    alignItems: 'center'
-  },
-  modal: {
-    backgroundColor: 'white',
-    padding: '30px',
-    borderRadius: '8px',
-    width: '500px',
-    maxWidth: '90%'
-  },
-  modalButtons: {
-    display: 'flex',
-    gap: '10px',
-    marginTop: '20px'
-  },
-  buttonCancel: {
-    flex: 1,
-    padding: '10px',
-    backgroundColor: '#f44336',
-    color: 'white',
-    border: 'none',
-    borderRadius: '4px',
-    cursor: 'pointer'
-  },
-  buttonConfirm: {
-    flex: 1,
-    padding: '10px',
-    backgroundColor: '#4CAF50',
-    color: 'white',
-    border: 'none',
-    borderRadius: '4px',
-    cursor: 'pointer'
-  },
-  loadingBox: {
-    padding: '15px',
-    backgroundColor: '#e3f2fd',
-    borderRadius: '4px',
-    color: '#1976d2',
-    textAlign: 'center',
-    marginTop: '5px'
-  },
-  errorBox: {
-    padding: '15px',
-    backgroundColor: '#ffebee',
-    borderRadius: '4px',
-    color: '#c62828',
-    textAlign: 'center',
-    marginTop: '5px'
-  },
-  warningBox: {
-    padding: '15px',
-    backgroundColor: '#fff3e0',
-    borderRadius: '4px',
-    color: '#e65100',
-    textAlign: 'center',
-    marginTop: '5px'
-  },
-  hint: {
-    display: 'block',
-    marginTop: '5px',
-    color: '#666',
-    fontSize: '12px'
-  }
-};
-
-export default MapaRotaEscolar;
+export default RotasOtimizadas;

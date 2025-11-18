@@ -6,7 +6,7 @@ import { CardChamada } from "../components/CardChamada";
 import { TabelaChamada } from "../components/TabelaChamada";
 import ItinerarioService from "../services/itinerarioService";
 import ChamadaService from "../services/chamadaService";
-import { toast, ToastContainer } from "react-toastify";
+import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
 export default function Chamada() {
@@ -172,16 +172,6 @@ export default function Chamada() {
 
   return (
     <div className="py-6">
-      <ToastContainer
-        theme="dark"
-        position="top-right"
-        autoClose={3000}
-        hideProgressBar={false}
-        newestOnTop
-        closeOnClick
-        pauseOnHover
-      />
-
       {/* Breadcrumb */}
       <Link
         to="/itinerarios"

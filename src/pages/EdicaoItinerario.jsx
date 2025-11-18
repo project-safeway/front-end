@@ -8,7 +8,7 @@ import { Botao } from "../components/Botao";
 import AdicionarAlunoModal from "../components/AdicionarAlunoModal";
 import ItinerarioService from '../services/itinerarioService';
 import TransporteService from '../services/transporteService';
-import { toast, ToastContainer } from 'react-toastify';
+import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
 export default function EdicaoItinerario() {
@@ -30,27 +30,52 @@ export default function EdicaoItinerario() {
     const carregarDados = async () => {
         setIsLoading(true);
         try {
+            // Carregar todos os alunos do transporte primeiro (para ter os dados completos)
+            const alunosTransporte = await TransporteService.listarAlunos(1);
+            console.log('[EdicaoItinerario] Alunos disponíveis:', alunosTransporte);
+            setAlunosDisponiveis(alunosTransporte);
+
             // Carregar itinerário
             const itinerarioData = await ItinerarioService.buscarPorId(itinerarioId);
+            console.log('[EdicaoItinerario] Dados do itinerário:', itinerarioData);
             setItinerario(itinerarioData);
 
             // Carregar alunos do itinerário
             if (itinerarioData.alunos && itinerarioData.alunos.length > 0) {
-                const alunosFormatados = itinerarioData.alunos.map(aluno => ({
-                    id: aluno.idAluno || aluno.id,
-                    nomeAluno: aluno.nome,
-                    responsavel: aluno.nomeResponsavel,
-                    escola: aluno.escola,
-                }));
+                console.log('[EdicaoItinerario] Alunos raw do backend:', itinerarioData.alunos);
+                
+                const alunosFormatados = itinerarioData.alunos.map(alunoIt => {
+                    const idAluno = alunoIt.alunoId || alunoIt.idAluno || alunoIt.id;
+                    const alunoCompleto = alunosTransporte.find(a => a.id === idAluno);
+                    
+                    const alunoFormatado = {
+                        id: idAluno,
+                        nomeAluno: alunoIt.nomeAluno || alunoCompleto?.nomeAluno || alunoCompleto?.nome || '-',
+                        responsavel: alunoIt.responsavel || alunoIt.nomeResponsavel || alunoCompleto?.responsavel || '-',
+                        escola: alunoIt.escola?.nome || alunoIt.escola || alunoCompleto?.escola || '-',
+                        enderecoId: alunoIt.idEndereco || alunoIt.enderecoId || alunoIt.fkEndereco || alunoCompleto?.enderecoId || alunoCompleto?.idEndereco,
+                        ordemEmbarque: alunoIt.ordemEmbarque
+                    };
+                    
+                    console.log('[EdicaoItinerario] Aluno mapeado:', { 
+                        original: alunoIt, 
+                        completo: alunoCompleto,
+                        formatado: alunoFormatado 
+                    });
+                    return alunoFormatado;
+                });
+                
+                // Ordenar pela ordem de embarque
+                alunosFormatados.sort((a, b) => (a.ordemEmbarque || 0) - (b.ordemEmbarque || 0));
+                
                 setAlunosItinerario(alunosFormatados);
+            } else {
+                console.log('[EdicaoItinerario] Nenhum aluno no itinerário');
+                setAlunosItinerario([]);
             }
 
-            // Carregar todos os alunos do transporte (transporteId sempre 1)
-            const alunosTransporte = await TransporteService.listarAlunos(1);
-            setAlunosDisponiveis(alunosTransporte);
-
         } catch (error) {
-            console.error('Erro ao carregar dados:', error);
+            console.error('[EdicaoItinerario] Erro ao carregar dados:', error);
             toast.error(`Erro ao carregar dados: ${error.message}`, { theme: "colored" });
         } finally {
             setIsLoading(false);
@@ -72,7 +97,7 @@ export default function EdicaoItinerario() {
         setAlunosItinerario(novoArray);
     };
 
-    const handleAdicionarAluno = async (aluno) => {
+    const handleAdicionarAluno = async (aluno, endereco) => {
         try {
             // Calcular a próxima ordem de embarque (última posição + 1)
             const proximaOrdem = alunosItinerario.length + 1;
@@ -80,20 +105,34 @@ export default function EdicaoItinerario() {
             // Adicionar aluno ao itinerário via API
             await ItinerarioService.adicionarAluno(itinerarioId, {
                 alunoId: aluno.id,
-                ordemEmbarque: proximaOrdem
+                ordemEmbarque: proximaOrdem,
+                enderecoId: endereco.id
             });
 
-            // Atualizar lista local
-            setAlunosItinerario(prev => [...prev, aluno]);
+            // Atualizar lista local garantindo que os campos estejam corretos
+            const alunoFormatado = {
+                id: aluno.id,
+                nomeAluno: aluno.nomeAluno || aluno.nome,
+                responsavel: aluno.responsavel || aluno.nomeResponsavel,
+                escola: aluno.escola,
+                endereco: `${endereco.logradouro}, ${endereco.numero} - ${endereco.bairro}`,
+                enderecoId: endereco.id
+            };
+            
+            setAlunosItinerario(prev => [...prev, alunoFormatado]);
             toast.success(`Aluno adicionado na posição ${proximaOrdem}º`, { theme: "colored" });
         } catch (error) {
-            console.error('Erro ao adicionar aluno:', error);
             toast.error(`Erro ao adicionar aluno: ${error.message}`, { theme: "colored" });
             throw error;
         }
     };
 
     const handleRemoverAluno = async (alunoId) => {
+        if (!alunoId || alunoId === 'undefined') {
+            toast.error('ID do aluno inválido', { theme: "colored" });
+            return;
+        }
+        
         const confirmar = window.confirm("Tem certeza que deseja remover este aluno do itinerário?");
         if (!confirmar) return;
 
@@ -102,7 +141,6 @@ export default function EdicaoItinerario() {
             setAlunosItinerario(prev => prev.filter(a => a.id !== alunoId));
             toast.success("Aluno removido com sucesso!", { theme: "colored" });
         } catch (error) {
-            console.error('Erro ao remover aluno:', error);
             toast.error(`Erro ao remover aluno: ${error.message}`, { theme: "colored" });
         }
     };
@@ -110,10 +148,24 @@ export default function EdicaoItinerario() {
     const handleSalvar = async () => {
         setIsSaving(true);
         try {
-            // Preparar lista de alunos com ordem de embarque
+            // Validar se todos os alunos têm endereço
+            const alunosSemEndereco = alunosItinerario.filter(aluno => !aluno.enderecoId);
+            
+            if (alunosSemEndereco.length > 0) {
+                const nomesAlunos = alunosSemEndereco.map(a => a.nomeAluno).join(', ');
+                toast.error(
+                    `Os seguintes alunos não possuem endereço cadastrado: ${nomesAlunos}. Remova-os ou adicione um endereço.`,
+                    { theme: "colored", autoClose: 5000 }
+                );
+                setIsSaving(false);
+                return;
+            }
+
+            // Preparar lista de alunos com ordem de embarque e endereço
             const alunosComOrdem = alunosItinerario.map((aluno, index) => ({
                 alunoId: aluno.id,
-                ordemEmbarque: index + 1  // A ordem começa em 1
+                ordemEmbarque: index + 1,
+                enderecoId: aluno.enderecoId
             }));
 
             // Preparar dados do itinerário no formato esperado pelo backend
@@ -160,7 +212,6 @@ export default function EdicaoItinerario() {
     if (!itinerario) {
         return (
             <div className="p-6">
-                <ToastContainer theme="dark" position="top-right" />
                 <div className="text-center py-12">
                     <p className="text-navy-600 mb-4">Itinerário não encontrado.</p>
                     <Link
@@ -177,16 +228,6 @@ export default function EdicaoItinerario() {
 
     return (
         <div className="py-6">
-            <ToastContainer 
-                theme="dark"
-                position="top-right"
-                autoClose={3000}
-                hideProgressBar={false}
-                newestOnTop
-                closeOnClick
-                pauseOnHover
-            />
-
             {/* Breadcrumb */}
             <Link
                 to="/itinerarios"

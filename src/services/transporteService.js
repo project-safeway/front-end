@@ -66,21 +66,47 @@ class TransporteService {
 
   async listarAlunos(transporteId) {
     return this._executarComRetry(async () => {
-      console.log(`[TransporteService] Listando alunos do transporte ${transporteId}`)
-      const response = await transporteAxios.get(`/transporte/${transporteId}`)
-      
-      // Extrair apenas os alunos do response
-      const alunosTransportes = response.data.alunosTransportes || []
-      
-      // Mapear para formato mais simples
-      return alunosTransportes.map(at => ({
-        id: at.aluno.idAluno,
-        nomeAluno: at.aluno.nome,
-        responsavel: at.aluno.nomeResponsavel,
-        escola: at.aluno.escola,
-        // Dados completos caso precise
-        aluno: at.aluno
-      }))
+      try {
+        const response = await transporteAxios.get(`/transporte/${transporteId}/alunos`)
+        
+        let alunos = []
+        
+        if (response.data.alunosTransportes) {
+          alunos = response.data.alunosTransportes
+        } else if (response.data.alunos) {
+          alunos = response.data.alunos
+        } else if (Array.isArray(response.data)) {
+          alunos = response.data
+        } else {
+          throw new Error('Formato de dados inesperado do backend ao listar alunos do transporte')
+        }
+        
+        // Se não encontrou alunos, retorna array vazio
+        if (!alunos || alunos.length === 0) {
+          return []
+        }
+        
+        // Mapear para formato consistente
+        return alunos.map(item => {
+          // Se item tem propriedade 'aluno', é alunoTransporte
+          const alunoData = item.aluno || item
+          
+          return {
+            id: alunoData.idAluno || alunoData.id,
+            nomeAluno: alunoData.nome,
+            responsavel: alunoData.nomeResponsavel || alunoData.responsavel,
+            escola: alunoData.escola?.nome || alunoData.escola || 'Não informado',
+            // Dados completos caso precise
+            ...alunoData
+          }
+        })
+      } catch (error) {
+        // Tratar erro específico de referência circular
+        if (error.message && error.message.includes('nesting depth')) {
+          throw new Error('Erro ao carregar alunos. O backend precisa corrigir referências circulares nas entidades.')
+        }
+        throw error
+      }
     })
   }
 

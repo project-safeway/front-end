@@ -141,18 +141,19 @@ function AppContent() {
       {/* Footer */}
       <Footer />
 
-      {/* Toast para retornos ao usuário */}
-        <ToastContainer
-          theme="colored"
-          position="top-right"
-          autoClose={3000}
-          hideProgressBar={false}
-          newestOnTop
-          closeOnClick
-          rtl={false}
-          pauseOnFocusLoss
-          draggable
-          pauseOnHover
+      {/* Toast Container Global - Funciona em toda aplicação */}
+      <ToastContainer
+        theme="colored"
+        position="top-right"
+        autoClose={3000}
+        hideProgressBar={false}
+        newestOnTop
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+        style={{ zIndex: 9999 }}
       />
     </div>
   )
