@@ -74,4 +74,29 @@ const mensalidadeService = {
   }
 }
 
+/**
+ * Listar mensalidades com filtros compatíveis com o endpoint /mensalidades
+ * params: { alunoId, dataInicio, dataFim, status, pageable }
+ */
+export async function listarMensalidades(params = {}) {
+  // api.get deve retornar dados já tratados pelo wrapper (res.data) — ajusta se necessário
+  return await api.get("/mensalidades", { params });
+}
+
+/**
+ * Marcar mensalidade como paga (PATCH /mensalidades/pagar/{id})
+ */
+export async function pagarMensalidade(id) {
+  return await api.patch(`/mensalidades/pagar/${id}`);
+}
+
+/**
+ * Criar nova mensalidade (POST /mensalidades)
+ * payload: { alunoId, dataVencimento, valorMensalidade, ... }
+ */
+export async function criarMensalidade(payload) {
+  const res = await api.post("/mensalidades", payload);
+  return res.data;
+}
+
 export default mensalidadeService
