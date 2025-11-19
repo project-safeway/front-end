@@ -5,46 +5,92 @@ import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import { CardItinerario } from "../components/CardItinerario";
 import { Botao } from "../components/Botao";
 import ItinerarioModal from "../components/ItinerarioModal";
+import ItinerarioService from '../services/itinerarioService';
+import { toast } from 'react-toastify'
+import 'react-toastify/dist/ReactToastify.css'
 
 export default function Itinerarios() {
   const navigate = useNavigate();
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [itinerarioSelecionado, setItinerarioSelecionado] = useState(null);
+  const [itinerarios, setItinerarios] = useState([]);
   const [isMobile, setIsMobile] = useState(window.innerWidth < 896);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(null);
 
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth < 896);
     window.addEventListener("resize", handleResize);
+    carregarItinerarios();
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
-  const [alunos] = useState([
-    { id: 1, nomeAluno: "João Silva", presente: false, responsavel: "Maria Silva", escola: "Escola A", sala: "101" },
-    { id: 2, nomeAluno: "Ana Souza", presente: false, responsavel: "Carlos Souza", escola: "Escola B", sala: "202" },
-    { id: 3, nomeAluno: "Pedro Oliveira", presente: false, responsavel: "Ana Oliveira", escola: "Escola C", sala: "303" },
-    { id: 4, nomeAluno: "Lucas Santos", presente: false, responsavel: "Fernanda Santos", escola: "Escola D", sala: "404" },
-  ]);
+  const carregarItinerarios = async () => {
+    setIsLoading(true);
+    try {
+      const data = await ItinerarioService.listarTodos();
 
-  const [itinerarios, setItinerarios] = useState([
-    { id: 1, nome: "Itinerário 1", horarioInicio: "07:00", horarioFim: "08:00", tipoViagem: "Ida", ativo: true, alunos },
-    { id: 2, nome: "Itinerário 2", horarioInicio: "08:00", horarioFim: "09:00", tipoViagem: "Volta", ativo: true, alunos },
-    { id: 3, nome: "Itinerário 3", horarioInicio: "09:00", horarioFim: "10:00", tipoViagem: "Ida", ativo: true, alunos },
-    { id: 4, nome: "Itinerário 4", horarioInicio: "10:00", horarioFim: "11:00", tipoViagem: "Volta", ativo: true, alunos },
-  ]);
+      if (data.length === 0) {
+        toast.info(
+          'Nenhum itinerário cadastrado. Clique em "Cadastrar Itinerário" para começar!',
+          { theme: "colored", toastId: "sem-itinerarios" }
+        );
+      }
+
+      setItinerarios(data);
+    } catch (error) {
+      toast.error(`Erro ao carregar itinerários: ${error.message}`, { theme: "colored" });
+    } finally {
+      setIsLoading(false);
+    }
+  }
 
   const handleSaveItinerario = async (novo) => {
-    setItinerarios((prev) => {
+    try {
       if (itinerarioSelecionado) {
-        return prev.map((i) => (i.id === itinerarioSelecionado.id ? { ...i, ...novo } : i));
+        await ItinerarioService.atualizar(itinerarioSelecionado.id, novo);
+        toast.success("Itinerário atualizado com sucesso!", { theme: "colored" });
+      } else {
+        await ItinerarioService.criar(novo);
+        toast.success("Itinerário criado com sucesso!", { theme: "colored" });
       }
-      return [...prev, { ...novo, id: Date.now() }];
-    });
-  };
+      await carregarItinerarios();
+      setIsModalOpen(false);
+    } catch (error) {
+      toast.error(`Erro ao salvar itinerário: ${error.message}`, { theme: "colored" });
+    }
+  }
 
   const handleDeleteItinerario = async (id) => {
-    setItinerarios((prev) => prev.filter((i) => i.id !== id));
-  };
+    const confirmar = window.confirm(
+      'Tem certeza que deseja excluir este itinerário? Esta ação não pode ser desfeita.'
+    );
+
+    if (!confirmar) return;
+
+    setIsDeleting(id);
+    try {
+      await ItinerarioService.desativar(id);
+      toast.success("Itinerário excluído com sucesso!", { theme: "colored" });
+      await carregarItinerarios();
+    } catch (error) {
+      toast.error(`Erro ao excluir itinerário: ${error.message}`, { theme: "colored" });
+    } finally {
+      setIsDeleting(null);
+    }
+  }
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-400 mx-auto"></div>
+          <p className="mt-4 text-navy-600">Carregando itinerários...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="py-6">
@@ -88,8 +134,8 @@ export default function Itinerarios() {
       {/* Lista de Itinerários */}
       <div
         className={`grid gap-4 py-4 ${isMobile
-            ? "grid-cols-1 place-items-center"
-            : "grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
+          ? "grid-cols-1 place-items-center"
+          : "grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
           }`}
       >
         {itinerarios.map((itinerario) => (
@@ -100,10 +146,17 @@ export default function Itinerarios() {
             horarioInicio={itinerario.horarioInicio}
             horarioFim={itinerario.horarioFim}
             tipoViagem={itinerario.tipoViagem}
-            onEdit={() => navigate(`/edicao-itinerario?itinerarioId=${itinerario.id}`)}
+            onVisualizarRota={() => navigate(`/rotas-otimizadas?itinerarioId=${itinerario.id}`)}
+            onEdit={() =>
+              navigate(`/edicao-itinerario?itinerarioId=${itinerario.id}`)
+            }
             onDelete={() => handleDeleteItinerario(itinerario.id)}
-            onHistorico={() => navigate(`/historico?itinerarioId=${itinerario.id}`)}
-            onIniciarPresenca={() => navigate(`/chamada?itinerarioId=${itinerario.id}`)}
+            onHistorico={() =>
+              navigate(`/historico?itinerarioId=${itinerario.id}`)
+            }
+            onIniciarPresenca={() =>
+              navigate(`/chamada?itinerarioId=${itinerario.id}`)
+            }
           />
         ))}
       </div>
