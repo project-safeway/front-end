@@ -1,4 +1,4 @@
-import { GoogleMap, Marker, Polyline, useJsApiLoader } from '@react-google-maps/api';
+import { GoogleMap, Marker, Polyline, DirectionsRenderer, useJsApiLoader } from '@react-google-maps/api';
 import { useState, useEffect } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
@@ -20,6 +20,10 @@ function RotasOtimizadas() {
   const [loading, setLoading] = useState(false);
   const [erro, setErro] = useState('');
   const [center, setCenter] = useState({ lat: -23.55, lng: -46.63 });
+  const [directionsResponse, setDirectionsResponse] = useState(null);
+  const [userLocation, setUserLocation] = useState(null);
+  const [map, setMap] = useState(null);
+  const [modoNavegacao, setModoNavegacao] = useState(false);
 
   const { isLoaded } = useJsApiLoader({
     googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY || "SUA_API_KEY_AQUI",
@@ -31,6 +35,55 @@ function RotasOtimizadas() {
       carregarDadosItinerario();
     }
   }, [itinerarioIdUrl]);
+
+  // Rastrear localização do usuário em tempo real
+  useEffect(() => {
+    if (!navigator.geolocation) {
+      console.warn('[RotasOtimizadas] Geolocalização não suportada');
+      return;
+    }
+
+    const watchId = navigator.geolocation.watchPosition(
+      (position) => {
+        const newLocation = {
+          lat: position.coords.latitude,
+          lng: position.coords.longitude,
+          heading: position.coords.heading || 0,
+          speed: position.coords.speed || 0
+        };
+        
+        console.log('[RotasOtimizadas] Localização atualizada:', newLocation);
+        setUserLocation(newLocation);
+
+        // Se modo navegação estiver ativo, atualizar câmera
+        if (modoNavegacao && map) {
+          map.panTo(newLocation);
+          if (position.coords.heading) {
+            map.setHeading(position.coords.heading);
+          }
+        }
+      },
+      (error) => {
+        console.error('[RotasOtimizadas] Erro ao obter localização:', error);
+        toast.error('Não foi possível obter sua localização', { theme: 'colored' });
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 5000,
+        maximumAge: 0
+      }
+    );
+
+    return () => navigator.geolocation.clearWatch(watchId);
+  }, [modoNavegacao, map]);
+
+  // Recalcular direções quando localização do usuário for obtida
+  useEffect(() => {
+    if (userLocation && rota && rota.paradas && rota.paradas.length > 0) {
+      console.log('[RotasOtimizadas] Localização obtida, recalculando rota...');
+      buscarDirecoesReais(rota.paradas);
+    }
+  }, [userLocation]);
 
   const carregarDadosItinerario = async () => {
     setLoading(true);
@@ -197,6 +250,9 @@ function RotasOtimizadas() {
 
       setRota(rotaOtimizada);
 
+      // Buscar direções reais (caminho pelas ruas) após otimizar
+      await buscarDirecoesReais(paradasComCoordenadas);
+
       // Centraliza o mapa no primeiro ponto
       if (rotaOtimizada.paradas && rotaOtimizada.paradas.length > 0) {
         const primeiroPonto = rotaOtimizada.paradas[0].localizacao;
@@ -213,6 +269,105 @@ function RotasOtimizadas() {
       setErro(error.message || 'Erro ao calcular rota otimizada');
       toast.error(error.message || 'Erro ao calcular rota otimizada', { theme: 'colored' });
     }
+  };
+
+  const buscarDirecoesReais = async (paradas) => {
+    if (!window.google || paradas.length < 2) return;
+
+    try {
+      const directionsService = new window.google.maps.DirectionsService();
+
+      // Se tiver localização do usuário, sempre iniciar a rota da localização atual
+      let origin;
+      let waypoints;
+      
+      if (userLocation) {
+        // Iniciar da localização do usuário
+        origin = userLocation;
+        // Todas as paradas viram waypoints (exceto a última que é o destino)
+        waypoints = paradas.slice(0, -1).map(parada => ({
+          location: new window.google.maps.LatLng(parada.localizacao.lat, parada.localizacao.lng),
+          stopover: true
+        }));
+        
+        console.log('[RotasOtimizadas] Usando localização do usuário como origem');
+      } else {
+        // Sem localização: primeira parada é origem
+        origin = paradas[0].localizacao;
+        // Paradas intermediárias são waypoints
+        waypoints = paradas.slice(1, -1).map(parada => ({
+          location: new window.google.maps.LatLng(parada.localizacao.lat, parada.localizacao.lng),
+          stopover: true
+        }));
+        
+        console.log('[RotasOtimizadas] Usando primeira parada como origem');
+      }
+
+      // Ponto de destino (última parada)
+      const destination = paradas[paradas.length - 1].localizacao;
+
+      console.log('[RotasOtimizadas] Buscando direções:', { origin, destination, waypoints });
+
+      const result = await directionsService.route({
+        origin: new window.google.maps.LatLng(origin.lat, origin.lng),
+        destination: new window.google.maps.LatLng(destination.lat, destination.lng),
+        waypoints: waypoints,
+        optimizeWaypoints: false, // Já otimizamos antes
+        travelMode: window.google.maps.TravelMode.DRIVING,
+      });
+
+      console.log('[RotasOtimizadas] Direções recebidas:', result);
+      setDirectionsResponse(result);
+
+    } catch (error) {
+      console.error('[RotasOtimizadas] Erro ao buscar direções:', error);
+      toast.warning('Não foi possível carregar o caminho nas ruas', { theme: 'colored' });
+    }
+  };
+
+  const iniciarNavegacao = async () => {
+    if (!userLocation) {
+      toast.error('Aguardando localização...', { theme: 'colored' });
+      return;
+    }
+
+    setModoNavegacao(true);
+    
+    if (map) {
+      // Configurar câmera em perspectiva (como Waze/Google Maps)
+      map.setZoom(18);
+      map.setMapTypeId('roadmap'); // Garantir que está em modo satélite/roadmap que suporta tilt
+      
+      // Aguardar um frame para aplicar tilt
+      setTimeout(() => {
+        if (map) {
+          map.setTilt(45); // Ângulo de inclinação
+          map.panTo(userLocation);
+          
+          if (userLocation.heading) {
+            map.setHeading(userLocation.heading);
+          }
+        }
+      }, 100);
+    }
+
+    // Recalcular rota incluindo localização do usuário
+    if (rota && rota.paradas) {
+      await buscarDirecoesReais(rota.paradas);
+    }
+
+    toast.success('Navegação iniciada!', { theme: 'colored' });
+  };
+
+  const pararNavegacao = () => {
+    setModoNavegacao(false);
+    
+    if (map) {
+      map.setTilt(0); // Voltar para visão de cima
+      map.setZoom(13);
+    }
+
+    toast.info('Navegação encerrada', { theme: 'colored' });
   };
 
   if (!isLoaded) {
@@ -313,13 +468,24 @@ function RotasOtimizadas() {
             >
               Abrir no Google Maps
             </button>
-            
-            <button
-              onClick={() => window.open(gerarLinkWaze(rota), '_blank')}
-              className="w-full mt-2 px-4 py-3 bg-[#00d4ff] hover:bg-[#00bfea] text-white font-medium rounded-lg transition-colors"
-            >
-              Abrir no Waze
-            </button>
+
+            {/* Botão de Navegação */}
+            {!modoNavegacao ? (
+              <button
+                onClick={iniciarNavegacao}
+                disabled={!userLocation}
+                className="w-full mt-2 px-4 py-3 bg-[#172848] hover:bg-[#34435F] text-white font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {userLocation ? 'Iniciar Navegação' : 'Aguardando localização...'}
+              </button>
+            ) : (
+              <button
+                onClick={pararNavegacao}
+                className="w-full mt-2 px-4 py-3 bg-[#F04848] hover:bg-[#d93636] text-white font-medium rounded-lg transition-colors"
+              >
+                Parar Navegação
+              </button>
+            )}
           </div>
         )}
       </div>
@@ -330,7 +496,33 @@ function RotasOtimizadas() {
           mapContainerStyle={{ width: '100%', height: '100%' }}
           center={center}
           zoom={13}
+          onLoad={(mapInstance) => setMap(mapInstance)}
+          options={{
+            mapTypeControl: true,
+            streetViewControl: true,
+            fullscreenControl: true,
+            rotateControl: modoNavegacao,
+            tilt: modoNavegacao ? 45 : 0
+          }}
         >
+          {/* Marcador do usuário/veículo */}
+          {userLocation && (
+            <Marker
+              position={userLocation}
+              icon={{
+                path: window.google.maps.SymbolPath.FORWARD_CLOSED_ARROW,
+                scale: 6,
+                fillColor: '#172848',
+                fillOpacity: 1,
+                strokeColor: 'white',
+                strokeWeight: 2,
+                rotation: userLocation.heading || 0
+              }}
+              title="Sua localização"
+              zIndex={1000}
+            />
+          )}
+
           {rota?.paradas.map((parada, idx) => {
             const isFirst = idx === 0;
             const isLast = idx === rota.paradas.length - 1;
@@ -357,13 +549,27 @@ function RotasOtimizadas() {
             );
           })}
 
-          {rota && (
-            <Polyline
-              path={rota.paradas.map(p => p.localizacao)}
+          {/* DirectionsRenderer para mostrar caminho nas ruas */}
+          {directionsResponse && (
+            <DirectionsRenderer
+              directions={directionsResponse}
               options={{
-                strokeColor: '#FB923C',
-                strokeWeight: 4,
-                strokeOpacity: 0.8
+                suppressMarkers: true, // Não mostrar marcadores padrão (usamos os personalizados)
+                polylineOptions: {
+                  strokeColor: '#FB923C',
+                  strokeWeight: 5,
+                  strokeOpacity: 0.8,
+                  geodesic: true,
+                  icons: [{
+                    icon: {
+                      path: 'M 0,-1 0,1',
+                      strokeOpacity: 1,
+                      scale: 3
+                    },
+                    offset: '0',
+                    repeat: '15px'
+                  }]
+                }
               }}
             />
           )}
@@ -378,12 +584,6 @@ function gerarLinkGoogleMaps(rota) {
     .map(p => `${p.localizacao.lat},${p.localizacao.lng}`)
     .join('/');
   return `https://www.google.com/maps/dir/${waypoints}`;
-}
-
-function gerarLinkWaze(rota) {
-  if (!rota?.paradas?.[0]) return '';
-  const firstPoint = rota.paradas[0];
-  return `https://waze.com/ul?ll=${firstPoint.localizacao.lat},${firstPoint.localizacao.lng}&navigate=yes`;
 }
 
 export default RotasOtimizadas;
