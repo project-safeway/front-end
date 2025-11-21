@@ -4,10 +4,9 @@ import { toast } from 'react-toastify'
 import SchoolIcon from '@mui/icons-material/School'
 import PersonIcon from '@mui/icons-material/Person'
 import EditIcon from '@mui/icons-material/Edit'
-import CheckIcon from '@mui/icons-material/Check'
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore'
 import ExpandLessIcon from '@mui/icons-material/ExpandLess'
-
+import ArrowBackIcon from '@mui/icons-material/ArrowBack'
 import escolasService from '../services/escolasService'
 import alunosService from '../services/alunosService'
 
@@ -19,27 +18,27 @@ export default function ListaAlunos() {
 
   useEffect(() => {
     let alive = true
-    ;(async () => {
-      try {
-        setCarregando(true)
-        const dados = await escolasService.getEscolas()
+      ; (async () => {
+        try {
+          setCarregando(true)
+          const dados = await escolasService.getEscolas()
 
-        if (!alive) return
-        
-        const lista = Array.isArray(dados) ? dados : []
+          if (!alive) return
 
-        if(lista.length == 0){
-          toast.info('Não há nenhuma escola cadastrada, clique em "Cadastrar Escola"')
+          const lista = Array.isArray(dados) ? dados : []
+
+          if (lista.length == 0) {
+            toast.info('Não há nenhuma escola cadastrada, clique em "Cadastrar Escola"')
+          }
+
+          setEscolasComAlunos(lista)
+          setAberto(lista.reduce((acc, item) => ({ ...acc, [item.escola?.id || item.id]: true }), {}))
+        } catch (error) {
+          if (alive) toast.error('Erro ao carregar dados')
+        } finally {
+          if (alive) setCarregando(false)
         }
-
-        setEscolasComAlunos(lista)
-        setAberto(lista.reduce((acc, item) => ({ ...acc, [item.escola?.id || item.id]: true }), {}))
-      } catch (error) {
-        if (alive) toast.error('Erro ao carregar dados')
-      } finally {
-        if (alive) setCarregando(false)
-      }
-    })()
+      })()
     return () => { alive = false }
   }, [])
 
@@ -58,7 +57,16 @@ export default function ListaAlunos() {
   }
 
   return (
+
     <div className="py-6">
+      {/* Breadcrumb */}
+      <Link
+        to="/"
+        className="inline-flex items-center gap-2 text-navy-600 hover:text-primary-400 mb-6 transition-colors"
+      >
+        <ArrowBackIcon fontSize="small" />
+        <span>Voltar ao Início</span>
+      </Link>
       <div className="flex items-center gap-3 mb-6">
         <div className="p-3 bg-primary-50 rounded-xl">
           <SchoolIcon className="text-primary-400 text-3xl" />
@@ -88,7 +96,7 @@ export default function ListaAlunos() {
           const escola = item.escola || item
           const alunos = item.alunos || []
           const escolaId = escola.id
-          
+
           return (
             <div key={escolaId} className="rounded-xl border border-offwhite-300 overflow-hidden">
               <div className="bg-white px-4 py-3 flex items-center justify-between">
@@ -137,7 +145,17 @@ export default function ListaAlunos() {
                         key={a.id}
                         className="bg-white rounded-lg border border-offwhite-300 px-4 py-3 flex items-center justify-between"
                       >
-                        <div className="flex items-center gap-3">
+                        <div
+                          onClick={() => navigate(`/alunos/${a.id}`)}
+                          title="Editar aluno"
+                          role="button"
+                          style={{ cursor: 'pointer', transition: 'background-color .15s' }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.backgroundColor = '#f1f5f9';
+                            e.currentTarget.style.borderRadius = '0.5rem';
+                          }}
+                          onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent' }}
+                          className="flex items-center gap-3">
                           <div className="h-9 w-9 rounded-full bg-offwhite-200 grid place-items-center">
                             <PersonIcon className="text-navy-700" fontSize="small" />
                           </div>
@@ -159,7 +177,7 @@ export default function ListaAlunos() {
                             className="p-2 rounded-md hover:bg-offwhite-200"
                             title="Ver"
                           >
-                            <CheckIcon />
+                            {/* <CheckIcon /> */}
                           </button>
 
                           <button
@@ -176,14 +194,14 @@ export default function ListaAlunos() {
                     ))}
                   </div>
 
-                  <div className="mt-4 text-center">
+                  {/* <div className="mt-4 text-center">
                     <Link
                       to={`/alunos/cadastrar?escolaId=${escolaId}`}
                       className="inline-block px-4 py-2 bg-offwhite-200 hover:bg-offwhite-300 text-navy-800 rounded-lg text-sm font-medium transition-colors"
                     >
                       Adicionar Aluno
                     </Link>
-                  </div>
+                  </div> */}
                 </div>
               )}
             </div>

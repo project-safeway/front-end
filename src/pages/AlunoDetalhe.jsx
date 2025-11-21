@@ -52,46 +52,46 @@ export default function AlunoDetalhe() {
 
   useEffect(() => {
     let alive = true
-    ;(async () => {
-      try {
-        setCarregando(true)
-        const [listaEscolas, dadosAluno] = await Promise.all([
-          escolasService.getEscolas(),
-          alunosService.getAlunoById(id),
-        ])
+      ; (async () => {
+        try {
+          setCarregando(true)
+          const [listaEscolas, dadosAluno] = await Promise.all([
+            escolasService.getEscolas(),
+            alunosService.getAlunoById(id),
+          ])
 
-        if (!alive) return
-        setEscolas(Array.isArray(listaEscolas) ? listaEscolas : (listaEscolas?.items ?? []))
+          if (!alive) return
+          setEscolas(Array.isArray(listaEscolas) ? listaEscolas : (listaEscolas?.items ?? []))
 
-        setAluno({
-          nomeAluno: dadosAluno?.nomeAluno ?? '',
-          nascimento: (dadosAluno?.nascimento || '').slice(0, 10),
-          escola: dadosAluno?.escolaId ?? dadosAluno?.escola ?? '',
-          sala: dadosAluno?.sala ?? '',
-          serie: dadosAluno?.serie ?? '',
-          turno: dadosAluno?.turno ?? '',
-          professor: dadosAluno?.professor ?? '',
-          endereco: dadosAluno?.endereco ?? '',
-          bairro: dadosAluno?.bairro ?? '',
-          cidade: dadosAluno?.cidade ?? '',
-          cep: dadosAluno?.cep ?? '',
-          mensalidade: String(dadosAluno?.mensalidade ?? ''),
-          vencimentoDia: String(dadosAluno?.vencimentoDia ?? ''),
-          pontoEmbarque: dadosAluno?.pontoEmbarque ?? '',
-          horarioIda: dadosAluno?.horarioIda ?? '',
-          horarioVolta: dadosAluno?.horarioVolta ?? '',
-          observacoes: dadosAluno?.observacoes ?? '',
-        })
+          setAluno({
+            nomeAluno: dadosAluno?.nomeAluno ?? '',
+            nascimento: (dadosAluno?.nascimento || '').slice(0, 10),
+            escola: dadosAluno?.escolaId ?? dadosAluno?.escola ?? '',
+            sala: dadosAluno?.sala ?? '',
+            serie: dadosAluno?.serie ?? '',
+            turno: dadosAluno?.turno ?? '',
+            professor: dadosAluno?.professor ?? '',
+            endereco: dadosAluno?.endereco ?? '',
+            bairro: dadosAluno?.bairro ?? '',
+            cidade: dadosAluno?.cidade ?? '',
+            cep: dadosAluno?.cep ?? '',
+            mensalidade: String(dadosAluno?.mensalidade ?? ''),
+            vencimentoDia: String(dadosAluno?.vencimentoDia ?? ''),
+            pontoEmbarque: dadosAluno?.pontoEmbarque ?? '',
+            horarioIda: dadosAluno?.horarioIda ?? '',
+            horarioVolta: dadosAluno?.horarioVolta ?? '',
+            observacoes: dadosAluno?.observacoes ?? '',
+          })
 
-        setResponsaveis(
-          Array.isArray(dadosAluno?.responsaveis) ? dadosAluno.responsaveis : []
-        )
-      } catch (e) {
-        console.error('[AlunoDetalhe] Erro ao carregar:', e)
-      } finally {
-        if (alive) setCarregando(false)
-      }
-    })()
+          setResponsaveis(
+            Array.isArray(dadosAluno?.responsaveis) ? dadosAluno.responsaveis : []
+          )
+        } catch (e) {
+          console.error('[AlunoDetalhe] Erro ao carregar:', e)
+        } finally {
+          if (alive) setCarregando(false)
+        }
+      })()
     return () => { alive = false }
   }, [id])
 
@@ -114,11 +114,11 @@ export default function AlunoDetalhe() {
     <div className="py-6">
       {/* Breadcrumb */}
       <Link
-        to="/"
+        to="/alunos"
         className="inline-flex items-center gap-2 text-navy-600 hover:text-primary-400 mb-6 transition-colors"
       >
         <ArrowBackIcon fontSize="small" />
-        <span>Voltar ao Início</span>
+        <span>Voltar para Alunos</span>
       </Link>
 
       {/* Header */}

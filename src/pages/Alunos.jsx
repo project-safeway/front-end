@@ -36,7 +36,7 @@ export function Alunos() {
             Em breve: Sistema de cadastro e gestão de alunos
           </p>
           <div className="flex gap-4 justify-center">
-            <Link to="/alunos/cadastrar" role="button" tabIndex={0} className="inline-block px-6 py-3 bg-primary-400 hover:bg-primary-500 text-white font-medium rounded-lg transition-colors"
+            <Link to="/alunos/cadastrar" className="inline-block px-6 py-3 bg-primary-400 hover:bg-primary-500 text-white font-medium rounded-lg transition-colors"
             >
               Cadastrar Aluno
             </Link>
