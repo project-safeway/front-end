@@ -4,8 +4,13 @@ export {
   formatDateTime,
   formatCurrency,
   formatCPF,
+  maskCPF,
   formatPhone,
-} from './formatter.js'
+  maskPhone,
+  formatCEP,
+  maskCEP,
+  buscarEnderecoPorCEP,
+} from './formatters.js'
 
 // Validators
 export {

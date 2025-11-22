@@ -4,12 +4,14 @@ import { toast } from 'react-toastify'
 import DomainIcon from '@mui/icons-material/Domain'
 import ArrowBackIcon from '@mui/icons-material/ArrowBack'
 import escolasService from '../services/escolasService'
+import { maskCEP, buscarEnderecoPorCEP } from '../utils/formatters'
 
 export function EdicaoEscola() {
   const { id } = useParams() // /escolas/:id/editar
   const navigate = useNavigate()
 
   const [carregando, setCarregando] = useState(true)
+  const [buscandoCEP, setBuscandoCEP] = useState(false)
 
   const [escola, setEscola] = useState({
     nome: '',
@@ -54,6 +56,36 @@ export function EdicaoEscola() {
 
   function setCampo(campo, valor) {
     setEscola(prev => ({ ...prev, [campo]: valor }))
+  }
+
+  const handleCEPChange = (e) => {
+    const maskedValue = maskCEP(e.target.value)
+    setCampo('cep', maskedValue)
+  }
+
+  const handleCEPBlur = async () => {
+    const cepLimpo = escola.cep.replace(/\D/g, '')
+    
+    if (cepLimpo.length !== 8) return
+
+    setBuscandoCEP(true)
+    try {
+      const dados = await buscarEnderecoPorCEP(cepLimpo)
+      
+      setEscola(prev => ({
+        ...prev,
+        logradouro: dados.logradouro || prev.logradouro,
+        bairro: dados.bairro || prev.bairro,
+        cidade: dados.cidade || prev.cidade,
+        uf: dados.uf || prev.uf
+      }))
+
+      toast.success('Endereço encontrado!', { theme: 'colored' })
+    } catch (error) {
+      toast.error(error.message || 'CEP não encontrado', { theme: 'colored' })
+    } finally {
+      setBuscandoCEP(false)
+    }
   }
 
   async function handleSubmit(e) {
@@ -141,6 +173,22 @@ export function EdicaoEscola() {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
+                  <label className="block text-sm font-medium text-navy-700 mb-2">CEP *</label>
+                  <input
+                    value={escola.cep}
+                    onChange={handleCEPChange}
+                    onBlur={handleCEPBlur}
+                    required
+                    maxLength={9}
+                    className="w-full rounded-lg border border-offwhite-300 bg-white px-4 py-2.5 outline-none focus:ring-2 focus:ring-primary-400 focus:border-transparent transition-all"
+                    placeholder="00000-000"
+                    disabled={buscandoCEP}
+                  />
+                  {buscandoCEP && (
+                    <p className="text-sm text-primary-400 mt-1">Buscando endereço...</p>
+                  )}
+                </div>
+                <div>
                   <label className="block text-sm font-medium text-navy-700 mb-2">Logradouro *</label>
                   <input
                     value={escola.logradouro}
@@ -193,21 +241,11 @@ export function EdicaoEscola() {
                   <label className="block text-sm font-medium text-navy-700 mb-2">UF *</label>
                   <input
                     value={escola.uf}
-                    onChange={e => setCampo('uf', e.target.value)}
+                    onChange={e => setCampo('uf', e.target.value.toUpperCase())}
                     required
                     maxLength={2}
                     className="w-full rounded-lg border border-offwhite-300 bg-white px-4 py-2.5 outline-none focus:ring-2 focus:ring-primary-400 focus:border-transparent transition-all"
                     placeholder="SP"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-navy-700 mb-2">CEP *</label>
-                  <input
-                    value={escola.cep}
-                    onChange={e => setCampo('cep', e.target.value)}
-                    required
-                    className="w-full rounded-lg border border-offwhite-300 bg-white px-4 py-2.5 outline-none focus:ring-2 focus:ring-primary-400 focus:border-transparent transition-all"
-                    placeholder="00000-000"
                   />
                 </div>
               </div>

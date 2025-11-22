@@ -5,12 +5,14 @@ import SchoolIcon from '@mui/icons-material/PersonAdd'
 import ArrowBackIcon from '@mui/icons-material/ArrowBack'
 import escolasService from '../services/escolasService'
 import alunosService from '../services/alunosService'
+import { maskCEP, buscarEnderecoPorCEP, maskCPF, maskPhone } from '../utils/formatters'
 
 export function CadastroAlunos() {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const [escolas, setEscolas] = useState([])
   const [loading, setLoading] = useState(false)
+  const [buscandoCEPs, setBuscandoCEPs] = useState([]) // Array para controlar estado de cada responsável
   const [responsaveis, setResponsaveis] = useState([
     { nome: '', cpf: '', tel1: '', tel2: '', email: '', endereco: { logradouro: '', numero: '', complemento: '', bairro: '', cidade: '', uf: '', cep: '', tipo: 'RESIDENCIAL' } },
   ])
@@ -34,6 +36,7 @@ export function CadastroAlunos() {
       ...prev,
       { nome: '', cpf: '', tel1: '', tel2: '', email: '', endereco: { logradouro: '', numero: '', complemento: '', bairro: '', cidade: '', uf: '', cep: '', tipo: 'RESIDENCIAL' } },
     ])
+    setBuscandoCEPs(prev => [...prev, false])
   }
 
   function atualizarResponsavel(i, campo, valor) {
@@ -46,6 +49,42 @@ export function CadastroAlunos() {
     const novo = [...responsaveis]
     novo[i].endereco[campo] = valor
     setResponsaveis(novo)
+  }
+
+  const handleCEPChange = (i, value) => {
+    const maskedValue = maskCEP(value)
+    atualizarEnderecoResponsavel(i, 'cep', maskedValue)
+  }
+
+  const handleCEPBlur = async (i) => {
+    const cepLimpo = responsaveis[i].endereco.cep.replace(/\D/g, '')
+    
+    if (cepLimpo.length !== 8) return
+
+    const novosBuscandoCEPs = [...buscandoCEPs]
+    novosBuscandoCEPs[i] = true
+    setBuscandoCEPs(novosBuscandoCEPs)
+
+    try {
+      const dados = await buscarEnderecoPorCEP(cepLimpo)
+      
+      const novosResponsaveis = [...responsaveis]
+      novosResponsaveis[i].endereco = {
+        ...novosResponsaveis[i].endereco,
+        logradouro: dados.logradouro || novosResponsaveis[i].endereco.logradouro,
+        bairro: dados.bairro || novosResponsaveis[i].endereco.bairro,
+        cidade: dados.cidade || novosResponsaveis[i].endereco.cidade,
+        uf: dados.uf || novosResponsaveis[i].endereco.uf
+      }
+      setResponsaveis(novosResponsaveis)
+
+      toast.success('Endereço encontrado!', { theme: 'colored' })
+    } catch (error) {
+      toast.error(error.message || 'CEP não encontrado', { theme: 'colored' })
+    } finally {
+      novosBuscandoCEPs[i] = false
+      setBuscandoCEPs(novosBuscandoCEPs)
+    }
   }
 
   function removerResponsavel(index) {
@@ -268,7 +307,7 @@ export function CadastroAlunos() {
                     <div>
                       <label className="block text-sm font-medium text-navy-700 mb-2">CPF</label>
                       <input
-                        value={r.cpf}
+                        value={maskCPF(r.cpf)}
                         onChange={(e) => atualizarResponsavel(i, 'cpf', e.target.value)}
                         maxLength={14}
                         className="w-full rounded-lg border border-offwhite-300 bg-white px-4 py-2.5 outline-none focus:ring-2 focus:ring-primary-400 focus:border-transparent transition-all"
@@ -278,20 +317,22 @@ export function CadastroAlunos() {
                     <div>
                       <label className="block text-sm font-medium text-navy-700 mb-2">Telefone 1 *</label>
                       <input
-                        value={r.tel1}
+                        value={maskPhone(r.tel1)}
                         onChange={(e) => atualizarResponsavel(i, 'tel1', e.target.value)}
                         required
+                        maxLength={15}
                         className="w-full rounded-lg border border-offwhite-300 bg-white px-4 py-2.5 outline-none focus:ring-2 focus:ring-primary-400 focus:border-transparent transition-all"
-                        placeholder="(xx) xxxxx-xxxx"
+                        placeholder="(00) 00000-0000"
                       />
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-navy-700 mb-2">Telefone 2</label>
                       <input
-                        value={r.tel2}
+                        value={maskPhone(r.tel2)}
                         onChange={(e) => atualizarResponsavel(i, 'tel2', e.target.value)}
+                        maxLength={15}
                         className="w-full rounded-lg border border-offwhite-300 bg-white px-4 py-2.5 outline-none focus:ring-2 focus:ring-primary-400 focus:border-transparent transition-all"
-                        placeholder="(xx) xxxxx-xxxx"
+                        placeholder="(00) 00000-0000"
                       />
                     </div>
                     <div className="md:col-span-2">
@@ -308,6 +349,22 @@ export function CadastroAlunos() {
                     <div className="md:col-span-2 border-t border-offwhite-200 pt-4 mt-2">
                       <p className="text-navy-700 font-medium mb-3">Endereço do Responsável</p>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-sm font-medium text-navy-700 mb-2">CEP *</label>
+                          <input
+                            value={r.endereco.cep}
+                            onChange={(e) => handleCEPChange(i, e.target.value)}
+                            onBlur={() => handleCEPBlur(i)}
+                            required
+                            maxLength={9}
+                            className="w-full rounded-lg border border-offwhite-300 bg-white px-4 py-2.5 outline-none focus:ring-2 focus:ring-primary-400 focus:border-transparent transition-all"
+                            placeholder="00000-000"
+                            disabled={buscandoCEPs[i]}
+                          />
+                          {buscandoCEPs[i] && (
+                            <p className="text-sm text-primary-400 mt-1">Buscando endereço...</p>
+                          )}
+                        </div>
                         <div>
                           <label className="block text-sm font-medium text-navy-700 mb-2">Logradouro *</label>
                           <input
@@ -361,21 +418,11 @@ export function CadastroAlunos() {
                           <label className="block text-sm font-medium text-navy-700 mb-2">UF *</label>
                           <input
                             value={r.endereco.uf}
-                            onChange={(e) => atualizarEnderecoResponsavel(i, 'uf', e.target.value)}
+                            onChange={(e) => atualizarEnderecoResponsavel(i, 'uf', e.target.value.toUpperCase())}
                             required
                             maxLength={2}
                             className="w-full rounded-lg border border-offwhite-300 bg-white px-4 py-2.5 outline-none focus:ring-2 focus:ring-primary-400 focus:border-transparent transition-all"
                             placeholder="SP"
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-sm font-medium text-navy-700 mb-2">CEP *</label>
-                          <input
-                            value={r.endereco.cep}
-                            onChange={(e) => atualizarEnderecoResponsavel(i, 'cep', e.target.value)}
-                            required
-                            className="w-full rounded-lg border border-offwhite-300 bg-white px-4 py-2.5 outline-none focus:ring-2 focus:ring-primary-400 focus:border-transparent transition-all"
-                            placeholder="00000-000"
                           />
                         </div>
                       </div>

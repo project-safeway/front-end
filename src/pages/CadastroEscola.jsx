@@ -4,10 +4,51 @@ import { toast } from 'react-toastify'
 import SchoolIcon from '@mui/icons-material/AddBusiness'
 import ArrowBackIcon from '@mui/icons-material/ArrowBack'
 import escolasService from '../services/escolasService'
+import { maskCEP, buscarEnderecoPorCEP } from '../utils/formatters'
 
 export function CadastroEscola() {
   const navigate = useNavigate()
   const [loading, setLoading] = useState(false)
+  const [buscandoCEP, setBuscandoCEP] = useState(false)
+  const [endereco, setEndereco] = useState({
+    logradouro: '',
+    numero: '',
+    complemento: '',
+    bairro: '',
+    cidade: '',
+    uf: '',
+    cep: ''
+  })
+
+  const handleCEPChange = (e) => {
+    const maskedValue = maskCEP(e.target.value)
+    setEndereco(prev => ({ ...prev, cep: maskedValue }))
+  }
+
+  const handleCEPBlur = async () => {
+    const cepLimpo = endereco.cep.replace(/\D/g, '')
+    
+    if (cepLimpo.length !== 8) return
+
+    setBuscandoCEP(true)
+    try {
+      const dados = await buscarEnderecoPorCEP(cepLimpo)
+      
+      setEndereco(prev => ({
+        ...prev,
+        logradouro: dados.logradouro || prev.logradouro,
+        bairro: dados.bairro || prev.bairro,
+        cidade: dados.cidade || prev.cidade,
+        uf: dados.uf || prev.uf
+      }))
+
+      toast.success('Endereço encontrado!', { theme: 'colored' })
+    } catch (error) {
+      toast.error(error.message || 'CEP não encontrado', { theme: 'colored' })
+    } finally {
+      setBuscandoCEP(false)
+    }
+  }
 
   async function handleSubmit(e) {
     e.preventDefault()
@@ -18,13 +59,13 @@ export function CadastroEscola() {
       nome: f.nome.value,
       nivelEnsino: f.nivelEnsino.value,
       endereco: {
-        logradouro: f.logradouro.value,
-        numero: f.numero.value,
-        complemento: f.complemento.value || null,
-        bairro: f.bairro.value,
-        cidade: f.cidade.value,
-        uf: f.uf.value,
-        cep: f.cep.value.replace(/\D/g, ''),
+        logradouro: endereco.logradouro,
+        numero: endereco.numero,
+        complemento: endereco.complemento || null,
+        bairro: endereco.bairro,
+        cidade: endereco.cidade,
+        uf: endereco.uf,
+        cep: endereco.cep.replace(/\D/g, ''),
         latitude: 0,
         longitude: 0
       },
@@ -101,9 +142,26 @@ export function CadastroEscola() {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
+                  <label className="block text-sm font-medium text-navy-700 mb-2">CEP *</label>
+                  <input
+                    value={endereco.cep}
+                    onChange={handleCEPChange}
+                    onBlur={handleCEPBlur}
+                    required
+                    maxLength={9}
+                    className="w-full rounded-lg border border-offwhite-300 bg-white px-4 py-2.5 outline-none focus:ring-2 focus:ring-primary-400 focus:border-transparent transition-all"
+                    placeholder="00000-000"
+                    disabled={buscandoCEP}
+                  />
+                  {buscandoCEP && (
+                    <p className="text-sm text-primary-400 mt-1">Buscando endereço...</p>
+                  )}
+                </div>
+                <div>
                   <label className="block text-sm font-medium text-navy-700 mb-2">Logradouro *</label>
                   <input
-                    name="logradouro"
+                    value={endereco.logradouro}
+                    onChange={(e) => setEndereco(prev => ({ ...prev, logradouro: e.target.value }))}
                     required
                     maxLength={255}
                     className="w-full rounded-lg border border-offwhite-300 bg-white px-4 py-2.5 outline-none focus:ring-2 focus:ring-primary-400 focus:border-transparent transition-all"
@@ -113,7 +171,8 @@ export function CadastroEscola() {
                 <div>
                   <label className="block text-sm font-medium text-navy-700 mb-2">Número *</label>
                   <input
-                    name="numero"
+                    value={endereco.numero}
+                    onChange={(e) => setEndereco(prev => ({ ...prev, numero: e.target.value }))}
                     required
                     maxLength={10}
                     className="w-full rounded-lg border border-offwhite-300 bg-white px-4 py-2.5 outline-none focus:ring-2 focus:ring-primary-400 focus:border-transparent transition-all"
@@ -123,7 +182,8 @@ export function CadastroEscola() {
                 <div>
                   <label className="block text-sm font-medium text-navy-700 mb-2">Complemento</label>
                   <input
-                    name="complemento"
+                    value={endereco.complemento}
+                    onChange={(e) => setEndereco(prev => ({ ...prev, complemento: e.target.value }))}
                     maxLength={100}
                     className="w-full rounded-lg border border-offwhite-300 bg-white px-4 py-2.5 outline-none focus:ring-2 focus:ring-primary-400 focus:border-transparent transition-all"
                     placeholder="Apartamento, bloco..."
@@ -132,7 +192,8 @@ export function CadastroEscola() {
                 <div>
                   <label className="block text-sm font-medium text-navy-700 mb-2">Bairro *</label>
                   <input
-                    name="bairro"
+                    value={endereco.bairro}
+                    onChange={(e) => setEndereco(prev => ({ ...prev, bairro: e.target.value }))}
                     required
                     maxLength={100}
                     className="w-full rounded-lg border border-offwhite-300 bg-white px-4 py-2.5 outline-none focus:ring-2 focus:ring-primary-400 focus:border-transparent transition-all"
@@ -142,7 +203,8 @@ export function CadastroEscola() {
                 <div>
                   <label className="block text-sm font-medium text-navy-700 mb-2">Cidade *</label>
                   <input
-                    name="cidade"
+                    value={endereco.cidade}
+                    onChange={(e) => setEndereco(prev => ({ ...prev, cidade: e.target.value }))}
                     required
                     maxLength={100}
                     className="w-full rounded-lg border border-offwhite-300 bg-white px-4 py-2.5 outline-none focus:ring-2 focus:ring-primary-400 focus:border-transparent transition-all"
@@ -152,21 +214,12 @@ export function CadastroEscola() {
                 <div>
                   <label className="block text-sm font-medium text-navy-700 mb-2">UF *</label>
                   <input
-                    name="uf"
+                    value={endereco.uf}
+                    onChange={(e) => setEndereco(prev => ({ ...prev, uf: e.target.value.toUpperCase() }))}
                     required
                     maxLength={2}
                     className="w-full rounded-lg border border-offwhite-300 bg-white px-4 py-2.5 outline-none focus:ring-2 focus:ring-primary-400 focus:border-transparent transition-all"
                     placeholder="SP"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-navy-700 mb-2">CEP *</label>
-                  <input
-                    name="cep"
-                    required
-                    maxLength={9}
-                    className="w-full rounded-lg border border-offwhite-300 bg-white px-4 py-2.5 outline-none focus:ring-2 focus:ring-primary-400 focus:border-transparent transition-all"
-                    placeholder="00000-000"
                   />
                 </div>
               </div>
