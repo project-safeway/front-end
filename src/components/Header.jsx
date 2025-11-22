@@ -112,7 +112,7 @@ export default function Header() {
                   <div className="flex items-center gap-3 border-l border-navy-700 pl-6">
                     <div className="flex items-center gap-2">
                       <PersonIcon fontSize="small" />
-                      <span className="text-sm">{user?.role || 'Usuário'}</span>
+                      <span className="text-sm">{user?.nome || 'Usuário'}</span>
                     </div>
                     <button
                       onClick={handleLogout}
@@ -148,7 +148,7 @@ export default function Header() {
                   <div className="mt-6 border-t border-gray-700 pt-4">
                     <div className="flex flex-col items-center gap-2 text-offwhite-100 mb-3">
                       <PersonIcon fontSize="small" />
-                      <span className="text-sm">{user?.role || 'Usuário'}</span>
+                      <span className="text-sm">{user?.nome || 'Usuário'}</span>
                     </div>
                     <button
                       onClick={handleLogout}

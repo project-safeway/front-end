@@ -59,7 +59,55 @@ class AlunosService {
     })
   }
 
+  async getAlunoById(alunoId) {
+    return this._executarComRetry(async () => {
+      const response = await alunoAxios.get(`/alunos/${alunoId}`)
+      console.log('Resposta getAlunoById:', response.data)
+      return response.data
+    })
+  }
 
+  async updateAluno(alunoId, alunoData) {
+    return this._executarComRetry(async () => {
+      const response = await alunoAxios.put(`/alunos/${alunoId}`, alunoData)
+      return response.data
+    })
+  }
+
+  async updateResponsavel(responsavelId, responsavelData) {
+    return this._executarComRetry(async () => {
+      const response = await alunoAxios.put(`/responsavel/${responsavelId}`, responsavelData)
+      return response.data
+    })
+  }
+
+  async createResponsavel(responsavelData) {
+    return this._executarComRetry(async () => {
+      const response = await alunoAxios.post('/responsavel', responsavelData)
+      return response.data
+    })
+  }
+
+  async updateEndereco(enderecoId, enderecoData) {
+    return this._executarComRetry(async () => {
+      const response = await alunoAxios.put(`/enderecos/${enderecoId}`, enderecoData)
+      return response.data
+    })
+  }
+
+  async createEndereco(enderecoData) {
+    return this._executarComRetry(async () => {
+      const response = await alunoAxios.post('/enderecos', enderecoData)
+      return response.data
+    })
+  }
+
+  async deletarResponsavel(responsavelId) {
+    return this._executarComRetry(async () => {
+      const response = await alunoAxios.delete(`/responsavel/${responsavelId}`)
+      return response.data
+    })
+  }
 }
 
 export default new AlunosService()

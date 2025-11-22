@@ -7,6 +7,8 @@ import EditIcon from '@mui/icons-material/Edit'
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore'
 import ExpandLessIcon from '@mui/icons-material/ExpandLess'
 import ArrowBackIcon from '@mui/icons-material/ArrowBack'
+import DomainIcon from '@mui/icons-material/Domain'
+import SearchIcon from '@mui/icons-material/Search'
 import escolasService from '../services/escolasService'
 import alunosService from '../services/alunosService'
 
@@ -15,6 +17,7 @@ export default function ListaAlunos() {
   const [carregando, setCarregando] = useState(true)
   const [escolasComAlunos, setEscolasComAlunos] = useState([])
   const [aberto, setAberto] = useState({})
+  const [busca, setBusca] = useState('')
 
   useEffect(() => {
     let alive = true
@@ -46,167 +49,180 @@ export default function ListaAlunos() {
     setAberto(prev => ({ ...prev, [id]: !prev[id] }))
   }
 
+  // Filtrar alunos por nome
+  const filtrarAlunos = (alunos) => {
+    if (!busca.trim()) return alunos
+    return alunos.filter(aluno => 
+      aluno.nome?.toLowerCase().includes(busca.toLowerCase())
+    )
+  }
+
 
 
   if (carregando) {
     return (
-      <div className="py-6">
-        <p className="text-navy-700">Carregando alunos...</p>
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-offwhite-50 to-offwhite-100">
+        <div className="text-center">
+          <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-primary-400 border-t-transparent mb-4"></div>
+          <p className="text-navy-700 text-lg font-medium">Carregando alunos...</p>
+        </div>
       </div>
     )
   }
 
   return (
+    <div className="min-h-screen bg-gradient-to-br py-8 px-4">
+      <div className="max-w-7xl mx-auto">
+        {/* Breadcrumb */}
+        <Link
+          to="/"
+          className="inline-flex items-center gap-2 text-navy-600 hover:text-primary-400 mb-6 transition-colors"
+        >
+          <ArrowBackIcon fontSize="small" />
+          <span>Voltar ao Início</span>
+        </Link>
 
-    <div className="py-6">
-      {/* Breadcrumb */}
-      <Link
-        to="/"
-        className="inline-flex items-center gap-2 text-navy-600 hover:text-primary-400 mb-6 transition-colors"
-      >
-        <ArrowBackIcon fontSize="small" />
-        <span>Voltar ao Início</span>
-      </Link>
-      <div className="flex items-center gap-3 mb-6">
-        <div className="p-3 bg-primary-50 rounded-xl">
-          <SchoolIcon className="text-primary-400 text-3xl" />
-        </div>
-        <div>
-          <h1 className="text-3xl font-bold text-navy-900">Alunos</h1>
-          <p className="text-navy-600">Listagem de alunos agrupados por escola</p>
-        </div>
-        <div className="ml-auto flex items-center gap-2">
-          <Link
-            to="/escolas/cadastrar"
-            className="inline-block px-4 py-2 bg-offwhite-200 hover:bg-offwhite-300 text-navy-800 rounded-lg font-medium transition-colors"
-          >
-            + Cadastrar Escola
-          </Link>
-          <Link
-            to="/alunos/cadastrar"
-            className="inline-block px-4 py-2 bg-primary-400 hover:bg-primary-500 text-white rounded-lg font-medium transition-colors"
-          >
-            + Cadastrar Aluno
-          </Link>
-        </div>
-      </div>
-
-      <div className="space-y-8">
-        {escolasComAlunos.map((item) => {
-          const escola = item.escola || item
-          const alunos = item.alunos || []
-          const escolaId = escola.id
-
-          return (
-            <div key={escolaId} className="rounded-xl border border-offwhite-300 overflow-hidden">
-              <div className="bg-white px-4 py-3 flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="h-10 w-10 rounded-lg border border-offwhite-300 grid place-items-center">
-                    <SchoolIcon />
-                  </div>
-                  <div>
-                    <p className="font-semibold text-navy-900">{escola.nome}</p>
-                    <p className="text-sm text-navy-600">
-                      {escola.endereco?.logradouro || escola.endereco?.cidade || 'Endereço não informado'}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-1">
-                  <button
-                    className="p-2 rounded-md hover:bg-offwhite-200"
-                    onClick={() => navigate(`/escolas/${escolaId}/editar`)}
-                    title="Editar escola"
-                  >
-                    <EditIcon />
-                  </button>
-
-                  <button
-                    className="p-2 rounded-md hover:bg-offwhite-200"
-                    onClick={() => toggleEscola(escolaId)}
-                    title={aberto[escolaId] ? 'Recolher' : 'Expandir'}
-                  >
-                    {aberto[escolaId] ? <ExpandLessIcon /> : <ExpandMoreIcon />}
-                  </button>
-                </div>
+        {/* Header minimalista */}
+        <div className="bg-white rounded-2xl shadow-sm border border-offwhite-200 p-8 mb-8">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-6">
+              <div className="p-4 bg-primary-50 rounded-xl">
+                <SchoolIcon className="text-primary-400 text-4xl" />
               </div>
+              <div>
+                <h1 className="text-3xl font-bold text-navy-900 mb-1">Alunos</h1>
+                <p className="text-navy-600">Listagem de alunos agrupados por escola</p>
+              </div>
+            </div>
 
-              {aberto[escolaId] && (
-                <div className="bg-offwhite-100/60 p-4">
-                  {alunos.length === 0 && (
-                    <div className="rounded-lg bg-white border border-dashed border-offwhite-300 p-6 text-center text-sm text-navy-600">
-                      Nenhum aluno cadastrado nesta escola.
+            <div className="flex items-center gap-3">
+              <div className="relative">
+                <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 text-navy-400" fontSize="small" />
+                <input
+                  type="text"
+                  placeholder="Buscar aluno por nome..."
+                  value={busca}
+                  onChange={(e) => setBusca(e.target.value)}
+                  className="pl-10 pr-4 py-2.5 rounded-lg border-2 border-offwhite-300 focus:border-primary-400 focus:ring-2 focus:ring-primary-100 outline-none transition-all w-64"
+                />
+              </div>
+              <Link
+                to="/escolas/cadastrar"
+                className="px-5 py-2.5 rounded-lg border-2 border-offwhite-300 hover:border-navy-400 text-navy-700 font-medium transition-all"
+              >
+                + Cadastrar Escola
+              </Link>
+              <Link
+                to="/alunos/cadastrar"
+                className="px-5 py-2.5 rounded-lg bg-primary-400 hover:bg-primary-500 text-white font-semibold transition-all shadow-sm hover:shadow-md"
+              >
+                + Cadastrar Aluno
+              </Link>
+            </div>
+          </div>
+        </div>
+
+        <div className="space-y-6">
+          {escolasComAlunos.map((item) => {
+            const escola = item.escola || item
+            const alunos = item.alunos || []
+            const escolaId = escola.id
+
+            return (
+              <div key={escolaId} className="bg-white rounded-xl shadow-sm border border-offwhite-200 overflow-hidden">
+                <div className="bg-white px-6 py-4 flex items-center justify-between border-b border-offwhite-200">
+                  <div className="flex items-center gap-4">
+                    <div>
+                      <p className="font-semibold text-lg text-navy-900">{escola.nome}</p>
+                      <p className="text-sm text-navy-600">
+                        {escola.endereco?.logradouro || escola.endereco?.cidade || 'Endereço não informado'}
+                      </p>
                     </div>
-                  )}
-
-                  <div className="space-y-3">
-                    {alunos.map((a) => (
-                      <div
-                        key={a.id}
-                        className="bg-white rounded-lg border border-offwhite-300 px-4 py-3 flex items-center justify-between"
-                      >
-                        <div
-                          onClick={() => navigate(`/alunos/${a.id}`)}
-                          title="Editar aluno"
-                          role="button"
-                          style={{ cursor: 'pointer', transition: 'background-color .15s' }}
-                          onMouseEnter={(e) => {
-                            e.currentTarget.style.backgroundColor = '#f1f5f9';
-                            e.currentTarget.style.borderRadius = '0.5rem';
-                          }}
-                          onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent' }}
-                          className="flex items-center gap-3">
-                          <div className="h-9 w-9 rounded-full bg-offwhite-200 grid place-items-center">
-                            <PersonIcon className="text-navy-700" fontSize="small" />
-                          </div>
-                          <div className="leading-tight">
-                            <p className="font-medium text-navy-900">{a.nome}</p>
-                            <p className="text-xs text-navy-600">
-                              {a.serie ? `Série: ${a.serie}` : ''}
-                              {a.serie && a.sala ? ' • ' : ''}
-                              {a.sala ? `Sala: ${a.sala}` : ''}
-                              {(a.serie || a.sala) && a.professor ? ' • ' : ''}
-                              {a.professor ? `Prof: ${a.professor}` : ''}
-                            </p>
-                          </div>
-                        </div>
-
-                        <div className="flex items-center gap-2">
-                          <button
-                            onClick={() => navigate(`/alunos/${a.id}`)}
-                            className="p-2 rounded-md hover:bg-offwhite-200"
-                            title="Ver"
-                          >
-                            {/* <CheckIcon /> */}
-                          </button>
-
-                          <button
-                            onClick={() => navigate(`/alunos/${a.id}/editar`)}
-                            className="p-2 rounded-md hover:bg-offwhite-200"
-                            title="Editar"
-                          >
-                            <EditIcon />
-                          </button>
-
-
-                        </div>
-                      </div>
-                    ))}
                   </div>
 
-                  {/* <div className="mt-4 text-center">
-                    <Link
-                      to={`/alunos/cadastrar?escolaId=${escolaId}`}
-                      className="inline-block px-4 py-2 bg-offwhite-200 hover:bg-offwhite-300 text-navy-800 rounded-lg text-sm font-medium transition-colors"
+                  <div className="flex items-center gap-2">
+                    <button
+                      className="p-2.5 rounded-lg hover:bg-white/60 transition-colors"
+                      onClick={() => navigate(`/escolas/${escolaId}/editar`)}
+                      title="Editar escola"
                     >
-                      Adicionar Aluno
-                    </Link>
-                  </div> */}
+                      <EditIcon className="text-navy-700" />
+                    </button>
+
+                    <button
+                      className="p-2.5 rounded-lg hover:bg-white/60 transition-colors"
+                      onClick={() => toggleEscola(escolaId)}
+                      title={aberto[escolaId] ? 'Recolher' : 'Expandir'}
+                    >
+                      {aberto[escolaId] ? <ExpandLessIcon className="text-navy-700" /> : <ExpandMoreIcon className="text-navy-700" />}
+                    </button>
+                  </div>
                 </div>
-              )}
-            </div>
-          )
-        })}
+
+                {aberto[escolaId] && (
+                  <div className="bg-white p-6">
+                    {filtrarAlunos(alunos).length === 0 && (
+                      <div className="rounded-xl bg-white border-2 border-dashed border-offwhite-300 p-8 text-center">
+                        <PersonIcon className="text-6xl text-navy-300 mb-3 opacity-40" />
+                        <p className="text-navy-600 font-medium">
+                          {busca.trim() ? 'Nenhum aluno encontrado com esse nome' : 'Nenhum aluno cadastrado nesta escola'}
+                        </p>
+                        <p className="text-sm text-navy-500 mt-1">
+                          {busca.trim() ? 'Tente outro termo de busca' : 'Clique em "+ Cadastrar Aluno" para adicionar'}
+                        </p>
+                      </div>
+                    )}
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {filtrarAlunos(alunos).map((a) => (
+                        <div
+                          key={a.id}
+                          className="bg-white rounded-xl border border-offwhite-200 p-4 hover:shadow-lg transition-all cursor-pointer group"
+                          onClick={() => navigate(`/alunos/${a.id}`)}
+                        >
+                          <div className="flex items-center gap-4">
+                            <div className="h-12 w-12 rounded-full bg-blue-100 grid place-items-center flex-shrink-0 group-hover:scale-110 transition-transform">
+                              <PersonIcon className="text-blue-500" />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="font-bold text-navy-900 truncate group-hover:text-primary-500 transition-colors">{a.nome}</p>
+                              <div className="flex flex-wrap gap-2 mt-1">
+                                {a.serie && (
+                                  <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-primary-50 text-primary-600 text-xs font-medium">
+                                    Série {a.serie}
+                                  </span>
+                                )}
+                                {a.sala && (
+                                  <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-primary-50 text-primary-600 text-xs font-medium">
+                                    Sala {a.sala}
+                                  </span>
+                                )}
+                              </div>
+                              {a.professor && (
+                                <p className="text-xs text-navy-500 mt-1 truncate">Prof: {a.professor}</p>
+                              )}
+                            </div>
+
+                            {/* <button
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                navigate(`/alunos/${a.id}/editar`)
+                              }}
+                              className="p-2 rounded-lg hover:bg-primary-50 transition-colors flex-shrink-0"
+                              title="Editar"
+                            >
+                              <EditIcon className="text-navy-600" fontSize="small" />
+                            </button> */}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )
+          })}
+        </div>
       </div>
     </div>
   )
