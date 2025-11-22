@@ -59,6 +59,14 @@ class AlunosService {
     })
   }
 
+  async getEnderecoById(enderecoId) {
+    return this._executarComRetry(async () => {
+      const response = await alunoAxios.get(`/enderecos/${enderecoId}`)
+      console.log('Resposta getEnderecoById:', response.data)
+      return response.data
+    })
+  }
+
   async getAlunoById(alunoId) {
     return this._executarComRetry(async () => {
       const response = await alunoAxios.get(`/alunos/${alunoId}`)
