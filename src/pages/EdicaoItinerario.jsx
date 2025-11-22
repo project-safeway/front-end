@@ -227,149 +227,159 @@ export default function EdicaoItinerario() {
     }
 
     return (
-        <div className="py-6">
-            {/* Breadcrumb */}
-            <Link
-                to="/itinerarios"
-                className="inline-flex items-center gap-2 text-navy-600 hover:text-primary-400 mb-6 transition-colors"
-            >
-                <ArrowBackIcon fontSize="small" />
-                <span>Voltar</span>
-            </Link>
+        <div className="min-h-screen py-8 px-4">
+            <div className="max-w-7xl mx-auto">
+                {/* Breadcrumb */}
+                <Link
+                    to="/itinerarios"
+                    className="inline-flex items-center gap-2 text-navy-600 hover:text-primary-400 mb-6 transition-colors"
+                >
+                    <ArrowBackIcon fontSize="small" />
+                    <span>Voltar para Itinerários</span>
+                </Link>
 
-            {/* Header */}
-            <div className="flex items-center gap-4 mb-6">
-                <div className="p-4 bg-primary-50 rounded-xl">
-                    <EditIcon className="text-primary-400 text-4xl" />
+                {/* Header minimalista */}
+                <div className="bg-white rounded-2xl shadow-sm border border-offwhite-200 p-8 mb-8">
+                    <div className="flex items-center gap-6">
+                        <div className="p-4 bg-primary-50 rounded-xl">
+                            <EditIcon className="text-primary-400 text-4xl" />
+                        </div>
+                        <div>
+                            <h1 className="text-3xl font-bold text-navy-900 mb-1">Editar Itinerário</h1>
+                            <p className="text-navy-600">
+                                Altere as informações e gerencie os alunos
+                            </p>
+                        </div>
+                    </div>
                 </div>
-                <div>
-                    <h1 className="text-3xl font-bold text-navy-900">Editar Itinerário</h1>
-                    <p className="text-navy-600">
-                        Altere as informações e gerencie os alunos
-                    </p>
+
+                {/* Formulário */}
+                <div className="bg-white rounded-xl shadow-sm border border-offwhite-200 p-8 mb-8">
+                    <h3 className="text-lg font-semibold text-navy-900 mb-4 pb-3 border-b border-offwhite-200">Informações do Itinerário</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        <div>
+                            <label className="block text-sm font-medium text-navy-700 mb-2">
+                                Nome do Itinerário *
+                            </label>
+                            <input
+                                type="text"
+                                value={itinerario.nome}
+                                onChange={(e) => handleChange("nome", e.target.value)}
+                                required
+                                className="w-full rounded-lg border border-offwhite-300 bg-white px-4 py-2.5 outline-none focus:ring-2 focus:ring-primary-400 focus:border-transparent transition-all"
+                                placeholder="Ex: Rota Centro"
+                            />
+                        </div>
+
+                        <div>
+                            <label className="block text-sm font-medium text-navy-700 mb-2">
+                                Horário Início *
+                            </label>
+                            <input
+                                type="time"
+                                value={itinerario.horarioInicio}
+                                onChange={(e) => handleChange("horarioInicio", e.target.value)}
+                                required
+                                className="w-full rounded-lg border border-offwhite-300 bg-white px-4 py-2.5 outline-none focus:ring-2 focus:ring-primary-400 focus:border-transparent transition-all"
+                            />
+                        </div>
+
+                        <div>
+                            <label className="block text-sm font-medium text-navy-700 mb-2">
+                                Horário Fim *
+                            </label>
+                            <input
+                                type="time"
+                                value={itinerario.horarioFim}
+                                onChange={(e) => handleChange("horarioFim", e.target.value)}
+                                required
+                                className="w-full rounded-lg border border-offwhite-300 bg-white px-4 py-2.5 outline-none focus:ring-2 focus:ring-primary-400 focus:border-transparent transition-all"
+                            />
+                        </div>
+
+                        <div>
+                            <label className="block text-sm font-medium text-navy-700 mb-2">
+                                Tipo de Viagem *
+                            </label>
+                            <select
+                                value={itinerario.tipoViagem}
+                                onChange={(e) => handleChange("tipoViagem", e.target.value)}
+                                required
+                                className="w-full rounded-lg border border-offwhite-300 bg-white px-4 py-2.5 outline-none focus:ring-2 focus:ring-primary-400 focus:border-transparent transition-all"
+                            >
+                                <option value="SO_IDA">Ida</option>
+                                <option value="SO_VOLTA">Volta</option>
+                            </select>
+                        </div>
+                    </div>
                 </div>
-            </div>
 
-            {/* Formulário */}
-            <div className="bg-white p-6 rounded-2xl shadow mb-8">
-                <h3 className="text-lg font-semibold text-navy-900 mb-4">Informações do Itinerário</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    <div>
-                        <label className="block text-sm font-medium text-navy-700 mb-2">
-                            Nome do Itinerário *
-                        </label>
-                        <input
-                            type="text"
-                            value={itinerario.nome}
-                            onChange={(e) => handleChange("nome", e.target.value)}
-                            className="w-full border border-offwhite-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-primary-400 focus:border-transparent outline-none"
-                            placeholder="Ex: Rota Centro"
-                        />
-                    </div>
-
-                    <div>
-                        <label className="block text-sm font-medium text-navy-700 mb-2">
-                            Horário Início *
-                        </label>
-                        <input
-                            type="time"
-                            value={itinerario.horarioInicio}
-                            onChange={(e) => handleChange("horarioInicio", e.target.value)}
-                            className="w-full border border-offwhite-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-primary-400 focus:border-transparent outline-none"
-                        />
-                    </div>
-
-                    <div>
-                        <label className="block text-sm font-medium text-navy-700 mb-2">
-                            Horário Fim *
-                        </label>
-                        <input
-                            type="time"
-                            value={itinerario.horarioFim}
-                            onChange={(e) => handleChange("horarioFim", e.target.value)}
-                            className="w-full border border-offwhite-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-primary-400 focus:border-transparent outline-none"
-                        />
-                    </div>
-
-                    <div>
-                        <label className="block text-sm font-medium text-navy-700 mb-2">
-                            Tipo de Viagem *
-                        </label>
-                        <select
-                            value={itinerario.tipoViagem}
-                            onChange={(e) => handleChange("tipoViagem", e.target.value)}
-                            className="w-full border border-offwhite-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-primary-400 focus:border-transparent outline-none"
+                {/* Seção de Alunos */}
+                <div className="bg-white rounded-xl shadow-sm border border-offwhite-200 p-8 mb-8">
+                    <div className="flex items-center justify-between mb-6">
+                        <div>
+                            <h3 className="text-lg font-semibold text-navy-900">
+                                Ordem de Embarque dos Alunos ({alunosItinerario.length})
+                            </h3>
+                            <p className="text-sm text-navy-600 mt-1">
+                                A ordem define a sequência em que o motorista buscará os alunos
+                            </p>
+                        </div>
+                        <button
+                            onClick={() => setIsModalOpen(true)}
+                            className="flex items-center gap-2 px-5 py-2.5 bg-primary-400 hover:bg-primary-500 text-white rounded-lg font-semibold transition-all shadow-sm hover:shadow-md"
                         >
-                            <option value="SO_IDA">Ida</option>
-                            <option value="SO_VOLTA">Volta</option>
-                        </select>
+                            <PersonAddIcon fontSize="small" />
+                            Adicionar Aluno
+                        </button>
                     </div>
-                </div>
-            </div>
 
-            {/* Seção de Alunos */}
-            <div className="bg-white p-6 rounded-2xl shadow mb-8">
-                <div className="flex items-center justify-between mb-4">
-                    <div>
-                        <h3 className="text-lg font-semibold text-navy-900">
-                            Ordem de Embarque dos Alunos ({alunosItinerario.length})
-                        </h3>
-                        <p className="text-sm text-navy-600">
-                            A ordem define a sequência em que o motorista buscará os alunos
-                        </p>
-                    </div>
+                    {alunosItinerario.length === 0 ? (
+                        <div className="text-center py-12 border-2 border-dashed border-offwhite-300 rounded-xl bg-offwhite-50">
+                            <PersonAddIcon className="text-navy-300 text-6xl mx-auto mb-4 opacity-40" />
+                            <p className="text-navy-600 font-medium mb-2">Nenhum aluno adicionado</p>
+                            <p className="text-sm text-navy-500">
+                                Clique em "Adicionar Aluno" para começar
+                            </p>
+                        </div>
+                    ) : (
+                        <TabelaEdicaoItinerario
+                            cabecalho={cabecalho}
+                            dados={alunosItinerario}
+                            fields={fields}
+                            onMover={handleMoverAluno}
+                            onRemover={handleRemoverAluno}
+                        />
+                    )}
+                </div>
+
+                {/* Botões de Ação */}
+                <div className="flex gap-3 justify-end">
                     <button
-                        onClick={() => setIsModalOpen(true)}
-                        className="flex items-center gap-2 px-4 py-2 bg-primary-400 hover:bg-primary-500 text-white rounded-lg transition-colors"
+                        onClick={() => navigate("/itinerarios")}
+                        className="px-6 py-2.5 border-2 border-offwhite-300 hover:border-navy-400 text-navy-700 rounded-lg font-medium transition-all"
+                        disabled={isSaving}
                     >
-                        <PersonAddIcon fontSize="small" />
-                        Adicionar Aluno
+                        Cancelar
+                    </button>
+                    <button
+                        onClick={handleSalvar}
+                        disabled={isSaving}
+                        className="px-6 py-2.5 rounded-lg bg-primary-400 hover:bg-primary-500 text-white font-semibold transition-all shadow-sm hover:shadow-md disabled:opacity-60 disabled:cursor-not-allowed"
+                    >
+                        {isSaving ? "Salvando..." : "Salvar Alterações"}
                     </button>
                 </div>
 
-                {alunosItinerario.length === 0 ? (
-                    <div className="text-center py-12 border-2 border-dashed border-offwhite-300 rounded-lg">
-                        <PersonAddIcon className="text-navy-300 text-6xl mx-auto mb-4" />
-                        <p className="text-navy-600 mb-2">Nenhum aluno adicionado</p>
-                        <p className="text-sm text-navy-500 mb-4">
-                            Clique em "Adicionar Aluno" para começar
-                        </p>
-                    </div>
-                ) : (
-                    <TabelaEdicaoItinerario
-                        cabecalho={cabecalho}
-                        dados={alunosItinerario}
-                        fields={fields}
-                        onMover={handleMoverAluno}
-                        onRemover={handleRemoverAluno}
-                    />
-                )}
-            </div>
-
-            {/* Botões de Ação */}
-            <div className="flex gap-3 justify-end">
-                <button
-                    onClick={() => navigate("/itinerarios")}
-                    className="px-6 py-2.5 border-2 border-offwhite-300 text-navy-700 rounded-lg hover:bg-offwhite-50 transition-colors font-medium"
-                    disabled={isSaving}
-                >
-                    Cancelar
-                </button>
-                <Botao
-                    texto={isSaving ? "Salvando..." : "Salvar Alterações"}
-                    onClick={handleSalvar}
-                    disabled={isSaving}
+                {/* Modal de Adicionar Aluno */}
+                <AdicionarAlunoModal
+                    isOpen={isModalOpen}
+                    onClose={() => setIsModalOpen(false)}
+                    onAdd={handleAdicionarAluno}
+                    alunosDisponiveis={alunosDisponiveis}
+                    alunosJaAdicionados={alunosItinerario}
                 />
             </div>
-
-            {/* Modal de Adicionar Aluno */}
-            <AdicionarAlunoModal
-                isOpen={isModalOpen}
-                onClose={() => setIsModalOpen(false)}
-                onAdd={handleAdicionarAluno}
-                alunosDisponiveis={alunosDisponiveis}
-                alunosJaAdicionados={alunosItinerario}
-            />
         </div>
     );
 }

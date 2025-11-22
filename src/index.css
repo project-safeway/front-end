@@ -17,9 +17,42 @@
   --amarelo-secundario: #FACC15;
 }
 
-/* Smooth transitions */
+/* Prevenir seleção de texto e cursor I-beam em toda a aplicação */
 * {
   transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+  cursor: default;
+}
+
+/* Permitir seleção apenas em campos de entrada */
+input,
+textarea,
+[contenteditable="true"] {
+  -webkit-user-select: text;
+  -moz-user-select: text;
+  -ms-user-select: text;
+  user-select: text;
+  cursor: text;
+}
+
+/* Garantir cursor pointer em elementos clicáveis */
+button,
+a,
+[role="button"],
+[onclick],
+.cursor-pointer {
+  cursor: pointer !important;
+}
+
+button *,
+a *,
+[role="button"] *,
+[onclick] *,
+.cursor-pointer * {
+  cursor: pointer !important;
 }
 
 /* Custom scrollbar */
