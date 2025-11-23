@@ -54,6 +54,21 @@ a *,
 .cursor-pointer * {
   cursor: pointer !important;
 }
+  
+/* Cursor grab para elementos arrastáveis */
+[draggable="true"] {
+  cursor: -webkit-grab !important;
+  cursor: grab !important;
+}
+
+[draggable="true"]:active {
+  cursor: -webkit-grabbing !important;
+  cursor: grabbing !important;
+}
+
+[draggable="true"] * {
+  cursor: inherit !important;
+}
 
 /* Custom scrollbar */
 ::-webkit-scrollbar {

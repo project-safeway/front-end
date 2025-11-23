@@ -103,8 +103,17 @@ class ItinerarioService {
   async atualizar(id, itinerarioData) {
     const dataFormatada = this._prepararDados(itinerarioData);
     
+    console.log('========================================');
+    console.log('[ItinerarioService] ATUALIZANDO ITINERÁRIO');
+    console.log('ID:', id);
+    console.log('Dados enviados:', JSON.stringify(dataFormatada, null, 2));
+    console.log('Quantidade de alunos:', dataFormatada.alunos?.length || 0);
+    console.log('Quantidade de escolas:', dataFormatada.escolas?.length || 0);
+    console.log('========================================');
+    
     return this._executarComRetry(async () => {
       const response = await itinerarioAxios.put(`/itinerarios/${id}`, dataFormatada)
+      console.log('[ItinerarioService] Resposta do backend:', response.data);
       return response.data
     })
   }
@@ -129,8 +138,69 @@ class ItinerarioService {
   }
 
   async reordenarAlunos(itinerarioId, novaOrdemIds) {
+    console.log('========================================');
+    console.log('[ItinerarioService] REORDENANDO ALUNOS');
+    console.log('Itinerário ID:', itinerarioId);
+    console.log('Nova ordem de IDs:', novaOrdemIds);
+    console.log('URL:', `/itinerarios/${itinerarioId}/alunos/ordem`);
+    console.log('========================================');
+    
     return this._executarComRetry(async () => {
-      await itinerarioAxios.patch(`/itinerarios/${itinerarioId}/alunos/ordem`, novaOrdemIds)
+      const response = await itinerarioAxios.patch(`/itinerarios/${itinerarioId}/alunos/ordem`, novaOrdemIds)
+      console.log('[ItinerarioService] Resposta reordenação alunos:', response.data);
+      return response.data;
+    })
+  }
+
+  /**
+   * ===============================================
+   * MÉTODOS PARA ESCOLAS
+   * ===============================================
+   */
+
+  /**
+   * Adiciona uma escola ao itinerário
+   * @param {number} itinerarioId - ID do itinerário
+   * @param {Object} escolaData - Dados da escola
+   * @param {number} escolaData.escolaId - ID da escola
+   * @param {number} escolaData.ordemVisita - Ordem de visita
+   * @param {number} escolaData.enderecoId - ID do endereço (opcional)
+   */
+  async adicionarEscola(itinerarioId, escolaData) {
+    return this._executarComRetry(async () => {
+      const response = await itinerarioAxios.post(`/itinerarios/${itinerarioId}/escolas`, escolaData)
+      return response.data
+    })
+  }
+
+  /**
+   * Remove uma escola do itinerário
+   * @param {number} itinerarioId - ID do itinerário
+   * @param {number} escolaId - ID da escola
+   */
+  async removerEscola(itinerarioId, escolaId) {
+    return this._executarComRetry(async () => {
+      await itinerarioAxios.delete(`/itinerarios/${itinerarioId}/escolas/${escolaId}`)
+    })
+  }
+
+  /**
+   * Reordena as escolas de um itinerário
+   * @param {number} itinerarioId - ID do itinerário
+   * @param {Array<number>} novaOrdemIds - Array com IDs das escolas na nova ordem
+   */
+  async reordenarEscolas(itinerarioId, novaOrdemIds) {
+    console.log('========================================');
+    console.log('[ItinerarioService] REORDENANDO ESCOLAS');
+    console.log('Itinerário ID:', itinerarioId);
+    console.log('Nova ordem de IDs:', novaOrdemIds);
+    console.log('URL:', `/itinerarios/${itinerarioId}/escolas/ordem`);
+    console.log('========================================');
+    
+    return this._executarComRetry(async () => {
+      const response = await itinerarioAxios.patch(`/itinerarios/${itinerarioId}/escolas/ordem`, novaOrdemIds)
+      console.log('[ItinerarioService] Resposta reordenação escolas:', response.data);
+      return response.data;
     })
   }
 
