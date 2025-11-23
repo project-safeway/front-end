@@ -1,12 +1,13 @@
-import { GoogleMap, Marker, Polyline, DirectionsRenderer, useJsApiLoader } from '@react-google-maps/api';
+import { GoogleMap, Marker, DirectionsRenderer, useJsApiLoader } from '@react-google-maps/api';
 import { useState, useEffect } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
-import RouteIcon from '@mui/icons-material/Route';
 import DirectionsCarIcon from '@mui/icons-material/DirectionsCar';
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import PlaceIcon from '@mui/icons-material/Place';
 import SchoolIcon from '@mui/icons-material/School';
+import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
+import RestoreIcon from '@mui/icons-material/Restore';
 import rotasService from '../services/rotasService';
 import alunosService from '../services/alunosService';
 import escolasService from '../services/escolasService';
@@ -17,6 +18,7 @@ function RotasOtimizadas() {
   const itinerarioIdUrl = searchParams.get('itinerarioId');
 
   const [rota, setRota] = useState(null);
+  const [rotaOriginal, setRotaOriginal] = useState(null); // Guardar rota original
   const [itinerario, setItinerario] = useState(null);
   const [alunosItinerario, setAlunosItinerario] = useState([]);
   const [escolasItinerario, setEscolasItinerario] = useState([]);
@@ -27,6 +29,7 @@ function RotasOtimizadas() {
   const [userLocation, setUserLocation] = useState(null);
   const [map, setMap] = useState(null);
   const [modoNavegacao, setModoNavegacao] = useState(false);
+  const [usandoRotaOtimizada, setUsandoRotaOtimizada] = useState(false); // Controlar se está usando rota otimizada
 
   const { isLoaded } = useJsApiLoader({
     googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY || "SUA_API_KEY_AQUI",
@@ -89,17 +92,19 @@ function RotasOtimizadas() {
     setErro('');
 
     try {
-      // Busca dados do itinerário
+      // Busca dados completos do itinerário (inclui alunos e escolas com ordemGlobal)
       const itData = await rotasService.buscarItinerario(itinerarioIdUrl);
       setItinerario(itData);
 
-      // Busca alunos do itinerário
-      const alunosData = await rotasService.buscarAlunosDoItinerario(itinerarioIdUrl);
-      setAlunosItinerario(alunosData);
-
-      // Buscar escolas do itinerário a partir dos dados do próprio itinerário
+      // Usar alunos e escolas do itinerário completo (têm ordemGlobal)
+      const alunosData = itData.alunos || [];
       const escolasData = itData.escolas || [];
+
+      setAlunosItinerario(alunosData);
       setEscolasItinerario(escolasData);
+
+      console.log('[Carregamento] Alunos do itinerário:', alunosData);
+      console.log('[Carregamento] Escolas do itinerário:', escolasData);
 
       if (alunosData.length === 0 && escolasData.length === 0) {
         setErro('Este itinerário não possui alunos ou escolas cadastradas');
@@ -118,24 +123,38 @@ function RotasOtimizadas() {
     }
   };
 
-  const otimizarRota = async (alunos, escolas = []) => {
+  const otimizarRota = async (alunos, escolas = [], forcarOtimizacao = false) => {
     try {
       // Criar lista unificada de itens (alunos + escolas) com ordem
       const itensUnificados = [
         ...alunos.map(aluno => ({
           ...aluno,
           tipo: 'aluno',
-          ordem: aluno.ordemEmbarque || 0
+          ordem: aluno.ordemGlobal || aluno.ordemEmbarque || 0
         })),
         ...escolas.map(escola => ({
           ...escola,
           tipo: 'escola',
-          ordem: escola.ordemVisita || 0
+          ordem: escola.ordemGlobal || escola.ordemVisita || 0
         }))
       ];
 
-      // Ordenar pela ordem (ordemEmbarque ou ordemVisita)
+      // Log para debug
+      console.log('===== ORDEM DOS ITENS =====');
+      itensUnificados.forEach(item => {
+        const nome = item.tipo === 'aluno' ? item.nomeAluno : item.nome;
+        console.log(`${item.tipo.toUpperCase()}: ${nome} - ordemGlobal: ${item.ordemGlobal}, ordemEspecifica: ${item.tipo === 'aluno' ? item.ordemEmbarque : item.ordemVisita}, ordem usada: ${item.ordem}`);
+      });
+
+      // Ordenar pela ordem global (prioriza ordemGlobal, senão usa ordem específica)
       itensUnificados.sort((a, b) => a.ordem - b.ordem);
+
+      console.log('===== ORDEM APÓS SORT =====');
+      itensUnificados.forEach((item, idx) => {
+        const nome = item.tipo === 'aluno' ? item.nomeAluno : item.nome;
+        console.log(`${idx + 1}. ${item.tipo.toUpperCase()}: ${nome} - ordem: ${item.ordem}`);
+      });
+      console.log('===========================');
 
       // Buscar coordenadas para cada item na ordem correta
       const itensComCoordenadas = await Promise.all(
@@ -200,7 +219,7 @@ function RotasOtimizadas() {
 
         if (!isNaN(lat) && !isNaN(lng) && lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180) {
           const ponto = {
-            id: item.tipo === 'aluno' ? nome : `Escola: ${nome}`,
+            id: item.tipo === 'aluno' ? nome : `${nome}`,
             endereco: item.enderecoCompleto,
             localizacao: { lat, lng },
             tipo: item.tipo,
@@ -224,6 +243,12 @@ function RotasOtimizadas() {
         throw new Error('Nenhum ponto de parada válido encontrado');
       }
 
+      console.log('===== PONTOS DE PARADA ENVIADOS =====');
+      pontosParada.forEach((p, idx) => {
+        console.log(`${idx + 1}. ${p.id} - ordem: ${p.ordem}`);
+      });
+      console.log('======================================');
+
       const request = {
         veiculo: {
           id: "VAN-ESCOLAR-01",
@@ -231,10 +256,16 @@ function RotasOtimizadas() {
           localizacaoFinal: pontosParada[pontosParada.length - 1].localizacao
         },
         pontosParada: pontosParada,
-        otimizarOrdem: true
+        otimizarOrdem: forcarOtimizacao // Usar parâmetro para decidir se otimiza ou mantém ordem
       };
 
       const resultado = await rotasService.otimizarRota(request);
+
+      console.log('===== PARADAS RETORNADAS PELO BACKEND =====');
+      resultado.paradas.forEach((p, idx) => {
+        console.log(`${idx + 1}. ${p.idParada}`);
+      });
+      console.log('===========================================');
 
       // O backend retorna: { distanciaTotal, tempoTotal, paradas, metricas, provedor }
       // Mas as coordenadas das paradas estão zeradas, então precisamos preenchê-las
@@ -263,6 +294,11 @@ function RotasOtimizadas() {
 
       setRota(rotaOtimizada);
 
+      // Salvar rota original na primeira vez (sem otimização)
+      if (!forcarOtimizacao && !rotaOriginal) {
+        setRotaOriginal(rotaOtimizada);
+      }
+
       // Buscar direções reais (caminho pelas ruas) após otimizar
       await buscarDirecoesReais(paradasComCoordenadas);
 
@@ -274,9 +310,11 @@ function RotasOtimizadas() {
         }
       }
 
-      toast.success(`Rota otimizada! ${rotaOtimizada.distanciaKm.toFixed(2)} km em ${rotaOtimizada.duracaoMinutos} min`, {
-        theme: 'colored'
-      });
+      const mensagem = forcarOtimizacao
+        ? `Rota otimizada pelo Google! ${rotaOtimizada.distanciaKm.toFixed(2)} km em ${rotaOtimizada.duracaoMinutos} min`
+        : `Rota calculada! ${rotaOtimizada.distanciaKm.toFixed(2)} km em ${rotaOtimizada.duracaoMinutos} min`;
+
+      toast.success(mensagem, { theme: 'colored' });
     } catch (error) {
       console.error('[RotasOtimizadas] Erro ao otimizar rota:', error);
       setErro(error.message || 'Erro ao calcular rota otimizada');
@@ -377,6 +415,42 @@ function RotasOtimizadas() {
     toast.info('Navegação encerrada', { theme: 'colored' });
   };
 
+  const sugerirMelhorRota = async () => {
+    if (!alunosItinerario.length && !escolasItinerario.length) {
+      toast.warning('Não há dados para otimizar', { theme: 'colored' });
+      return;
+    }
+
+    setLoading(true);
+    try {
+      toast.info('Calculando melhor rota...', { theme: 'colored' });
+      await otimizarRota(alunosItinerario, escolasItinerario, true); // forcarOtimizacao = true
+      setUsandoRotaOtimizada(true);
+    } catch (error) {
+      toast.error('Erro ao calcular melhor rota', { theme: 'colored' });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const voltarRotaOriginal = async () => {
+    if (!alunosItinerario.length && !escolasItinerario.length) {
+      toast.warning('Não há dados para recalcular', { theme: 'colored' });
+      return;
+    }
+
+    setLoading(true);
+    try {
+      toast.info('Voltando para ordem cadastrada...', { theme: 'colored' });
+      await otimizarRota(alunosItinerario, escolasItinerario, false); // forcarOtimizacao = false
+      setUsandoRotaOtimizada(false);
+    } catch (error) {
+      toast.error('Erro ao recalcular rota', { theme: 'colored' });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   if (!isLoaded) {
     return (
       <div className="flex justify-center items-center h-screen">
@@ -416,8 +490,35 @@ function RotasOtimizadas() {
         {/* Resumo da Rota - Único card */}
         {rota && (
           <div className="bg-white rounded-lg shadow flex-1 flex flex-col overflow-hidden">
-            <div className="p-4 border-b border-gray-200 flex-shrink-0">
+            <div className="p-4 border-b border-gray-200 flex-shrink-0 flex items-center justify-between">
               <h3 className="text-[#172848] font-semibold text-lg">Resumo da Rota</h3>
+
+              {/* Botão de sugestão ou voltar */}
+              {!usandoRotaOtimizada ? (
+                <button
+                  onClick={sugerirMelhorRota}
+                  disabled={loading}
+                  className="p-2 rounded-full hover:bg-blue-50 transition-colors group relative disabled:opacity-50 disabled:cursor-not-allowed"
+                  title="Sugerir melhor rota"
+                >
+                  <HelpOutlineIcon className="text-blue-500" fontSize="small" />
+                  <span className="absolute right-full mr-2 top-1/2 -translate-y-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+                    Sugerir melhor rota
+                  </span>
+                </button>
+              ) : (
+                <button
+                  onClick={voltarRotaOriginal}
+                  disabled={loading}
+                  className="p-2 rounded-full hover:bg-orange-50 transition-colors group relative disabled:opacity-50 disabled:cursor-not-allowed"
+                  title="Retornar"
+                >
+                  <RestoreIcon className="text-[#FB923C]" fontSize="small" />
+                  <span className="absolute right-full mr-2 top-1/2 -translate-y-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+                    Retornar para ordem cadastrada
+                  </span>
+                </button>
+              )}
             </div>
 
             <div className="p-4 flex-shrink-0">
@@ -444,22 +545,22 @@ function RotasOtimizadas() {
             </div>
 
             <div className="px-4 pb-2 flex-shrink-0">
-              <h4 className="text-[#34435F] font-semibold text-sm mb-2">Ordem de Embarque:</h4>
+              <h4 className="text-[#34435F] font-semibold text-sm mb-2">Ordem de Paradas:</h4>
             </div>
 
             {/* Lista com scroll */}
             <div className="flex-1 overflow-y-auto px-4">
               <ol className="pl-5 space-y-1 pb-2">
                 {rota.paradas.map((parada, idx) => {
-                  const isEscola = parada.idParada?.includes('Escola:');
+                  const isEscola = parada.tipo === 'escola'
                   return (
                     <li key={idx} className="text-[#34435F] flex items-center gap-2">
                       {isEscola ? (
-                        <SchoolIcon className="text-green-500" fontSize="small" />
+                        <span className="w-3 h-3 bg-green-500 rounded-full"></span>
                       ) : (
                         <span className="w-3 h-3 bg-[#FB923C] rounded-full"></span>
                       )}
-                      <span className={isEscola ? 'font-medium' : ''}>
+                      <span className={isEscola ? 'font-small' : ''}>
                         {parada.idParada}
                       </span>
                     </li>
@@ -478,7 +579,7 @@ function RotasOtimizadas() {
                     <span className="text-[#34435F]">Aluno</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <SchoolIcon className="text-green-500" fontSize="small" />
+                    <span className="w-3 h-3 bg-green-500 rounded-full"></span>
                     <span className="text-[#34435F]">Escola</span>
                   </div>
                 </div>
