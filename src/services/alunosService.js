@@ -1,87 +1,121 @@
-// src/services/alunosService.js
-import api from './api'
+import axios from 'axios'
+import config from '../config/config'
 
-const alunosService = {
-  /**
-   * Busca todos os alunos (ou com filtros)
-   * @param {Object} params - Filtros opcionais, ex: { escolaId: 1 }
-   * @returns {Promise<Array>}
-   */
-  async getAlunos(params = {}) {
-    const data = await api.get('/alunos', { params })
-    return data
+const API_URL = config.API_BASE_URL
+
+const alunoAxios = axios.create({
+  baseURL: API_URL,
+  timeout: 10000,
+  headers: {
+    'Content-Type': 'application/json',
   },
+})
 
-  /**
-   * Busca alunos de uma escola específica
-   * @param {number|string} escolaId
-   * @returns {Promise<Array>}
-   */
-  async getAlunosByEscola(escolaId) {
-    const data = await api.get(`/escolas/${escolaId}/alunos`)
-    return data
-  },
+alunoAxios.interceptors.request.use((request) => {
+  const token = localStorage.getItem('token')
+  if (token) {
+    request.headers.Authorization = `Bearer ${token}`
+  }
+  return request
+})
 
-  /**
-   * Busca um aluno por ID
-   * @param {number|string} id
-   * @returns {Promise<Object>}
-   */
-  async getAlunoById(id) {
-    const data = await api.get(`/alunos/${id}`)
-    return data
-  },
+alunoAxios.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401) {
+      localStorage.removeItem('token')
+      window.location.href = '/login'
+    }
+    return Promise.reject(error)
+  }
+)
 
-  /**
-   * Cria um novo aluno
-   * @param {Object} payload - Dados do aluno
-   * @returns {Promise<Object>}
-   */
-  async createAluno(payload) {
-    const data = await api.post('/alunos', payload)
-    return data
-  },
+class AlunosService {
+  async _executarComRetry(fn, tentativas = 3, delay = 1000) {
+    for (let i = 0; i < tentativas; i++) {
+      try {
+        return await fn()
+      } catch (error) {
+        if (i === tentativas - 1) throw error
+        if (error.response && error.response.status >= 400 && error.response.status < 500) {
+          throw error
+        }
+        await new Promise(resolve => setTimeout(resolve, delay))
+      }
+    }
+  }
 
-  /**
-   * Atualiza os dados de um aluno
-   * @param {number|string} id - ID do aluno
-   * @param {Object} payload - Dados atualizados
-   * @returns {Promise<Object>}
-   */
-  async updateAluno(id, payload) {
-    const data = await api.put(`/alunos/${id}`, payload)
-    return data
-  },
+  async createAluno(alunoData) {
+    return this._executarComRetry(async () => {
+      const response = await alunoAxios.post('/alunos', alunoData)
+      return response.data
+    })
+  }
 
-  /**
-   * Exclui um aluno
-   * @param {number|string} id - ID do aluno
-   * @returns {Promise<void>}
-   */
-  async deleteAluno(id) {
-    const data = await api.delete(`/alunos/${id}`)
-    return data
-  },
-
-  /**
-   * Busca os endereços de um aluno
-   * @param {number|string} alunoId - ID do aluno
-   * @returns {Promise<Array>} Lista de endereços do aluno
-   */
   async getEnderecosByAluno(alunoId) {
-    const data = await api.get(`/alunos/${alunoId}/enderecos`)
-    return data
-  },
+    return this._executarComRetry(async () => {
+      const response = await alunoAxios.get(`/alunos/${alunoId}/enderecos`)
+      return response.data
+    })
+  }
 
-  /**
-   * Busca um endereço específico por ID
-   * @param {number|string} enderecoId - ID do endereço
-   * @returns {Promise<Object>} Dados do endereço incluindo latitude e longitude
-   */
   async getEnderecoById(enderecoId) {
-    const data = await api.get(`/enderecos/${enderecoId}`)
-    return data
-  },
+    return this._executarComRetry(async () => {
+      const response = await alunoAxios.get(`/enderecos/${enderecoId}`)
+      console.log('Resposta getEnderecoById:', response.data)
+      return response.data
+    })
+  }
+
+  async getAlunoById(alunoId) {
+    return this._executarComRetry(async () => {
+      const response = await alunoAxios.get(`/alunos/${alunoId}`)
+      console.log('Resposta getAlunoById:', response.data)
+      return response.data
+    })
+  }
+
+  async updateAluno(alunoId, alunoData) {
+    return this._executarComRetry(async () => {
+      const response = await alunoAxios.put(`/alunos/${alunoId}`, alunoData)
+      return response.data
+    })
+  }
+
+  async updateResponsavel(responsavelId, responsavelData) {
+    return this._executarComRetry(async () => {
+      const response = await alunoAxios.put(`/responsavel/${responsavelId}`, responsavelData)
+      return response.data
+    })
+  }
+
+  async createResponsavel(responsavelData) {
+    return this._executarComRetry(async () => {
+      const response = await alunoAxios.post('/responsavel', responsavelData)
+      return response.data
+    })
+  }
+
+  async updateEndereco(enderecoId, enderecoData) {
+    return this._executarComRetry(async () => {
+      const response = await alunoAxios.put(`/enderecos/${enderecoId}`, enderecoData)
+      return response.data
+    })
+  }
+
+  async createEndereco(enderecoData) {
+    return this._executarComRetry(async () => {
+      const response = await alunoAxios.post('/enderecos', enderecoData)
+      return response.data
+    })
+  }
+
+  async deletarResponsavel(responsavelId) {
+    return this._executarComRetry(async () => {
+      const response = await alunoAxios.delete(`/responsavel/${responsavelId}`)
+      return response.data
+    })
+  }
 }
 
-export default alunosService
+export default new AlunosService()

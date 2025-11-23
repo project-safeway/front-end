@@ -1,85 +1,47 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import { toast } from 'react-toastify'
 import SchoolIcon from '@mui/icons-material/School'
 import PersonIcon from '@mui/icons-material/Person'
 import EditIcon from '@mui/icons-material/Edit'
-import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline'
-import CheckIcon from '@mui/icons-material/Check'
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore'
 import ExpandLessIcon from '@mui/icons-material/ExpandLess'
-
+import ArrowBackIcon from '@mui/icons-material/ArrowBack'
+import DomainIcon from '@mui/icons-material/Domain'
+import SearchIcon from '@mui/icons-material/Search'
 import escolasService from '../services/escolasService'
 import alunosService from '../services/alunosService'
 
 export default function ListaAlunos() {
   const navigate = useNavigate()
   const [carregando, setCarregando] = useState(true)
-  const [escolas, setEscolas] = useState([])               // [{id, nome, endereco?...}]
-  const [alunosPorEscola, setAlunosPorEscola] = useState({}) // { [escolaId]: Array<Aluno> }
-  const [aberto, setAberto] = useState({})                 // { [escolaId]: boolean }
-
-  // -------- MOCK para teste rápido --------
-  const USE_MOCK = true
-  const MOCK_ESCOLAS = [
-    { id: 1, nome: 'Escola Martin Luther King', endereco: 'Rua dos Bobo, Número: 0' },
-    { id: 2, nome: 'EMEB Arco-Íris Dourado', endereco: 'Av. Primavera, 123' },
-  ]
-  const MOCK_ALUNOS = {
-    1: [
-      { id: 101, nomeAluno: 'Fulano de Tal',  endereco: 'Rua XTPQ, Nº 467', serie: '5º A', responsavel: 'Marlene' },
-      { id: 102, nomeAluno: 'Ciclano Silva',  endereco: 'Rua das Flores, 50', serie: '4º B', responsavel: 'Marlene' },
-      { id: 103, nomeAluno: 'Beltrano Souza', endereco: 'Av. Central, 10',   serie: '3º C', responsavel: 'Marlene' },
-    ],
-    2: [
-      { id: 201, nomeAluno: 'Ana Pereira',     endereco: 'Rua Bons Ventos, 12', serie: '2º A', responsavel: 'Carlos' },
-      { id: 202, nomeAluno: 'Bruno Carvalho',  endereco: 'Rua Bons Ventos, 12', serie: '1º C', responsavel: 'Carla' },
-    ],
-  }
-  // ---------------------------------------
+  const [escolasComAlunos, setEscolasComAlunos] = useState([])
+  const [aberto, setAberto] = useState({})
+  const [busca, setBusca] = useState('')
 
   useEffect(() => {
     let alive = true
-    ;(async () => {
-      try {
-        setCarregando(true)
+      ; (async () => {
+        try {
+          setCarregando(true)
+          const dados = await escolasService.getEscolas()
 
-        if (USE_MOCK) {
           if (!alive) return
-          setEscolas(MOCK_ESCOLAS)
-          setAlunosPorEscola(MOCK_ALUNOS)
-          setAberto(MOCK_ESCOLAS.reduce((acc, e) => ({ ...acc, [e.id]: true }), {}))
-          return
+
+          const lista = Array.isArray(dados) ? dados : []
+
+          if (lista.length == 0) {
+            toast.info('Não há nenhuma escola cadastrada, clique em "Cadastrar Escola"')
+          }
+
+          setEscolasComAlunos(lista)
+          setAberto(lista.reduce((acc, item) => ({ ...acc, [item.escola?.id || item.id]: true }), {}))
+        } catch (error) {
+          if (alive) toast.error('Erro ao carregar dados')
+        } finally {
+          if (alive) setCarregando(false)
         }
-
-        const lista = await escolasService.getEscolas()
-        const arr = Array.isArray(lista) ? lista : (lista?.items ?? [])
-        const escolasFinal = arr.length ? arr : MOCK_ESCOLAS
-        if (!alive) return
-        setEscolas(escolasFinal)
-
-        const entries = await Promise.all(
-          escolasFinal.map(async (e) => {
-            try {
-              if (alunosService.getAlunosByEscola) {
-                const alunos = await alunosService.getAlunosByEscola(e.id)
-                return [e.id, alunos?.length ? alunos : (MOCK_ALUNOS[e.id] || [])]
-              }
-              if (alunosService.getAlunos) {
-                const alunos = await alunosService.getAlunos({ escolaId: e.id })
-                return [e.id, alunos?.length ? alunos : (MOCK_ALUNOS[e.id] || [])]
-              }
-              return [e.id, MOCK_ALUNOS[e.id] || []]
-            } catch {
-              return [e.id, MOCK_ALUNOS[e.id] || []]
-            }
-          })
-        )
-        setAlunosPorEscola(Object.fromEntries(entries))
-        setAberto(escolasFinal.reduce((acc, e) => ({ ...acc, [e.id]: true }), {}))
-      } finally {
-        if (alive) setCarregando(false)
-      }
-    })()
+      })()
     return () => { alive = false }
   }, [])
 
@@ -87,170 +49,180 @@ export default function ListaAlunos() {
     setAberto(prev => ({ ...prev, [id]: !prev[id] }))
   }
 
-  async function removerAluno(idAluno, escolaId) {
-    try {
-      if (!USE_MOCK) await alunosService.deleteAluno(idAluno)
-      setAlunosPorEscola(prev => ({
-        ...prev,
-        [escolaId]: (prev[escolaId] || []).filter(a => String(a.id) !== String(idAluno)),
-      }))
-    } catch (e) {
-      console.error('[ListaAlunos] Erro ao remover aluno:', e)
-    }
+  // Filtrar alunos por nome
+  const filtrarAlunos = (alunos) => {
+    if (!busca.trim()) return alunos
+    return alunos.filter(aluno => 
+      aluno.nome?.toLowerCase().includes(busca.toLowerCase())
+    )
   }
+
+
 
   if (carregando) {
     return (
-      <div className="py-6">
-        <p className="text-navy-700">Carregando alunos...</p>
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-offwhite-50 to-offwhite-100">
+        <div className="text-center">
+          <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-primary-400 border-t-transparent mb-4"></div>
+          <p className="text-navy-700 text-lg font-medium">Carregando alunos...</p>
+        </div>
       </div>
     )
   }
 
   return (
-    <div className="py-6">
-      {/* topo */}
-      <div className="flex items-center gap-3 mb-6">
-        <div className="p-3 bg-primary-50 rounded-xl">
-          <SchoolIcon className="text-primary-400 text-3xl" />
-        </div>
-        <div>
-          <h1 className="text-3xl font-bold text-navy-900">Alunos</h1>
-          <p className="text-navy-600">Listagem de alunos agrupados por escola</p>
-        </div>
-        <div className="ml-auto flex items-center gap-2">
-          <Link
-            to="/escolas/cadastrar"
-            className="inline-block px-4 py-2 bg-offwhite-200 hover:bg-offwhite-300 text-navy-800 rounded-lg font-medium transition-colors"
-          >
-            + Cadastrar Escola
-          </Link>
-          <Link
-            to="/alunos/cadastrar"
-            className="inline-block px-4 py-2 bg-primary-400 hover:bg-primary-500 text-white rounded-lg font-medium transition-colors"
-          >
-            + Cadastrar Aluno
-          </Link>
-        </div>
-      </div>
+    <div className="min-h-screen bg-gradient-to-br py-8 px-4">
+      <div className="max-w-7xl mx-auto">
+        {/* Breadcrumb */}
+        <Link
+          to="/"
+          className="inline-flex items-center gap-2 text-navy-600 hover:text-primary-400 mb-6 transition-colors"
+        >
+          <ArrowBackIcon fontSize="small" />
+          <span>Voltar ao Início</span>
+        </Link>
 
-      {/* escolas */}
-      <div className="space-y-8">
-        {escolas.map((esc) => {
-          const alunos = alunosPorEscola[esc.id] || []
-          return (
-            <div key={esc.id} className="rounded-xl border border-offwhite-300 overflow-hidden">
-              {/* header escola */}
-              <div className="bg-white px-4 py-3 flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="h-10 w-10 rounded-lg border border-offwhite-300 grid place-items-center">
-                    <SchoolIcon />
-                  </div>
-                  <div>
-                    <p className="font-semibold text-navy-900">{esc.nome}</p>
-                    <p className="text-sm text-navy-600">
-                      {esc.endereco || esc.logradouro || 'Endereço não informado'}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-1">
-                  {/* editar escola */}
-                  <button
-                    className="p-2 rounded-md hover:bg-offwhite-200"
-                    onClick={() => navigate(`/escolas/${esc.id}/editar`)}
-                    title="Editar escola"
-                  >
-                    <EditIcon />
-                  </button>
-
-                  {/* expandir/recolher */}
-                  <button
-                    className="p-2 rounded-md hover:bg-offwhite-200"
-                    onClick={() => toggleEscola(esc.id)}
-                    title={aberto[esc.id] ? 'Recolher' : 'Expandir'}
-                  >
-                    {aberto[esc.id] ? <ExpandLessIcon /> : <ExpandMoreIcon />}
-                  </button>
-                </div>
+        {/* Header minimalista */}
+        <div className="bg-white rounded-2xl shadow-sm border border-offwhite-200 p-8 mb-8">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-6">
+              <div className="p-4 bg-primary-50 rounded-xl">
+                <SchoolIcon className="text-primary-400 text-4xl" />
               </div>
+              <div>
+                <h1 className="text-3xl font-bold text-navy-900 mb-1">Alunos</h1>
+                <p className="text-navy-600">Listagem de alunos agrupados por escola</p>
+              </div>
+            </div>
 
-              {/* lista de alunos */}
-              {aberto[esc.id] && (
-                <div className="bg-offwhite-100/60 p-4">
-                  {alunos.length === 0 && (
-                    <div className="rounded-lg bg-white border border-dashed border-offwhite-300 p-6 text-center text-sm text-navy-600">
-                      Nenhum aluno cadastrado nesta escola.
+            <div className="flex items-center gap-3">
+              <div className="relative">
+                <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 text-navy-400" fontSize="small" />
+                <input
+                  type="text"
+                  placeholder="Buscar aluno por nome..."
+                  value={busca}
+                  onChange={(e) => setBusca(e.target.value)}
+                  className="pl-10 pr-4 py-2.5 rounded-lg border-2 border-offwhite-300 focus:border-primary-400 focus:ring-2 focus:ring-primary-100 outline-none transition-all w-64"
+                />
+              </div>
+              <Link
+                to="/escolas/cadastrar"
+                className="px-5 py-2.5 rounded-lg border-2 border-offwhite-300 hover:border-navy-400 text-navy-700 font-medium transition-all"
+              >
+                + Cadastrar Escola
+              </Link>
+              <Link
+                to="/alunos/cadastrar"
+                className="px-5 py-2.5 rounded-lg bg-primary-400 hover:bg-primary-500 text-white font-semibold transition-all shadow-sm hover:shadow-md"
+              >
+                + Cadastrar Aluno
+              </Link>
+            </div>
+          </div>
+        </div>
+
+        <div className="space-y-6">
+          {escolasComAlunos.map((item) => {
+            const escola = item.escola || item
+            const alunos = item.alunos || []
+            const escolaId = escola.id
+
+            return (
+              <div key={escolaId} className="bg-white rounded-xl shadow-sm border border-offwhite-200 overflow-hidden">
+                <div className="bg-white px-6 py-4 flex items-center justify-between border-b border-offwhite-200">
+                  <div className="flex items-center gap-4">
+                    <div>
+                      <p className="font-semibold text-lg text-navy-900">{escola.nome}</p>
+                      <p className="text-sm text-navy-600">
+                        {escola.endereco?.logradouro || escola.endereco?.cidade || 'Endereço não informado'}
+                      </p>
                     </div>
-                  )}
-
-                  <div className="space-y-3">
-                    {alunos.map((a) => (
-                      <div
-                        key={a.id}
-                        className="bg-white rounded-lg border border-offwhite-300 px-4 py-3 flex items-center justify-between"
-                      >
-                        <div className="flex items-center gap-3">
-                          <div className="h-9 w-9 rounded-full bg-offwhite-200 grid place-items-center">
-                            <PersonIcon className="text-navy-700" fontSize="small" />
-                          </div>
-                          <div className="leading-tight">
-                            <p className="font-medium text-navy-900">{a.nomeAluno || a.nome}</p>
-                            <p className="text-xs text-navy-600">
-                              {a.endereco ? `End.: ${a.endereco}` : null}
-                              {a.endereco && (a.serie || a.serieNome) ? ' • ' : ''}
-                              {a.serie || a.serieNome ? `Série: ${a.serie || a.serieNome}` : ''}
-                              {a.responsavel ? ` • Responsável: ${a.responsavel}` : ''}
-                            </p>
-                          </div>
-                        </div>
-
-                        <div className="flex items-center gap-2">
-                          {/* visualizar */}
-                          <button
-                            onClick={() => navigate(`/alunos/${a.id}`)}
-                            className="p-2 rounded-md hover:bg-offwhite-200"
-                            title="Ver"
-                          >
-                            <CheckIcon />
-                          </button>
-
-                          {/* editar */}
-                          <button
-                            onClick={() => navigate(`/alunos/${a.id}/editar`)}
-                            className="p-2 rounded-md hover:bg-offwhite-200"
-                            title="Editar"
-                          >
-                            <EditIcon />
-                          </button>
-
-                          {/* excluir */}
-                          <button
-                            onClick={() => removerAluno(a.id, esc.id)}
-                            className="p-2 rounded-md hover:bg-offwhite-200 text-red-600"
-                            title="Remover"
-                          >
-                            <DeleteOutlineIcon />
-                          </button>
-                        </div>
-                      </div>
-                    ))}
                   </div>
 
-                  {/* CTA adicionar aluno nessa escola */}
-                  <div className="mt-4 text-center">
-                    <Link
-                      to={`/alunos/cadastrar?escolaId=${esc.id}`}
-                      className="inline-block px-4 py-2 bg-offwhite-200 hover:bg-offwhite-300 text-navy-800 rounded-lg text-sm font-medium transition-colors"
+                  <div className="flex items-center gap-2">
+                    <button
+                      className="p-2.5 rounded-lg hover:bg-white/60 transition-colors"
+                      onClick={() => navigate(`/escolas/${escolaId}/editar`)}
+                      title="Editar escola"
                     >
-                      Adicionar Aluno
-                    </Link>
+                      <EditIcon className="text-navy-700" />
+                    </button>
+
+                    <button
+                      className="p-2.5 rounded-lg hover:bg-white/60 transition-colors"
+                      onClick={() => toggleEscola(escolaId)}
+                      title={aberto[escolaId] ? 'Recolher' : 'Expandir'}
+                    >
+                      {aberto[escolaId] ? <ExpandLessIcon className="text-navy-700" /> : <ExpandMoreIcon className="text-navy-700" />}
+                    </button>
                   </div>
                 </div>
-              )}
-            </div>
-          )
-        })}
+
+                {aberto[escolaId] && (
+                  <div className="bg-white p-6">
+                    {filtrarAlunos(alunos).length === 0 && (
+                      <div className="rounded-xl bg-white border-2 border-dashed border-offwhite-300 p-8 text-center">
+                        <PersonIcon className="text-6xl text-navy-300 mb-3 opacity-40" />
+                        <p className="text-navy-600 font-medium">
+                          {busca.trim() ? 'Nenhum aluno encontrado com esse nome' : 'Nenhum aluno cadastrado nesta escola'}
+                        </p>
+                        <p className="text-sm text-navy-500 mt-1">
+                          {busca.trim() ? 'Tente outro termo de busca' : 'Clique em "+ Cadastrar Aluno" para adicionar'}
+                        </p>
+                      </div>
+                    )}
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {filtrarAlunos(alunos).map((a) => (
+                        <div
+                          key={a.id}
+                          className="bg-white rounded-xl border border-offwhite-200 p-4 hover:shadow-lg transition-all cursor-pointer group"
+                          onClick={() => navigate(`/alunos/${a.id}`)}
+                        >
+                          <div className="flex items-center gap-4">
+                            <div className="h-12 w-12 rounded-full bg-blue-100 grid place-items-center flex-shrink-0 group-hover:scale-110 transition-transform">
+                              <PersonIcon className="text-blue-500" />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="font-bold text-navy-900 truncate group-hover:text-primary-500 transition-colors">{a.nome}</p>
+                              <div className="flex flex-wrap gap-2 mt-1">
+                                {a.serie && (
+                                  <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-primary-50 text-primary-600 text-xs font-medium">
+                                    Série {a.serie}
+                                  </span>
+                                )}
+                                {a.sala && (
+                                  <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-primary-50 text-primary-600 text-xs font-medium">
+                                    Sala {a.sala}
+                                  </span>
+                                )}
+                              </div>
+                              {a.professor && (
+                                <p className="text-xs text-navy-500 mt-1 truncate">Prof: {a.professor}</p>
+                              )}
+                            </div>
+
+                            {/* <button
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                navigate(`/alunos/${a.id}/editar`)
+                              }}
+                              className="p-2 rounded-lg hover:bg-primary-50 transition-colors flex-shrink-0"
+                              title="Editar"
+                            >
+                              <EditIcon className="text-navy-600" fontSize="small" />
+                            </button> */}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )
+          })}
+        </div>
       </div>
     </div>
   )

@@ -93,51 +93,50 @@ export default function Itinerarios() {
   }
 
   return (
-    <div className="py-6">
-      {/* Breadcrumb */}
-      <Link
-        to="/"
-        className="inline-flex items-center gap-2 text-navy-600 hover:text-primary-400 mb-6 transition-colors"
-      >
-        <ArrowBackIcon fontSize="small" />
-        <span>Voltar ao Início</span>
-      </Link>
+    <div className="min-h-screen py-8 px-4">
+      <div className="max-w-7xl mx-auto">
+        {/* Breadcrumb */}
+        <Link
+          to="/"
+          className="inline-flex items-center gap-2 text-navy-600 hover:text-primary-400 mb-6 transition-colors"
+        >
+          <ArrowBackIcon fontSize="small" />
+          <span>Voltar ao Início</span>
+        </Link>
 
-      {/* Header */}
-      <div className="flex items-center gap-4 mb-6">
-        <div className="p-4 bg-primary-50 rounded-xl">
-          <MapIcon className="text-primary-400 text-4xl" />
+        {/* Header minimalista */}
+        <div className="bg-white rounded-2xl shadow-sm border border-offwhite-200 p-8 mb-8">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-6">
+              <div className="p-4 bg-primary-50 rounded-xl">
+                <MapIcon className="text-primary-400 text-4xl" />
+              </div>
+              <div>
+                <h1 className="text-3xl font-bold text-navy-900 mb-1">Itinerários</h1>
+                <p className="text-navy-600">Gerencie suas rotas de transporte</p>
+              </div>
+            </div>
+            
+            <button
+              onClick={() => {
+                setItinerarioSelecionado(null);
+                setIsModalOpen(true);
+              }}
+              className="px-5 py-2.5 rounded-lg bg-primary-400 hover:bg-primary-500 text-white font-semibold transition-all shadow-sm hover:shadow-md"
+            >
+              + Cadastrar Itinerário
+            </button>
+          </div>
         </div>
-        <div>
-          <h1 className="text-3xl font-bold text-navy-900">Itinerários</h1>
-          <p className="text-navy-600">Gerencie seus itinerários</p>
-        </div>
-      </div>
 
-      {/* Botão principal */}
-      <Botao
-        texto="Cadastrar Itinerário"
-        onClick={() => {
-          setItinerarioSelecionado(null);
-          setIsModalOpen(true);
-        }}
-      />
-
-      <ItinerarioModal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        onSave={handleSaveItinerario}
-        onDelete={handleDeleteItinerario}
-        itinerario={itinerarioSelecionado}
-      />
-
-      {/* Lista de Itinerários */}
-      <div
-        className={`grid gap-4 py-4 ${isMobile
-          ? "grid-cols-1 place-items-center"
-          : "grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
-          }`}
-      >
+        {/* Lista de Itinerários */}
+        <div
+          className={`grid gap-4 ${
+            isMobile
+              ? "grid-cols-1 place-items-center"
+              : "grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
+            }`}
+        >
         {itinerarios.map((itinerario) => (
           <CardItinerario
             key={itinerario.id}
@@ -159,6 +158,15 @@ export default function Itinerarios() {
             }
           />
         ))}
+        </div>
+
+        <ItinerarioModal
+          isOpen={isModalOpen}
+          onClose={() => setIsModalOpen(false)}
+          onSave={handleSaveItinerario}
+          onDelete={handleDeleteItinerario}
+          itinerario={itinerarioSelecionado}
+        />
       </div>
     </div>
   );

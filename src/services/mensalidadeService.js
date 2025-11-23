@@ -9,8 +9,8 @@ const mensalidadeService = {
       
       const response = await api.get(`/mensalidades/pendentes?${params.toString()}`)
       
-      // O response pode ser o próprio array ou ter a propriedade data
-      const data = Array.isArray(response) ? response : response.data
+      // Backend retorna Page<MensalidadeResponse>, então pegamos o conteúdo
+      const data = response.content || response.data?.content || []
       
       return data
     } catch (error) {
