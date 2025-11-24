@@ -5,30 +5,50 @@ import {
   pagarMensalidade,
   criarMensalidade
 } from "../services/mensalidadeService";
-import { listarPagamentos, criarPagamento as criarPagamentoService } from "../services/pagamentoService";
+import { 
+  listarPagamentos, 
+  criarPagamento as criarPagamentoService,
+  atualizarPagamento,
+  excluirPagamento
+} from "../services/pagamentoService";
 import { listarFuncionarios } from "../services/funcionarioService";
 
 export default function Financeiro() {
-  const [aba, setAba] = useState("mensalidades"); // 'mensalidades' | 'pagamentos' | 'funcionarios' | 'despesas'
+  const [aba, setAba] = useState("mensalidades");
   const [mensalidades, setMensalidades] = useState([]);
   const [pagamentos, setPagamentos] = useState([]);
   const [funcionarios, setFuncionarios] = useState([]);
-  // despesas locais (pode ser substituído por endpoint se existir)
-  const [despesas, setDespesas] = useState([]);
+
+  // Filtros
   const [filtroTexto, setFiltroTexto] = useState("");
   const [filtroStatus, setFiltroStatus] = useState([]);
   const [filtroDataInicio, setFiltroDataInicio] = useState("");
   const [filtroDataFim, setFiltroDataFim] = useState("");
+  const [filtroFuncionarioId, setFiltroFuncionarioId] = useState("");
+  const [filtroValorMinimo, setFiltroValorMinimo] = useState("");
+  const [filtroValorMaximo, setFiltroValorMaximo] = useState("");
+  const [filtroAlunoId, setFiltroAlunoId] = useState("");
 
+  // Paginação
+  const [paginaAtual, setPaginaAtual] = useState(0);
+  const [totalPaginas, setTotalPaginas] = useState(0);
+  const [totalElementos, setTotalElementos] = useState(0);
+
+  // Modais
   const [modalAberto, setModalAberto] = useState(false);
-  const [modalContexto, setModalContexto] = useState(null); // 'mensalidade' | 'pagamento' | 'funcionario' | 'novaMensalidade'
+  const [modalContexto, setModalContexto] = useState(null);
   const [modalItem, setModalItem] = useState(null);
 
+  // Estados para edição
+  const [modoEdicao, setModoEdicao] = useState(false);
+  const [itemEditando, setItemEditando] = useState(null);
+
+  // Form de pagamento (despesa) simplificado
   const [formPagamento, setFormPagamento] = useState({
     valorPagamento: "",
     dataPagamento: new Date().toISOString().slice(0, 10),
     idFuncionario: "",
-    mensalidadeId: ""
+    descricao: ""
   });
 
   const [formNovaMensalidade, setFormNovaMensalidade] = useState({
@@ -37,341 +57,497 @@ export default function Financeiro() {
     valorMensalidade: ""
   });
 
-  // inline states para adicionar pagamento direto na linha
-  const [pagamentosEmLinha, setPagamentosEmLinha] = useState({});
+  // Estados para KPIs
+  const [kpisData, setKpisData] = useState({
+    receitaMes: 0,
+    despesasMes: 0,
+    mensalidadesRecebidas: 0,
+    carregandoKpis: false
+  });
 
-  // carregar mensalidades
+  // Carregar mensalidades com filtros e paginação
   const carregarMensalidades = useCallback(async function () {
     try {
-      const params = {};
-      if (filtroStatus.length) params.status = filtroStatus;
+      const params = {
+        page: paginaAtual,
+        size: 10
+      };
+      
+      if (filtroAlunoId) params.alunoId = parseInt(filtroAlunoId, 10);
       if (filtroDataInicio) params.dataInicio = filtroDataInicio;
       if (filtroDataFim) params.dataFim = filtroDataFim;
+      if (filtroStatus.length > 0) params.status = filtroStatus;
+
       const res = await listarMensalidades(params);
-      const lista = Array.isArray(res) ? res : (res?.content ?? []);
-      setMensalidades(lista);
+      
+      if (res.data) {
+        setMensalidades(res.data.content || []);
+        setTotalPaginas(res.data.totalPages || 0);
+        setTotalElementos(res.data.totalElements || 0);
+      } else {
+        setMensalidades(Array.isArray(res) ? res : []);
+      }
     } catch (err) {
       console.error("carregarMensalidades:", err);
       setMensalidades([]);
     }
-  }, [filtroStatus, filtroDataInicio, filtroDataFim]);
+  }, [paginaAtual, filtroAlunoId, filtroDataInicio, filtroDataFim, filtroStatus]);
 
-  // carregar pagamentos
+  // Carregar pagamentos (despesas) com filtros e paginação
   const carregarPagamentos = useCallback(async function () {
     try {
-      const params = {}; // pode adicionar filtros
+      const params = {
+        page: paginaAtual,
+        size: 10
+      };
+
+      if (filtroFuncionarioId) params.funcionarioId = parseInt(filtroFuncionarioId, 10);
+      if (filtroDataInicio) params.dataInicio = filtroDataInicio;
+      if (filtroDataFim) params.dataFim = filtroDataFim;
+      if (filtroValorMinimo) params.valorMinimo = parseFloat(filtroValorMinimo);
+      if (filtroValorMaximo) params.valorMaximo = parseFloat(filtroValorMaximo);
+
       const res = await listarPagamentos(params);
-      const lista = Array.isArray(res) ? res : (res?.content ?? []);
-      setPagamentos(lista);
+      
+      if (res.data) {
+        setPagamentos(res.data.content || []);
+        setTotalPaginas(res.data.totalPages || 0);
+        setTotalElementos(res.data.totalElements || 0);
+      } else {
+        setPagamentos(Array.isArray(res) ? res : []);
+      }
     } catch (err) {
       console.error("carregarPagamentos:", err);
       setPagamentos([]);
     }
-  }, []);
+  }, [paginaAtual, filtroFuncionarioId, filtroDataInicio, filtroDataFim, filtroValorMinimo, filtroValorMaximo]);
 
-  // carregar funcionarios
+  // Carregar funcionários
   async function carregarFuncionarios() {
     try {
       const res = await listarFuncionarios();
-      const lista = Array.isArray(res) ? res : (res?.content ?? []);
-      setFuncionarios(lista);
+      setFuncionarios(Array.isArray(res) ? res : []);
     } catch (err) {
       console.error("carregarFuncionarios:", err);
       setFuncionarios([]);
     }
   }
 
-  useEffect(() => { carregarMensalidades(); }, [carregarMensalidades]);
-  useEffect(() => { if (aba === "pagamentos") carregarPagamentos(); }, [aba, carregarPagamentos]);
-  useEffect(() => { if (aba === "funcionarios") carregarFuncionarios(); }, [aba]);
+  // Carregar KPIs do mês atual
+  const carregarKPIs = useCallback(async function () {
+    setKpisData(prev => ({ ...prev, carregandoKpis: true }));
+    
+    try {
+      const hoje = new Date();
+      const anoAtual = hoje.getFullYear();
+      const mesAtual = hoje.getMonth() + 1;
+      
+      const dataInicio = `${anoAtual}-${String(mesAtual).padStart(2, '0')}-01`;
+      const ultimoDia = new Date(anoAtual, mesAtual, 0).getDate();
+      const dataFim = `${anoAtual}-${String(mesAtual).padStart(2, '0')}-${ultimoDia}`;
 
-  // --- KPIs: totais do mês atual ---
-  const hoje = new Date();
-  const anoAtual = hoje.getFullYear();
-  const mesAtual = hoje.getMonth() + 1; // 1-12
+      console.log(`Buscando KPIs do período: ${dataInicio} até ${dataFim}`);
 
-  function isInCurrentMonth(dateStr) {
-    if (!dateStr) return false;
-    const d = new Date(dateStr);
-    if (Number.isNaN(d.getTime())) return false;
-    return d.getFullYear() === anoAtual && (d.getMonth() + 1) === mesAtual;
-  }
+      // Buscar todos os dados do mês
+      const [resPagamentos, resMensalidades] = await Promise.all([
+        listarPagamentos({
+          dataInicio,
+          dataFim,
+          size: 1000
+        }),
+        listarMensalidades({
+          dataInicio,
+          dataFim,
+          status: ['PAGO'],
+          size: 1000
+        })
+      ]);
 
-  const totalReceitaMes = pagamentos.reduce((acc, p) => {
-    const data = p.dataPagamento ?? p.dataPagemento ?? p.data ?? "";
-    if (!isInCurrentMonth(data)) return acc;
-    const valor = Number(p.valorPagamento ?? p.valor ?? 0) || 0;
-    return acc + valor;
-  }, 0);
+      const pagamentosMes = resPagamentos.data?.content || [];
+      const mensalidadesPagas = resMensalidades.data?.content || [];
 
-  const totalDespesasMes = despesas.reduce((acc, d) => {
-    const data = d.dataDespesa ?? d.data ?? "";
-    if (!isInCurrentMonth(data)) return acc;
-    const valor = Number(d.valorDespesa ?? d.valor ?? 0) || 0;
-    return acc + valor;
-  }, 0);
+      // RECEITA = Mensalidades pagas
+      const receitaTotal = mensalidadesPagas.reduce((acc, m) => {
+        return acc + (Number(m.valorMensalidade) || 0);
+      }, 0);
 
-  const saldoMes = totalReceitaMes - totalDespesasMes;
-  const statusFinanceiro = saldoMes >= 0 ? "Positivo" : "Negativo";
+      // DESPESAS = Todos os pagamentos
+      const despesasTotal = pagamentosMes.reduce((acc, p) => {
+        return acc + (Number(p.valorPagamento) || 0);
+      }, 0);
+
+      setKpisData({
+        receitaMes: receitaTotal,
+        despesasMes: despesasTotal,
+        mensalidadesRecebidas: mensalidadesPagas.length,
+        carregandoKpis: false
+      });
+
+      console.log('KPIs calculados:', {
+        receita: receitaTotal,
+        despesas: despesasTotal,
+        lucro: receitaTotal - despesasTotal,
+        periodo: `${dataInicio} - ${dataFim}`
+      });
+
+    } catch (err) {
+      console.error("Erro ao carregar KPIs:", err);
+      setKpisData({
+        receitaMes: 0,
+        despesasMes: 0,
+        mensalidadesRecebidas: 0,
+        carregandoKpis: false
+      });
+    }
+  }, []);
+
+  // Effects
+  useEffect(() => {
+    setPaginaAtual(0);
+  }, [aba]);
+
+  useEffect(() => {
+    carregarKPIs();
+    carregarFuncionarios();
+  }, [carregarKPIs]);
+
+  useEffect(() => {
+    if (aba === "mensalidades") carregarMensalidades();
+  }, [aba, carregarMensalidades]);
+
+  useEffect(() => {
+    if (aba === "pagamentos") carregarPagamentos();
+  }, [aba, carregarPagamentos]);
+
+  const saldoMes = kpisData.receitaMes - kpisData.despesasMes;
 
   function formatCurrency(v) {
-    return `R$ ${Number(v || 0).toFixed(2)}`;
+    return `R$ ${Number(v || 0).toLocaleString('pt-BR', { 
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2 
+    })}`;
   }
-  // --- fim KPIs ---
 
-  // ações
+  // Ações
   async function handlePagarMensalidade(id) {
     if (!window.confirm("Confirmar pagamento desta mensalidade?")) return;
     try {
       await pagarMensalidade(id);
-      await Promise.all([carregarMensalidades(), carregarPagamentos()]);
+      await Promise.all([carregarMensalidades(), carregarKPIs()]);
     } catch (err) {
       console.error("handlePagarMensalidade:", err);
-      alert("Erro ao marcar pago. Veja console.");
+      alert("Erro ao marcar como pago");
     }
   }
 
-  function abrirModalPagamento(item = null, contexto = "mensalidade") {
-    setModalContexto(contexto);
-    setModalItem(item);
-    setFormPagamento({
-      valorPagamento: "",
-      dataPagamento: new Date().toISOString().slice(0, 10),
-      idFuncionario: contexto === "funcionario" ? (item?.id ?? "") : "",
-      mensalidadeId: contexto === "mensalidade" && item ? (item.idMensalidade ?? item.id) : ""
-    });
-    setModalAberto(true);
-    window.scrollTo({ top: 0, behavior: "smooth" });
+  async function handleExcluirPagamento(id) {
+    if (!window.confirm("Confirmar exclusão desta despesa?")) return;
+    try {
+      await excluirPagamento(id);
+      await Promise.all([carregarPagamentos(), carregarKPIs()]);
+    } catch (err) {
+      console.error("handleExcluirPagamento:", err);
+      alert("Erro ao excluir despesa");
+    }
   }
 
-  function abrirModalNovaMensalidade() {
-    setModalContexto("novaMensalidade");
-    setModalItem(null);
-    setFormNovaMensalidade({
-      alunoId: "",
-      dataVencimento: new Date().toISOString().slice(0, 10),
-      valorMensalidade: ""
-    });
+  // Modais
+  function abrirModalPagamento(item = null, contexto = "pagamento") {
+    const ehEdicao = item && contexto === "editarPagamento";
+    setModoEdicao(ehEdicao);
+    setItemEditando(ehEdicao ? item : null);
+    setModalContexto(contexto);
+    setModalItem(item);
+    
+    if (ehEdicao) {
+      setFormPagamento({
+        valorPagamento: String(item.valorPagamento || ""),
+        dataPagamento: item.dataPagamento || new Date().toISOString().slice(0, 10),
+        idFuncionario: String(item.funcionario?.id || ""),
+        descricao: item.descricao || ""
+      });
+    } else {
+      setFormPagamento({
+        valorPagamento: "",
+        dataPagamento: new Date().toISOString().slice(0, 10),
+        idFuncionario: "",
+        descricao: ""
+      });
+    }
+    
     setModalAberto(true);
-    window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
   function fecharModal() {
     setModalAberto(false);
     setModalContexto(null);
     setModalItem(null);
+    setModoEdicao(false);
+    setItemEditando(null);
   }
 
-  function handleFormPagamentoChange(e) {
-    const { name, value } = e.target;
-    setFormPagamento(prev => ({ ...prev, [name]: value }));
-  }
-
-  function handleFormNovaMensalidadeChange(e) {
-    const { name, value } = e.target;
-    setFormNovaMensalidade(prev => ({ ...prev, [name]: value }));
-  }
-
-  async function salvarPagamentoModal(e) {
+  async function salvarPagamento(e) {
     e.preventDefault();
+    
+    const idFuncionario = parseInt(formPagamento.idFuncionario, 10);
+    if (!idFuncionario || isNaN(idFuncionario)) {
+      return alert("Selecione um funcionário");
+    }
+
+    const valorPagamento = parseFloat(formPagamento.valorPagamento);
+    if (isNaN(valorPagamento) || valorPagamento <= 0) {
+      return alert("Informe um valor válido");
+    }
+
     const body = {
       dataPagamento: formPagamento.dataPagamento,
-      valorPagamento: parseFloat(formPagamento.valorPagamento)
+      valorPagamento: valorPagamento
     };
-    if (isNaN(body.valorPagamento) || body.valorPagamento <= 0) return alert("Informe um valor válido");
-    try {
-      const idFuncionario = formPagamento.idFuncionario ? parseInt(formPagamento.idFuncionario, 10) : undefined;
-      const mensalidadeId = formPagamento.mensalidadeId ? parseInt(formPagamento.mensalidadeId, 10) : undefined;
 
-      // Se o usuário selecionou uma mensalidade, primeiro marca como paga (PATCH) e depois registra o pagamento.
-      if (mensalidadeId) {
-        try {
-          await pagarMensalidade(mensalidadeId);
-        } catch (err) {
-          // não interrompe: ainda tentamos criar o registro de pagamento
-          console.warn("pagarMensalidade falhou (continuando para criar pagamento):", err);
-        }
+    try {
+      if (modoEdicao && itemEditando) {
+        await atualizarPagamento(itemEditando.id, body, idFuncionario);
+      } else {
+        await criarPagamentoService(body, idFuncionario);
       }
 
-      await criarPagamentoService(body, idFuncionario);
-      await Promise.all([carregarMensalidades(), carregarPagamentos(), carregarFuncionarios()]);
+      await Promise.all([
+        carregarPagamentos(), 
+        carregarMensalidades(),
+        carregarKPIs()
+      ]);
       fecharModal();
     } catch (err) {
-      console.error("salvarPagamentoModal:", err);
-      alert("Erro ao criar pagamento. Veja console.");
+      console.error("salvarPagamento:", err);
+      alert(`Erro ao ${modoEdicao ? 'editar' : 'registrar'} despesa`);
     }
   }
 
   async function salvarNovaMensalidade(e) {
     e.preventDefault();
     const payload = {
-      alunoId: formNovaMensalidade.alunoId ? parseInt(formNovaMensalidade.alunoId, 10) : undefined,
+      alunoId: parseInt(formNovaMensalidade.alunoId, 10),
       dataVencimento: formNovaMensalidade.dataVencimento,
       valorMensalidade: parseFloat(formNovaMensalidade.valorMensalidade)
     };
-    if (!payload.alunoId) return alert("Informe o ID do aluno");
+
+    if (!payload.alunoId || isNaN(payload.alunoId)) return alert("ID do aluno é obrigatório");
     if (isNaN(payload.valorMensalidade) || payload.valorMensalidade <= 0) return alert("Informe um valor válido");
+
     try {
       await criarMensalidade(payload);
       await carregarMensalidades();
       fecharModal();
     } catch (err) {
       console.error("salvarNovaMensalidade:", err);
-      alert("Erro ao criar mensalidade. Veja console.");
+      alert("Erro ao criar mensalidade");
     }
   }
 
-  // pagamentos em linha (reutilizável)
-  function abrirPagamentoEmLinha(chave, contexto = "mensalidade") {
-    setPagamentosEmLinha(prev => ({ ...prev, [chave]: { valorPagamento: "", dataPagamento: new Date().toISOString().slice(0, 10), idFuncionario: "", contexto, aberto: true } }));
+  // Filtros
+  function limparFiltros() {
+    setFiltroTexto("");
+    setFiltroStatus([]);
+    setFiltroDataInicio("");
+    setFiltroDataFim("");
+    setFiltroFuncionarioId("");
+    setFiltroValorMinimo("");
+    setFiltroValorMaximo("");
+    setFiltroAlunoId("");
+    setPaginaAtual(0);
   }
 
-  function fecharPagamentoEmLinha(chave) {
-    setPagamentosEmLinha(prev => {
-      const copy = { ...prev }; delete copy[chave]; return copy;
-    });
+  function aplicarFiltros() {
+    setPaginaAtual(0);
+    if (aba === "mensalidades") carregarMensalidades();
+    if (aba === "pagamentos") carregarPagamentos();
   }
 
-  function mudarPagamentoEmLinha(chave, e) {
-    const { name, value } = e.target;
-    setPagamentosEmLinha(prev => ({ ...prev, [chave]: { ...prev[chave], [name]: value } }));
-  }
-
-  async function enviarPagamentoEmLinha(e, chave) {
-    e.preventDefault();
-    const estado = pagamentosEmLinha[chave];
-    if (!estado) return;
-    const body = { dataPagamento: estado.dataPagamento, valorPagamento: parseFloat(estado.valorPagamento) };
-    if (isNaN(body.valorPagamento) || body.valorPagamento <= 0) return alert("Valor inválido");
-    try {
-      const idFuncionario = estado.idFuncionario ? parseInt(estado.idFuncionario, 10) : undefined;
-      await criarPagamentoService(body, idFuncionario);
-      await Promise.all([carregarMensalidades(), carregarPagamentos()]);
-      fecharPagamentoEmLinha(chave);
-    } catch (err) {
-      console.error("enviarPagamentoEmLinha:", err);
-      alert("Erro ao registrar pagamento. Veja console.");
+  function irParaPagina(pagina) {
+    if (pagina >= 0 && pagina < totalPaginas) {
+      setPaginaAtual(pagina);
     }
   }
 
-  // filtros simples
+  // Filtros de texto locais
   const mensalidadesFiltradas = mensalidades.filter(m => {
     if (!filtroTexto) return true;
     const s = filtroTexto.toLowerCase();
-    const id = String(m.idMensalidade ?? m.id ?? "");
-    const nome = (m.aluno?.nome ?? m.alunoNome ?? "").toLowerCase();
+    const id = String(m.idMensalidade || m.id || "");
+    const nome = (m.aluno?.nome || m.alunoNome || "").toLowerCase();
     return id.includes(s) || nome.includes(s);
   });
 
   const pagamentosFiltrados = pagamentos.filter(p => {
     if (!filtroTexto) return true;
     const s = filtroTexto.toLowerCase();
-    const funcNome = (p.funcionario?.nome ?? "").toLowerCase();
-    return funcNome.includes(s) || String(p.id ?? p.pagamentoId ?? "").includes(s);
+    const funcNome = (p.funcionario?.nome || "").toLowerCase();
+    return funcNome.includes(s) || String(p.id || "").includes(s);
   });
-
-  const funcionariosFiltrados = funcionarios.filter(f => {
-    if (!filtroTexto) return true;
-    const s = filtroTexto.toLowerCase();
-    return (f.nome ?? "").toLowerCase().includes(s) || String(f.id ?? "").includes(s);
-  });
-
-  // cabeçalhos
-  const cabMens = ["ID", "Aluno", "Vencimento", "Valor", "Valor pago", "Data pagamento", "Status"];
-  const camposMens = ["idMensalidade", "alunoNome", "dataVencimento", "valorMensalidade", "valorPagamento", "dataPagamento", "status"];
-
-  const cabPag = ["ID", "Data pagamento", "Valor", "Funcionário"];
-  const camposPag = ["id", "dataPagamento", "valorPagamento", "funcionarioNome"];
-
-  const cabFunc = ["ID", "Nome", "CPF", "Transporte"];
 
   return (
     <div className="p-6 bg-gray-50 min-h-screen">
-      <div className="max-w-6xl mx-auto">
-        <h1 className="text-2xl font-bold mb-4">Financeiro</h1>
+      <div className="max-w-7xl mx-auto">
+        <div className="flex justify-between items-center mb-4">
+          <h1 className="text-2xl font-bold">Gestão Financeira</h1>
+          <div className="text-sm text-gray-600">
+            {new Date().toLocaleDateString('pt-BR', { 
+              month: 'long', 
+              year: 'numeric' 
+            })}
+          </div>
+        </div>
 
         {/* KPIs */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
-          <div className="p-4 bg-white rounded shadow flex flex-col">
-            <span className="text-sm text-gray-500">Despesas (mês atual)</span>
-            <span className="text-2xl font-bold mt-2">{formatCurrency(totalDespesasMes)}</span>
+          <div className="p-4 bg-white rounded shadow">
+            <span className="text-sm text-gray-500">💰 Receita do Mês</span>
+            <span className="text-2xl font-bold mt-2 block text-green-600">
+              {kpisData.carregandoKpis ? "Carregando..." : formatCurrency(kpisData.receitaMes)}
+            </span>
+            <span className="text-xs text-gray-400">
+              {kpisData.mensalidadesRecebidas} mensalidades recebidas
+            </span>
           </div>
-
-          <div className="p-4 bg-white rounded shadow flex flex-col">
-            <span className="text-sm text-gray-500">Receita (mês atual)</span>
-            <span className="text-2xl font-bold mt-2">{formatCurrency(totalReceitaMes)}</span>
+          
+          <div className="p-4 bg-white rounded shadow">
+            <span className="text-sm text-gray-500">💸 Despesas do Mês</span>
+            <span className="text-2xl font-bold mt-2 block text-red-600">
+              {kpisData.carregandoKpis ? "Carregando..." : formatCurrency(kpisData.despesasMes)}
+            </span>
+            <span className="text-xs text-gray-400">
+              Todos os pagamentos
+            </span>
           </div>
-
-          <div className={`p-4 rounded shadow flex flex-col justify-between ${saldoMes >= 0 ? "bg-green-50" : "bg-red-50"}`}>
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-gray-500">Status financeiro</span>
-              <span className={`px-2 py-1 rounded text-sm font-semibold ${saldoMes >= 0 ? "bg-green-200 text-green-800" : "bg-red-200 text-red-800"}`}>{statusFinanceiro}</span>
-            </div>
-            <div className="mt-3">
-              <div className="text-sm text-gray-500">Saldo do mês</div>
-              <div className="text-2xl font-bold">{formatCurrency(saldoMes)}</div>
-            </div>
+          
+          <div className={`p-4 rounded shadow ${saldoMes >= 0 ? "bg-green-50" : "bg-red-50"}`}>
+            <span className="text-sm text-gray-500">📈 Lucro do Mês</span>
+            <span className={`text-2xl font-bold mt-2 block ${saldoMes >= 0 ? "text-green-700" : "text-red-700"}`}>
+              {kpisData.carregandoKpis ? "Carregando..." : formatCurrency(saldoMes)}
+            </span>
+            <span className="text-xs text-gray-400">
+              {saldoMes >= 0 ? "Positivo ✅" : "Negativo ⚠️"}
+            </span>
           </div>
         </div>
 
+        {/* Abas */}
         <div className="flex gap-2 mb-4">
-          <button onClick={() => setAba("mensalidades")} className={`px-4 py-2 rounded ${aba === "mensalidades" ? "bg-blue-600 text-white" : "bg-white border"}`}>Mensalidades</button>
-          <button onClick={() => setAba("pagamentos")} className={`px-4 py-2 rounded ${aba === "pagamentos" ? "bg-blue-600 text-white" : "bg-white border"}`}>Pagamentos</button>
-          <button onClick={() => setAba("funcionarios")} className={`px-4 py-2 rounded ${aba === "funcionarios" ? "bg-blue-600 text-white" : "bg-white border"}`}>Funcionários</button>
-          <div className="ml-auto flex items-center gap-2">
-            <button onClick={() => { if (aba === "mensalidades") carregarMensalidades(); else if (aba === "pagamentos") carregarPagamentos(); else if (aba === "funcionarios") carregarFuncionarios(); }} className="px-3 py-2 bg-gray-200 rounded">Recarregar</button>
-            <input placeholder="Filtrar por texto" value={filtroTexto} onChange={e => setFiltroTexto(e.target.value)} className="p-2 border rounded w-64" />
+          <button 
+            onClick={() => setAba("mensalidades")} 
+            className={`px-4 py-2 rounded ${aba === "mensalidades" ? "bg-blue-600 text-white" : "bg-white border"}`}
+          >
+            💰 Receitas (Mensalidades)
+          </button>
+          <button 
+            onClick={() => setAba("pagamentos")} 
+            className={`px-4 py-2 rounded ${aba === "pagamentos" ? "bg-blue-600 text-white" : "bg-white border"}`}
+          >
+            💸 Despesas (Pagamentos)
+          </button>
+        </div>
+
+        {/* Filtros */}
+        <div className="bg-white p-4 rounded shadow mb-4">
+          <h3 className="font-medium mb-3">Filtros</h3>
+          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-3">
+            <input 
+              placeholder="Buscar por texto" 
+              value={filtroTexto} 
+              onChange={e => setFiltroTexto(e.target.value)} 
+              className="p-2 border rounded" 
+            />
+            <input 
+              type="date" 
+              placeholder="Data início" 
+              value={filtroDataInicio} 
+              onChange={e => setFiltroDataInicio(e.target.value)} 
+              className="p-2 border rounded" 
+            />
+            <input 
+              type="date" 
+              placeholder="Data fim" 
+              value={filtroDataFim} 
+              onChange={e => setFiltroDataFim(e.target.value)} 
+              className="p-2 border rounded" 
+            />
+
+            {aba === "mensalidades" && (
+              <input 
+                placeholder="ID do aluno" 
+                value={filtroAlunoId} 
+                onChange={e => setFiltroAlunoId(e.target.value)} 
+                className="p-2 border rounded" 
+              />
+            )}
+
+            {aba === "pagamentos" && (
+              <>
+                <input 
+                  placeholder="ID do funcionário" 
+                  value={filtroFuncionarioId} 
+                  onChange={e => setFiltroFuncionarioId(e.target.value)} 
+                  className="p-2 border rounded" 
+                />
+                <input 
+                  placeholder="Valor mínimo" 
+                  value={filtroValorMinimo} 
+                  onChange={e => setFiltroValorMinimo(e.target.value)} 
+                  className="p-2 border rounded" 
+                />
+                <input 
+                  placeholder="Valor máximo" 
+                  value={filtroValorMaximo} 
+                  onChange={e => setFiltroValorMaximo(e.target.value)} 
+                  className="p-2 border rounded" 
+                />
+              </>
+            )}
+          </div>
+          
+          <div className="flex gap-2 mt-3">
+            <button onClick={aplicarFiltros} className="px-4 py-2 bg-blue-600 text-white rounded">
+              Aplicar Filtros
+            </button>
+            <button onClick={limparFiltros} className="px-4 py-2 bg-gray-200 rounded">
+              Limpar
+            </button>
           </div>
         </div>
 
+        {/* Conteúdo das abas */}
         {aba === "mensalidades" && (
           <section className="bg-white p-4 rounded shadow">
             <div className="flex justify-between items-center mb-3">
-              <h2 className="text-lg font-medium">Mensalidades</h2>
-              <div className="flex gap-2">
-                <button onClick={abrirModalNovaMensalidade} className="px-3 py-2 bg-green-600 text-white rounded">Adicionar mensalidade</button>
-                <button onClick={() => abrirModalPagamento(null, "mensalidade")} className="px-3 py-2 bg-blue-500 text-white rounded">Novo pagamento</button>
-              </div>
+              <h2 className="text-lg font-medium">💰 Receitas - Mensalidades</h2>
+              <button 
+                onClick={() => { setModalAberto(true); setModalContexto("novaMensalidade"); }} 
+                className="px-3 py-2 bg-green-600 text-white rounded"
+              >
+                Nova Mensalidade
+              </button>
             </div>
 
             <Tabela
-              cabecalho={cabMens}
+              cabecalho={["ID", "Aluno", "Vencimento", "Valor", "Status"]}
               dados={mensalidadesFiltradas.map(m => ({
                 ...m,
-                idMensalidade: m.idMensalidade ?? m.id,
-                alunoNome: m.aluno?.nome ?? m.alunoNome ?? "-",
-                dataPagamento: m.dataPagamento ?? m.dataPagemento ?? "-"
+                idMensalidade: m.idMensalidade || m.id,
+                alunoNome: m.aluno?.nome || m.alunoNome || "-",
+                valorMensalidade: formatCurrency(m.valorMensalidade)
               }))}
-              fields={camposMens}
-              status={false}
-              renderCell={(row, key) => {
-                if (key === "valorMensalidade" || key === "valorPagamento") return `R$ ${Number(row[key] || 0).toFixed(2)}`;
-                return row[key] ?? "-";
-              }}
-              renderActions={(row) => {
-                const id = row.idMensalidade || row.id;
-                const chave = `mens-${id}`;
-                const estado = pagamentosEmLinha[chave];
-                return (
-                  <div className="flex flex-col gap-2">
-                    {!estado?.aberto ? (
-                      <div className="flex gap-2">
-                        <button onClick={() => abrirPagamentoEmLinha(chave, "mensalidade")} className="px-2 py-1 bg-green-600 text-white rounded">Adicionar pagamento</button>
-                        <button onClick={() => handlePagarMensalidade(id)} className="px-2 py-1 bg-orange-400 text-white rounded">Marcar pago</button>
-                        <button onClick={() => abrirModalPagamento(row, "mensalidade")} className="px-2 py-1 bg-blue-500 text-white rounded">Abrir modal</button>
-                      </div>
-                    ) : (
-                      <form onSubmit={(e) => enviarPagamentoEmLinha(e, chave)} className="flex gap-2 items-center">
-                        <input name="valorPagamento" value={estado.valorPagamento} onChange={(e) => mudarPagamentoEmLinha(chave, e)} placeholder="Valor" className="p-1 border rounded w-24" required />
-                        <input type="date" name="dataPagamento" value={estado.dataPagamento} onChange={(e) => mudarPagamentoEmLinha(chave, e)} className="p-1 border rounded" required />
-                        <input name="idFuncionario" value={estado.idFuncionario} onChange={(e) => mudarPagamentoEmLinha(chave, e)} placeholder="ID func." className="p-1 border rounded w-24" />
-                        <button type="submit" className="px-2 py-1 bg-green-600 text-white rounded">Salvar</button>
-                        <button type="button" onClick={() => fecharPagamentoEmLinha(chave)} className="px-2 py-1 bg-gray-200 rounded">Cancelar</button>
-                      </form>
-                    )}
-                  </div>
-                );
-              }}
+              fields={["idMensalidade", "alunoNome", "dataVencimento", "valorMensalidade", "status"]}
+              renderActions={(row) => (
+                <div className="flex gap-2">
+                  <button 
+                    onClick={() => handlePagarMensalidade(row.idMensalidade || row.id)} 
+                    className="px-2 py-1 bg-green-600 text-white rounded text-sm"
+                    disabled={row.status === 'PAGO'}
+                  >
+                    {row.status === 'PAGO' ? '✅ Pago' : 'Marcar Pago'}
+                  </button>
+                </div>
+              )}
             />
           </section>
         )}
@@ -379,141 +555,187 @@ export default function Financeiro() {
         {aba === "pagamentos" && (
           <section className="bg-white p-4 rounded shadow">
             <div className="flex justify-between items-center mb-3">
-              <h2 className="text-lg font-medium">Lista de pagamentos</h2>
-              <div className="flex gap-2">
-                <button onClick={() => abrirModalPagamento(null, "pagamento")} className="px-3 py-2 bg-green-600 text-white rounded">Novo pagamento</button>
-              </div>
+              <h2 className="text-lg font-medium">💸 Despesas - Pagamentos</h2>
+              <button 
+                onClick={() => abrirModalPagamento()} 
+                className="px-3 py-2 bg-red-600 text-white rounded"
+              >
+                Nova Despesa
+              </button>
             </div>
 
             <Tabela
-              cabecalho={cabPag}
+              cabecalho={["ID", "Data", "Valor", "Para", "Tipo"]}
               dados={pagamentosFiltrados.map(p => ({
                 ...p,
-                id: p.id ?? p.pagamentoId ?? p.pk ?? "",
-                dataPagamento: p.dataPagamento ?? p.dataPagemento ?? "-",
-                valorPagamento: p.valorPagamento ?? p.valor ?? 0,
-                funcionarioNome: p.funcionario?.nome ?? (p.funcionarioNome ?? "-")
+                valorPagamento: formatCurrency(p.valorPagamento),
+                funcionarioNome: p.funcionario?.nome || "-",
+                tipoLabel: p.funcionario?.cargo || "Funcionário"
               }))}
-              fields={camposPag}
-              status={false}
-              renderCell={(row, key) => {
-                if (key === "valorPagamento") return `R$ ${Number(row[key] || 0).toFixed(2)}`;
-                return row[key] ?? "-";
-              }}
-              renderActions={(row) => {
-                const chave = `pay-${row.id}`;
-                const estado = pagamentosEmLinha[chave];
-                return (
-                  <div className="flex gap-2 items-center">
-                    {!estado?.aberto ? (
-                      <div className="flex gap-2">
-                        <button onClick={() => abrirPagamentoEmLinha(chave, "pagamento")} className="px-2 py-1 bg-green-600 text-white rounded">Adicionar</button>
-                        <button onClick={() => abrirModalPagamento(row, "pagamento")} className="px-2 py-1 bg-blue-500 text-white rounded">Editar/Ver</button>
-                      </div>
-                    ) : (
-                      <form onSubmit={(e) => enviarPagamentoEmLinha(e, chave)} className="flex gap-2 items-center">
-                        <input name="valorPagamento" value={estado.valorPagamento} onChange={(e) => mudarPagamentoEmLinha(chave, e)} placeholder="Valor" className="p-1 border rounded w-24" required />
-                        <input type="date" name="dataPagamento" value={estado.dataPagamento} onChange={(e) => mudarPagamentoEmLinha(chave, e)} className="p-1 border rounded" required />
-                        <input name="idFuncionario" value={estado.idFuncionario} onChange={(e) => mudarPagamentoEmLinha(chave, e)} placeholder="ID func." className="p-1 border rounded w-24" />
-                        <button type="submit" className="px-2 py-1 bg-green-600 text-white rounded">Salvar</button>
-                        <button type="button" onClick={() => fecharPagamentoEmLinha(chave)} className="px-2 py-1 bg-gray-200 rounded">Cancelar</button>
-                      </form>
-                    )}
-                  </div>
-                );
-              }}
+              fields={["id", "dataPagamento", "valorPagamento", "funcionarioNome", "tipoLabel"]}
+              renderActions={(row) => (
+                <div className="flex gap-2">
+                  <button 
+                    onClick={() => abrirModalPagamento(row, "editarPagamento")} 
+                    className="px-2 py-1 bg-blue-500 text-white rounded text-sm"
+                  >
+                    Editar
+                  </button>
+                  <button 
+                    onClick={() => handleExcluirPagamento(row.id)} 
+                    className="px-2 py-1 bg-red-500 text-white rounded text-sm"
+                  >
+                    Excluir
+                  </button>
+                </div>
+              )}
             />
           </section>
         )}
 
-        {aba === "funcionarios" && (
-          <section className="bg-white p-4 rounded shadow">
-            <h2 className="text-lg font-medium mb-3">Funcionários</h2>
-            <Tabela
-              cabecalho={cabFunc}
-              dados={funcionariosFiltrados.map(f => ({ ...f, id: f.id ?? f.funcionarioId ?? "", transporte: f.transporte?.placa ? `${f.transporte.modelo ?? ""} / ${f.transporte.placa}` : "-" }))}
-              fields={["id", "nome", "cpf", "transporte"]}
-              status={false}
-              renderCell={(row, key) => row[key] ?? "-"}
-              renderActions={(row) => {
-                const chave = `func-${row.id}`;
-                const estado = pagamentosEmLinha[chave];
-                return (
-                  <div className="flex gap-2 items-center">
-                    {!estado?.aberto ? (
-                      <div className="flex gap-2">
-                        <button onClick={() => abrirPagamentoEmLinha(chave, "funcionario")} className="px-2 py-1 bg-green-600 text-white rounded">Registrar pagamento</button>
-                        <button onClick={() => abrirModalPagamento(row, "funcionario")} className="px-2 py-1 bg-blue-500 text-white rounded">Abrir modal</button>
-                      </div>
-                    ) : (
-                      <form onSubmit={(e) => enviarPagamentoEmLinha(e, chave)} className="flex gap-2 items-center">
-                        <input name="valorPagamento" value={estado.valorPagamento} onChange={(e) => mudarPagamentoEmLinha(chave, e)} placeholder="Valor" className="p-1 border rounded w-24" required />
-                        <input type="date" name="dataPagamento" value={estado.dataPagamento} onChange={(e) => mudarPagamentoEmLinha(chave, e)} className="p-1 border rounded" required />
-                        <button type="submit" className="px-2 py-1 bg-green-600 text-white rounded">Salvar</button>
-                        <button type="button" onClick={() => fecharPagamentoEmLinha(chave)} className="px-2 py-1 bg-gray-200 rounded">Cancelar</button>
-                      </form>
-                    )}
-                  </div>
-                );
-              }}
-            />
-          </section>
+        {/* Paginação */}
+        {totalPaginas > 1 && (
+          <div className="flex justify-center items-center gap-2 mt-4">
+            <button 
+              onClick={() => irParaPagina(paginaAtual - 1)} 
+              disabled={paginaAtual === 0}
+              className="px-3 py-1 border rounded disabled:opacity-50"
+            >
+              Anterior
+            </button>
+            <span className="px-3 py-1">
+              Página {paginaAtual + 1} de {totalPaginas} ({totalElementos} itens)
+            </span>
+            <button 
+              onClick={() => irParaPagina(paginaAtual + 1)} 
+              disabled={paginaAtual >= totalPaginas - 1}
+              className="px-3 py-1 border rounded disabled:opacity-50"
+            >
+              Próxima
+            </button>
+          </div>
         )}
 
-        {/* Modal reutilizável */}
+        {/* Modal de Pagamento/Despesa - SIMPLIFICADO */}
         {modalAberto && modalContexto !== "novaMensalidade" && (
           <div className="fixed inset-0 z-50 flex items-center justify-center">
             <div className="absolute inset-0 bg-black opacity-50" onClick={fecharModal} />
             <div className="relative bg-white rounded-lg shadow-lg w-full max-w-md mx-4 p-6 z-10">
-              <h2 className="text-lg font-semibold mb-3">
-                {modalContexto === "funcionario" ? `Pagamento - ${modalItem?.nome ?? modalItem?.id}` :
-                 modalContexto === "pagamento" ? `Pagamento` :
-                 `Pagamento - ${((modalItem?.aluno?.nome ?? modalItem?.alunoNome ?? modalItem?.id) || "")}`}
+              <h2 className="text-lg font-semibold mb-4">
+                💸 {modoEdicao ? "Editar Despesa" : "Nova Despesa"}
               </h2>
-              <form onSubmit={salvarPagamentoModal} className="space-y-3">
-                {/* Dropdown de mensalidades (populado via GET /mensalidades) */}
+              
+              <form onSubmit={salvarPagamento} className="space-y-4">
+                {/* Seleção de funcionário */}
                 <div>
-                  <label className="block text-sm font-medium mb-1">Mensalidade (opcional)</label>
+                  <label className="block text-sm font-medium mb-1">Funcionário/Fornecedor *</label>
                   <select
-                    name="mensalidadeId"
-                    value={formPagamento.mensalidadeId}
-                    onChange={handleFormPagamentoChange}
+                    value={formPagamento.idFuncionario}
+                    onChange={e => setFormPagamento(prev => ({ ...prev, idFuncionario: e.target.value }))}
                     className="w-full p-2 border rounded"
+                    required
                   >
-                    <option value="">-- Nenhuma / selecionar mensalidade --</option>
-                    {mensalidades.map(m => {
-                      const id = m.idMensalidade ?? m.id;
-                      const label = `${id} — ${m.aluno?.nome ?? m.alunoNome ?? "-" } — ${m.dataVencimento ?? "-"}`;
-                      return <option key={id} value={id}>{label}</option>;
-                    })}
+                    <option value="">Selecione quem vai receber</option>
+                    {funcionarios.map(f => (
+                      <option key={f.id} value={f.id}>
+                        {f.nome} {f.cargo ? `- ${f.cargo}` : ""}
+                      </option>
+                    ))}
                   </select>
+                  <p className="text-xs text-gray-500 mt-1">
+                    💡 Cadastre funcionários, motoristas, postos de gasolina, etc. na tela de Funcionários
+                  </p>
                 </div>
 
-                <input name="valorPagamento" value={formPagamento.valorPagamento} onChange={handleFormPagamentoChange} placeholder="Valor (ex: 50.00)" className="w-full p-2 border rounded" required />
-                <input type="date" name="dataPagamento" value={formPagamento.dataPagamento} onChange={handleFormPagamentoChange} className="w-full p-2 border rounded" required />
-                <input name="idFuncionario" value={formPagamento.idFuncionario} onChange={handleFormPagamentoChange} placeholder="ID do funcionário (opcional)" className="w-full p-2 border rounded" />
-                <div className="flex justify-end gap-2">
-                  <button type="button" onClick={fecharModal} className="px-3 py-2 bg-gray-200 rounded">Cancelar</button>
-                  <button type="submit" className="px-3 py-2 bg-green-600 text-white rounded">Salvar</button>
+                {/* Descrição/Observação */}
+                <div>
+                  <label className="block text-sm font-medium mb-1">Descrição (opcional)</label>
+                  <input 
+                    placeholder="Ex: Combustível, Salário mensal, etc." 
+                    value={formPagamento.descricao}
+                    onChange={e => setFormPagamento(prev => ({ ...prev, descricao: e.target.value }))}
+                    className="w-full p-2 border rounded" 
+                  />
+                </div>
+
+                {/* Valor e Data */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Valor *</label>
+                    <input 
+                      type="number"
+                      step="0.01"
+                      placeholder="0,00" 
+                      value={formPagamento.valorPagamento} 
+                      onChange={e => setFormPagamento(prev => ({ ...prev, valorPagamento: e.target.value }))}
+                      className="w-full p-2 border rounded" 
+                      required 
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Data *</label>
+                    <input 
+                      type="date" 
+                      value={formPagamento.dataPagamento} 
+                      onChange={e => setFormPagamento(prev => ({ ...prev, dataPagamento: e.target.value }))}
+                      className="w-full p-2 border rounded" 
+                      required 
+                    />
+                  </div>
+                </div>
+
+                <div className="flex justify-end gap-2 pt-4">
+                  <button type="button" onClick={fecharModal} className="px-4 py-2 bg-gray-200 rounded">
+                    Cancelar
+                  </button>
+                  <button type="submit" className="px-4 py-2 bg-red-600 text-white rounded">
+                    💸 {modoEdicao ? "Atualizar" : "Registrar"} Despesa
+                  </button>
                 </div>
               </form>
             </div>
           </div>
         )}
 
-        {/* Modal para nova mensalidade */}
+        {/* Modal Nova Mensalidade */}
         {modalAberto && modalContexto === "novaMensalidade" && (
           <div className="fixed inset-0 z-50 flex items-center justify-center">
             <div className="absolute inset-0 bg-black opacity-50" onClick={fecharModal} />
             <div className="relative bg-white rounded-lg shadow-lg w-full max-w-md mx-4 p-6 z-10">
-              <h2 className="text-lg font-semibold mb-3">Nova mensalidade</h2>
+              <h2 className="text-lg font-semibold mb-3">💰 Nova Mensalidade</h2>
               <form onSubmit={salvarNovaMensalidade} className="space-y-3">
-                <input name="alunoId" value={formNovaMensalidade.alunoId} onChange={handleFormNovaMensalidadeChange} placeholder="ID do aluno" className="w-full p-2 border rounded" required />
-                <input name="valorMensalidade" value={formNovaMensalidade.valorMensalidade} onChange={handleFormNovaMensalidadeChange} placeholder="Valor mensalidade (ex: 150.00)" className="w-full p-2 border rounded" required />
-                <input type="date" name="dataVencimento" value={formNovaMensalidade.dataVencimento} onChange={handleFormNovaMensalidadeChange} className="w-full p-2 border rounded" required />
-                <div className="flex justify-end gap-2">
-                  <button type="button" onClick={fecharModal} className="px-3 py-2 bg-gray-200 rounded">Cancelar</button>
-                  <button type="submit" className="px-3 py-2 bg-green-600 text-white rounded">Salvar</button>
+                <input 
+                  type="number"
+                  placeholder="ID do aluno *" 
+                  value={formNovaMensalidade.alunoId} 
+                  onChange={e => setFormNovaMensalidade(prev => ({ ...prev, alunoId: e.target.value }))}
+                  className="w-full p-2 border rounded" 
+                  required 
+                />
+                <input 
+                  type="number"
+                  step="0.01"
+                  placeholder="Valor da mensalidade *" 
+                  value={formNovaMensalidade.valorMensalidade} 
+                  onChange={e => setFormNovaMensalidade(prev => ({ ...prev, valorMensalidade: e.target.value }))}
+                  className="w-full p-2 border rounded" 
+                  required 
+                />
+                <input 
+                  type="date" 
+                  value={formNovaMensalidade.dataVencimento} 
+                  onChange={e => setFormNovaMensalidade(prev => ({ ...prev, dataVencimento: e.target.value }))}
+                  className="w-full p-2 border rounded" 
+                  required 
+                />
+                
+                <div className="flex justify-end gap-2 pt-3">
+                  <button type="button" onClick={fecharModal} className="px-3 py-2 bg-gray-200 rounded">
+                    Cancelar
+                  </button>
+                  <button type="submit" className="px-3 py-2 bg-green-600 text-white rounded">
+                    Criar Mensalidade
+                  </button>
                 </div>
               </form>
             </div>
