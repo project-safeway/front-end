@@ -48,15 +48,21 @@ export default function Chamada() {
       const chamadaResponse = await ChamadaService.iniciarChamada(itinerarioId);
       setChamadaId(chamadaResponse.id);
 
-      const alunosFormatados = itinerarioData.alunos
-        .sort((a, b) => a.ordemEmbarque - b.ordemEmbarque)
+      const rawAlunos =
+        itinerarioData.alunos ||
+        (itinerarioData.itinerario && itinerarioData.itinerario.alunos) ||
+        [];
+
+      const alunosFormatados = rawAlunos
+        .slice()
+        .sort((a, b) => (a.ordemEmbarque ?? a.ordemGlobal ?? 0) - (b.ordemEmbarque ?? b.ordemGlobal ?? 0))
         .map((aluno) => ({
-          id: aluno.idAluno || aluno.id,
-          nomeAluno: aluno.nome,
-          responsavel: aluno.nomeResponsavel || "Não informado",
+          id: aluno.alunoId || aluno.idAluno || aluno.id,
+          nomeAluno: aluno.nomeAluno || aluno.nome || "Sem nome",
+          responsavel: aluno.nomeResponsavel || aluno.responsavel || "Não informado",
           escola: aluno.escola || "Não informado",
-          sala: aluno.sala || "Não informado",
-          ordemEmbarque: aluno.ordemEmbarque,
+          sala: aluno.sala || null,
+          ordemEmbarque: aluno.ordemEmbarque ?? aluno.ordemGlobal ?? 0,
           presente: null,
         }));
 
@@ -120,7 +126,7 @@ export default function Chamada() {
 
       await ChamadaService.registrarPresenca(chamadaId, presencas);
 
-      await ChamadaService.alterarStatusChamada(chamadaId, "FINALIZADA");
+      await ChamadaService.alterarStatusChamada(itinerarioId, "FINALIZADA");
 
       setChamadaFinalizada(true);
       toast.success("Chamada finalizada com sucesso!", { theme: "colored" });
@@ -144,7 +150,7 @@ export default function Chamada() {
     if (!confirmar) return;
 
     try {
-      await ChamadaService.alterarStatusChamada(chamadaId, "CANCELADA");
+      await ChamadaService.alterarStatusChamada(itinerarioId, "CANCELADA");
       toast.info("Chamada cancelada.", { theme: "colored" });
       navigate("/itinerarios");
     } catch (error) {
