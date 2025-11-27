@@ -128,8 +128,6 @@ export function CadastroAlunos() {
           cidade: r.endereco.cidade,
           uf: r.endereco.uf,
           cep: r.endereco.cep.replace(/\D/g, ''),
-          latitude: 0,
-          longitude: 0,
           tipo: r.endereco.tipo || 'RESIDENCIAL'
         }
       }))

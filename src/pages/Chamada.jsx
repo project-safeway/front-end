@@ -60,7 +60,7 @@ export default function Chamada() {
           id: aluno.alunoId || aluno.idAluno || aluno.id,
           nomeAluno: aluno.nomeAluno || aluno.nome || "Sem nome",
           responsavel: aluno.nomeResponsavel || aluno.responsavel || "Não informado",
-          escola: aluno.escola || "Não informado",
+          escola: aluno.nomeEscola || "Não informado",
           sala: aluno.sala || null,
           ordemEmbarque: aluno.ordemEmbarque ?? aluno.ordemGlobal ?? 0,
           presente: null,
@@ -197,19 +197,6 @@ export default function Chamada() {
           <p className="text-navy-600">
             {itinerario?.nome || "Registre a presença dos alunos"}
           </p>
-        </div>
-        <div className="text-right">
-          <p className="text-sm text-navy-600">
-            Progresso: {totalRegistrados}/{alunos.length}
-          </p>
-          <div className="flex gap-4 mt-1">
-            <span className="text-sm text-green-600 font-medium">
-              ✓ {totalPresentes} Presentes
-            </span>
-            <span className="text-sm text-red-600 font-medium">
-              ✗ {totalAusentes} Ausentes
-            </span>
-          </div>
         </div>
       </div>
 
