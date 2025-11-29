@@ -64,6 +64,14 @@ class TransporteService {
     })
   }
 
+  async getUserTransport() {
+    return this._executarComRetry(async () => {
+      console.log('[TransporteService] Buscando transporte do usuário logado')
+      const response = await transporteAxios.get('/transporte')
+      return response.data
+    })
+  }
+
   async listarAlunos(transporteId) {
     return this._executarComRetry(async () => {
       try {
@@ -107,6 +115,13 @@ class TransporteService {
         }
         throw error
       }
+    })
+  }
+
+  async listarTransportesUsuario() {
+    return this._executarComRetry(async () => {
+      const response = await transporteAxios.get('/transporte')
+      return response.data
     })
   }
 

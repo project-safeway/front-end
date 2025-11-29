@@ -75,6 +75,20 @@ class EscolasService {
       return response.data
     })
   }
+
+  async updateEscola(id, escolaData) {
+    return this._executarComRetry(async () => {
+      const response = await escolasAxios.put(`/escolas/${id}`, escolaData)
+      return response.data
+    })
+  }
+
+  async deleteEscola(id) {
+    return this._executarComRetry(async () => {
+      const response = await escolasAxios.delete(`/escolas/${id}`)
+      return response.data
+    })
+  }
 }
 
 export default new EscolasService()

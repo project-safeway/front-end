@@ -6,13 +6,15 @@ import ArrowBackIcon from '@mui/icons-material/ArrowBack'
 import escolasService from '../services/escolasService'
 import alunosService from '../services/alunosService'
 import { maskCEP, buscarEnderecoPorCEP, maskCPF, maskPhone } from '../utils/formatters'
+import { useAuth } from '../contexts/AuthContext'
 
 export function CadastroAlunos() {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
+  const { user } = useAuth()
   const [escolas, setEscolas] = useState([])
   const [loading, setLoading] = useState(false)
-  const [buscandoCEPs, setBuscandoCEPs] = useState([]) // Array para controlar estado de cada responsável
+  const [buscandoCEPs, setBuscandoCEPs] = useState([]) /* Line 15 omitted */
   const [responsaveis, setResponsaveis] = useState([
     { nome: '', cpf: '', tel1: '', tel2: '', email: '', endereco: { logradouro: '', numero: '', complemento: '', bairro: '', cidade: '', uf: '', cep: '', tipo: 'RESIDENCIAL' } },
   ])
@@ -113,7 +115,7 @@ export function CadastroAlunos() {
       valorMensalidade: parseFloat(f.mensalidade.value) || 0,
       diaVencimento: parseInt(f.vencimentoDia.value) || 1,
       fkEscola: parseInt(escolaId),
-      fkTransporte: parseInt(f.transporte?.value) || 1,
+      fkTransporte: user?.transportId || user?.idTransporte || 1,
       responsaveis: responsaveis.map(r => ({
         nome: r.nome,
         cpf: r.cpf || null,

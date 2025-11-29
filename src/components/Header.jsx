@@ -112,7 +112,7 @@ export default function Header() {
                   <div className="flex items-center gap-3 border-l border-navy-700 pl-6">
                     <div className="flex items-center gap-2">
                       <PersonIcon fontSize="small" />
-                      <span className="text-sm">{user?.nome || 'Usuário'}</span>
+                      <span className="text-sm">{user?.nomeUsuario || 'Usuário'}</span>
                     </div>
                     <button
                       onClick={handleLogout}

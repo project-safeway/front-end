@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useAuth } from '../contexts/AuthContext';
 import PropTypes from "prop-types";
 import CloseIcon from "@mui/icons-material/Close";
 import SaveIcon from "@mui/icons-material/Save";
@@ -14,9 +15,11 @@ export default function ItinerarioModal({
   onDelete, 
   itinerario 
 }) {
+  const { user } = useAuth();
+  const transporteId = user?.transportId || user?.idTransporte || 1;
   const [formData, setFormData] = useState({
     nome: "",
-    transporteId: 1,
+    transporteId,
     horarioInicio: "",
     horarioFim: "",
     tipoViagem: "SO_IDA",
@@ -36,7 +39,7 @@ export default function ItinerarioModal({
     if (itinerario) {
       setFormData({
         nome: itinerario.nome || "",
-        transporteId: 1,
+        transporteId: itinerario.transporteId || transporteId,
         horarioInicio: itinerario.horarioInicio || "",
         horarioFim: itinerario.horarioFim || "",
         tipoViagem: itinerario.tipoViagem || "SO_IDA",
@@ -44,14 +47,14 @@ export default function ItinerarioModal({
     } else {
       setFormData({
         nome: "",
-        transporteId: 1,
+        transporteId,
         horarioInicio: "",
         horarioFim: "",
         tipoViagem: "SO_IDA",
       });
     }
     setErrors({});
-  }, [itinerario, isOpen]);
+  }, [itinerario, isOpen, transporteId]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -108,7 +111,8 @@ export default function ItinerarioModal({
 
     setIsSubmitting(true);
     try {
-      await onSave(formData);
+      // Sempre garantir transporteId correto
+      await onSave({ ...formData, transporteId });
       handleClose();
     } catch (error) {
       console.error("Erro ao salvar itinerário:", error);
@@ -141,10 +145,9 @@ export default function ItinerarioModal({
 
   const handleClose = () => {
     if (isSubmitting) return;
-    
     setFormData({
       nome: "",
-      transporteId: 1,
+      transporteId,
       horarioInicio: "",
       horarioFim: "",
       tipoViagem: "SO_IDA",

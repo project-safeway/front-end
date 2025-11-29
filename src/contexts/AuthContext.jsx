@@ -15,25 +15,33 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null)
   const [loading, setLoading] = useState(true)
 
+
   useEffect(() => {
     // Verifica se há um token válido ao carregar a aplicação
     const initializeAuth = () => {
       if (authService.isAuthenticated()) {
+        // Tenta recuperar do localStorage (último login)
+        const nomeUsuario = localStorage.getItem('nomeUsuario')
+        const idTransporte = localStorage.getItem('idTransporte')
         const userId = authService.getUserId()
         const role = authService.getUserRole()
-        setUser({ id: userId, role })
+        const transportId = authService.getTransportId() || idTransporte
+        setUser({ id: userId, role, transportId, nomeUsuario })
       }
       setLoading(false)
     }
-
     initializeAuth()
   }, [])
 
   const login = async (email, senha) => {
     const response = await authService.login(email, senha)
+    // Salva nomeUsuario e idTransporte vindos do backend
+    if (response.nomeUsuario) localStorage.setItem('nomeUsuario', response.nomeUsuario)
+    if (response.idTransporte) localStorage.setItem('idTransporte', response.idTransporte)
     const userId = authService.getUserId()
     const role = authService.getUserRole()
-    setUser({ id: userId, role })
+    const transportId = authService.getTransportId() || response.idTransporte
+    setUser({ id: userId, role, transportId, nomeUsuario: response.nomeUsuario })
     return response
   }
 
