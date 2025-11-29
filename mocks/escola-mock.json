@@ -1,0 +1,15 @@
+{
+    "nome": "Colégio São Paulo",
+    "nivelEnsino": "ENSINO_FUNDAMENTAL",
+    "endereco": {
+        "logradouro": "Rua da Escola",
+        "numero": "100",
+        "complemento": null,
+        "bairro": "Centro",
+        "cidade": "São Paulo",
+        "uf": "SP",
+        "cep": "01310-000",
+        "latitude": -23.55052,
+        "longitude": -46.633308
+    }
+}

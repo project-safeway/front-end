@@ -6,6 +6,7 @@ import ArrowBackIcon from '@mui/icons-material/ArrowBack'
 import escolasService from '../services/escolasService'
 import alunosService from '../services/alunosService'
 import { maskCEP, buscarEnderecoPorCEP, maskCPF, maskPhone } from '../utils/formatters'
+import { useAuth } from '../contexts/AuthContext'
 
 export function EdicaoAlunos() {
   const { id } = useParams() // /alunos/:id/editar
@@ -28,7 +29,7 @@ export function EdicaoAlunos() {
     valorMensalidade: '',
     diaVencimento: '',
     fkEscola: '',
-    fkTransporte: 1,
+    fkTransporte: user?.transportId || user?.idTransporte || 1,
   })
 
   const [responsaveis, setResponsaveis] = useState([])
@@ -94,7 +95,7 @@ export function EdicaoAlunos() {
           valorMensalidade: dadosAluno?.valorMensalidade?.toString() || dadosAluno?.valorPadraoMensalidade?.toString() || dadosAluno?.mensalidade?.toString() || '',
           diaVencimento: dadosAluno?.diaVencimento?.toString() || dadosAluno?.vencimentoDia?.toString() || '',
           fkEscola: fkEscola,
-          fkTransporte: dadosAluno?.fkTransporte || 1,
+          fkTransporte: dadosAluno?.fkTransporte || user?.transportId || user?.idTransporte || 1,
         })
 
         // Preencher responsáveis
@@ -317,7 +318,7 @@ export function EdicaoAlunos() {
         valorMensalidade: parseFloat(aluno.valorMensalidade) || 0,
         diaVencimento: parseInt(aluno.diaVencimento) || 1,
         fkEscola: parseInt(aluno.fkEscola),
-        fkTransporte: parseInt(aluno.fkTransporte) || 1,
+        fkTransporte: parseInt(aluno.fkTransporte) || user?.transportId || user?.idTransporte || 1,
         responsaveis: responsaveisPayload,
       }
 
