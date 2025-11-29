@@ -6,6 +6,8 @@ import PlayCircleFilledWhiteIcon from "@mui/icons-material/PlayCircleFilledWhite
 import RouteIcon from "@mui/icons-material/Route";
 import Tooltip from "@mui/material/Tooltip";
 
+import { useState } from "react";
+
 export function CardItinerario({
     tamanho,
     label,
@@ -19,6 +21,12 @@ export function CardItinerario({
     onIniciarPresenca,
     onVisualizarRota,
 }) {
+    const [isStarting, setIsStarting] = useState(false);
+    const handleStart = () => {
+        if (isStarting) return;
+        setIsStarting(true);
+        onIniciarPresenca && onIniciarPresenca();
+    };
     return (
         <div
             className={`${tamanho} flex flex-col justify-between bg-white rounded-2xl shadow-md hover:shadow-lg transition-all p-4 border border-gray-100 relative`}
@@ -89,11 +97,12 @@ export function CardItinerario({
             {/* Rodapé */}
             <div className="flex justify-center mt-3">
                 <button
-                    onClick={onIniciarPresenca}
-                    className="flex items-center gap-1 bg-orange-500 hover:bg-orange-600 text-white text-sm font-medium py-1.5 px-3 rounded-full shadow-md transition"
+                    onClick={handleStart}
+                    disabled={isStarting}
+                    className={`flex items-center gap-1 bg-orange-500 hover:bg-orange-600 text-white text-sm font-medium py-1.5 px-3 rounded-full shadow-md transition ${isStarting ? 'opacity-60 cursor-not-allowed' : ''}`}
                 >
                     <PlayCircleFilledWhiteIcon fontSize="small" />
-                    Iniciar Presença
+                    {isStarting ? 'Aguarde...' : 'Iniciar Presença'}
                 </button>
             </div>
         </div>
