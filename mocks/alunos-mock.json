@@ -1,0 +1,322 @@
+[
+    {
+        "nome": "Eduardo Martins",
+        "professor": "Prof. Roberto",
+        "dtNascimento": "2010-02-18",
+        "serie": 8,
+        "sala": "8B",
+        "valorMensalidade": 520.00,
+        "diaVencimento": 9,
+        "fkEscola": 1,
+        "fkTransporte": 1,
+        "responsaveis": [
+            {
+                "nome": "Carla Martins",
+                "cpf": "12398745622",
+                "tel1": "919887766",
+                "tel2": null,
+                "email": "carla@email.com",
+                "endereco": {
+                    "logradouro": "Rua Parapuã",
+                    "numero": "980",
+                    "complemento": null,
+                    "bairro": "Vila Nova Cachoeirinha",
+                    "cidade": "São Paulo",
+                    "uf": "SP",
+                    "cep": "02652-001",
+                    "latitude": -23.462800,
+                    "longitude": -46.680900,
+                    "tipo": "RESIDENCIAL"
+                }
+            }
+        ]
+    },
+    {
+        "nome": "Mariana Silva",
+        "professor": "Prof. Denise",
+        "dtNascimento": "2011-09-12",
+        "serie": 7,
+        "sala": "7A",
+        "valorMensalidade": 495.00,
+        "diaVencimento": 7,
+        "fkEscola": 1,
+        "fkTransporte": 1,
+        "responsaveis": [
+            {
+                "nome": "João Silva",
+                "cpf": "99887766554",
+                "tel1": "912346789",
+                "tel2": null,
+                "email": "joao.silva@email.com",
+                "endereco": {
+                    "logradouro": "Estrada do M'Boi Mirim",
+                    "numero": "4500",
+                    "complemento": "Casa 03",
+                    "bairro": "Jardim Ângela",
+                    "cidade": "São Paulo",
+                    "uf": "SP",
+                    "cep": "04936-000",
+                    "latitude": -23.681200,
+                    "longitude": -46.789500,
+                    "tipo": "RESIDENCIAL"
+                }
+            }
+        ]
+    },
+    {
+        "nome": "Thiago Albuquerque",
+        "professor": "Prof. Camila",
+        "dtNascimento": "2009-07-01",
+        "serie": 9,
+        "sala": "9C",
+        "valorMensalidade": 540.00,
+        "diaVencimento": 11,
+        "fkEscola": 1,
+        "fkTransporte": 1,
+        "responsaveis": [
+            {
+                "nome": "Luciana Albuquerque",
+                "cpf": "88776655443",
+                "tel1": "918223344",
+                "tel2": null,
+                "email": "luciana@email.com",
+                "endereco": {
+                    "logradouro": "Avenida Águas Espraiadas",
+                    "numero": "2200",
+                    "complemento": "Torre B",
+                    "bairro": "Brooklin",
+                    "cidade": "São Paulo",
+                    "uf": "SP",
+                    "cep": "04675-120",
+                    "latitude": -23.626900,
+                    "longitude": -46.692800,
+                    "tipo": "RESIDENCIAL"
+                }
+            }
+        ]
+    },
+    {
+        "nome": "Fernanda Rocha",
+        "professor": "Prof. Ricardo",
+        "dtNascimento": "2012-04-10",
+        "serie": 6,
+        "sala": "6C",
+        "valorMensalidade": 455.00,
+        "diaVencimento": 4,
+        "fkEscola": 1,
+        "fkTransporte": 1,
+        "responsaveis": [
+            {
+                "nome": "Beatriz Rocha",
+                "cpf": "55443322110",
+                "tel1": "917554433",
+                "tel2": null,
+                "email": "beatriz@email.com",
+                "endereco": {
+                    "logradouro": "Rua das Ameixeiras",
+                    "numero": "700",
+                    "complemento": "Bloco 1",
+                    "bairro": "Cidade Tiradentes",
+                    "cidade": "São Paulo",
+                    "uf": "SP",
+                    "cep": "08485-520",
+                    "latitude": -23.568300,
+                    "longitude": -46.398200,
+                    "tipo": "RESIDENCIAL"
+                }
+            }
+        ]
+    },
+    {
+        "nome": "Rafael Nogueira",
+        "professor": "Prof. Ana Paula",
+        "dtNascimento": "2010-06-21",
+        "serie": 8,
+        "sala": "8D",
+        "valorMensalidade": 515.00,
+        "diaVencimento": 13,
+        "fkEscola": 1,
+        "fkTransporte": 1,
+        "responsaveis": [
+            {
+                "nome": "Marcelo Nogueira",
+                "cpf": "44332211009",
+                "tel1": "915667788",
+                "tel2": null,
+                "email": "marcelo@email.com",
+                "endereco": {
+                    "logradouro": "Estrada da Aldeia",
+                    "numero": "1500",
+                    "complemento": "Casa 8",
+                    "bairro": "Aldeia da Serra",
+                    "cidade": "Barueri",
+                    "uf": "SP",
+                    "cep": "06533-001",
+                    "latitude": -23.504700,
+                    "longitude": -46.893200,
+                    "tipo": "RESIDENCIAL"
+                }
+            }
+        ]
+    },
+    {
+        "nome": "Camila Souza",
+        "professor": "Prof. Fernando",
+        "dtNascimento": "2011-03-25",
+        "serie": 7,
+        "sala": "7B",
+        "valorMensalidade": 500.00,
+        "diaVencimento": 8,
+        "fkEscola": 1,
+        "fkTransporte": 1,
+        "responsaveis": [
+            {
+                "nome": "Patricia Souza",
+                "cpf": "33221100998",
+                "tel1": "914445566",
+                "tel2": "933221100",
+                "email": "patricia.souza@email.com",
+                "endereco": {
+                    "logradouro": "Rua Vergueiro",
+                    "numero": "3200",
+                    "complemento": "Apto 45",
+                    "bairro": "Vila Mariana",
+                    "cidade": "São Paulo",
+                    "uf": "SP",
+                    "cep": "04101-000",
+                    "latitude": -23.574300,
+                    "longitude": -46.640500,
+                    "tipo": "RESIDENCIAL"
+                }
+            }
+        ]
+    },
+    {
+        "nome": "Lucas Oliveira",
+        "professor": "Prof. Juliana",
+        "dtNascimento": "2009-11-08",
+        "serie": 9,
+        "sala": "9A",
+        "valorMensalidade": 535.00,
+        "diaVencimento": 10,
+        "fkEscola": 1,
+        "fkTransporte": 1,
+        "responsaveis": [
+            {
+                "nome": "André Oliveira",
+                "cpf": "22110099887",
+                "tel1": "916778899",
+                "tel2": null,
+                "email": "andre.oliveira@email.com",
+                "endereco": {
+                    "logradouro": "Avenida Paulista",
+                    "numero": "1578",
+                    "complemento": "Conjunto 120",
+                    "bairro": "Bela Vista",
+                    "cidade": "São Paulo",
+                    "uf": "SP",
+                    "cep": "01310-200",
+                    "latitude": -23.561400,
+                    "longitude": -46.656100,
+                    "tipo": "RESIDENCIAL"
+                }
+            }
+        ]
+    },
+    {
+        "nome": "Juliana Costa",
+        "professor": "Prof. Marcos",
+        "dtNascimento": "2012-08-14",
+        "serie": 6,
+        "sala": "6A",
+        "valorMensalidade": 450.00,
+        "diaVencimento": 5,
+        "fkEscola": 1,
+        "fkTransporte": 1,
+        "responsaveis": [
+            {
+                "nome": "Renata Costa",
+                "cpf": "11009988776",
+                "tel1": "913334455",
+                "tel2": null,
+                "email": "renata.costa@email.com",
+                "endereco": {
+                    "logradouro": "Rua do Manifesto",
+                    "numero": "850",
+                    "complemento": null,
+                    "bairro": "Ipiranga",
+                    "cidade": "São Paulo",
+                    "uf": "SP",
+                    "cep": "04209-001",
+                    "latitude": -23.591800,
+                    "longitude": -46.610200,
+                    "tipo": "RESIDENCIAL"
+                }
+            }
+        ]
+    },
+    {
+        "nome": "Pedro Santos",
+        "professor": "Prof. Larissa",
+        "dtNascimento": "2010-12-05",
+        "serie": 8,
+        "sala": "8A",
+        "valorMensalidade": 525.00,
+        "diaVencimento": 12,
+        "fkEscola": 1,
+        "fkTransporte": 1,
+        "responsaveis": [
+            {
+                "nome": "Roberto Santos",
+                "cpf": "99887766543",
+                "tel1": "919998877",
+                "tel2": "938887766",
+                "email": "roberto.santos@email.com",
+                "endereco": {
+                    "logradouro": "Rua Augusta",
+                    "numero": "2690",
+                    "complemento": "Apto 102",
+                    "bairro": "Jardins",
+                    "cidade": "São Paulo",
+                    "uf": "SP",
+                    "cep": "01412-100",
+                    "latitude": -23.556700,
+                    "longitude": -46.662800,
+                    "tipo": "RESIDENCIAL"
+                }
+            }
+        ]
+    },
+    {
+        "nome": "Isabella Lima",
+        "professor": "Prof. Carlos",
+        "dtNascimento": "2011-05-30",
+        "serie": 7,
+        "sala": "7C",
+        "valorMensalidade": 505.00,
+        "diaVencimento": 6,
+        "fkEscola": 1,
+        "fkTransporte": 1,
+        "responsaveis": [
+            {
+                "nome": "Fabiana Lima",
+                "cpf": "88776655432",
+                "tel1": "917776655",
+                "tel2": null,
+                "email": "fabiana.lima@email.com",
+                "endereco": {
+                    "logradouro": "Avenida Rebouças",
+                    "numero": "1800",
+                    "complemento": "Torre A - Apto 501",
+                    "bairro": "Pinheiros",
+                    "cidade": "São Paulo",
+                    "uf": "SP",
+                    "cep": "05402-100",
+                    "latitude": -23.567200,
+                    "longitude": -46.685400,
+                    "tipo": "RESIDENCIAL"
+                }
+            }
+        ]
+    }
+]

@@ -1,13 +1,18 @@
 import { useState, useEffect } from "react";
+import { useAuth } from '../contexts/AuthContext';
 import { useSearchParams, Link, useNavigate } from "react-router-dom";
 import EditIcon from "@mui/icons-material/Edit";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import PersonAddIcon from "@mui/icons-material/PersonAdd";
-import { TabelaEdicaoItinerario } from "../components/TabelaEdicaoItinerario";
+import SchoolIcon from "@mui/icons-material/School";
+import RouteIcon from "@mui/icons-material/Route";
+import { TabelaPlanejamentoRotas } from "../components/TabelaPlanejamentoRotas";
 import { Botao } from "../components/Botao";
 import AdicionarAlunoModal from "../components/AdicionarAlunoModal";
+import AdicionarEscolaModal from "../components/AdicionarEscolaModal";
 import ItinerarioService from '../services/itinerarioService';
 import TransporteService from '../services/transporteService';
+import EscolasService from '../services/escolasService';
 import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
@@ -15,67 +20,101 @@ export default function EdicaoItinerario() {
     const [searchParams] = useSearchParams();
     const navigate = useNavigate();
     const itinerarioId = Number(searchParams.get("itinerarioId"));
+    const { user } = useAuth();
 
     const [itinerario, setItinerario] = useState(null);
     const [alunosItinerario, setAlunosItinerario] = useState([]);
     const [alunosDisponiveis, setAlunosDisponiveis] = useState([]);
+    const [escolasItinerario, setEscolasItinerario] = useState([]);
+    const [escolasDisponiveis, setEscolasDisponiveis] = useState([]);
+    const [itensTrajeto, setItensTrajeto] = useState([]); // Lista unificada
     const [isLoading, setIsLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [isModalEscolaOpen, setIsModalEscolaOpen] = useState(false);
 
     useEffect(() => {
         carregarDados();
     }, [itinerarioId]);
 
+    // Sincronizar lista unificada quando alunos ou escolas mudarem
+    useEffect(() => {
+        const itensUnificados = [
+            ...alunosItinerario.map(aluno => ({ ...aluno, tipo: 'aluno' })),
+            ...escolasItinerario.map(escola => ({ ...escola, tipo: 'escola' }))
+        ];
+
+        // Ordenar por ordemGlobal se disponível, senão usar ordem específica
+        itensUnificados.sort((a, b) => {
+            const ordemA = a.ordemGlobal || (a.tipo === 'aluno' ? (a.ordemEmbarque || 0) : (a.ordemVisita || 0));
+            const ordemB = b.ordemGlobal || (b.tipo === 'aluno' ? (b.ordemEmbarque || 0) : (b.ordemVisita || 0));
+            return ordemA - ordemB;
+        });
+
+        setItensTrajeto(itensUnificados);
+    }, [alunosItinerario, escolasItinerario]);
+
     const carregarDados = async () => {
         setIsLoading(true);
         try {
-            // Carregar todos os alunos do transporte primeiro (para ter os dados completos)
-            const alunosTransporte = await TransporteService.listarAlunos(1);
-            console.log('[EdicaoItinerario] Alunos disponíveis:', alunosTransporte);
+            // Carregar todos os alunos do transporte do usuário logado
+            const transporteId = user?.transportId || user?.idTransporte || 1;
+            const alunosTransporte = await TransporteService.listarAlunos(transporteId);
             setAlunosDisponiveis(alunosTransporte);
+
+            // Carregar escolas disponíveis
+            const escolasData = await EscolasService.getEscolas();
+            setEscolasDisponiveis(escolasData);
 
             // Carregar itinerário
             const itinerarioData = await ItinerarioService.buscarPorId(itinerarioId);
-            console.log('[EdicaoItinerario] Dados do itinerário:', itinerarioData);
             setItinerario(itinerarioData);
 
             // Carregar alunos do itinerário
             if (itinerarioData.alunos && itinerarioData.alunos.length > 0) {
-                console.log('[EdicaoItinerario] Alunos raw do backend:', itinerarioData.alunos);
-                
                 const alunosFormatados = itinerarioData.alunos.map(alunoIt => {
                     const idAluno = alunoIt.alunoId || alunoIt.idAluno || alunoIt.id;
                     const alunoCompleto = alunosTransporte.find(a => a.id === idAluno);
-                    
+
                     const alunoFormatado = {
                         id: idAluno,
                         nomeAluno: alunoIt.nomeAluno || alunoCompleto?.nomeAluno || alunoCompleto?.nome || '-',
                         responsavel: alunoIt.responsavel || alunoIt.nomeResponsavel || alunoCompleto?.responsavel || '-',
                         escola: alunoIt.escola?.nome || alunoIt.escola || alunoCompleto?.escola || '-',
                         enderecoId: alunoIt.idEndereco || alunoIt.enderecoId || alunoIt.fkEndereco || alunoCompleto?.enderecoId || alunoCompleto?.idEndereco,
-                        ordemEmbarque: alunoIt.ordemEmbarque
+                        ordemEmbarque: alunoIt.ordemEmbarque,
+                        ordemGlobal: alunoIt.ordemGlobal || alunoIt.ordemEmbarque // Usar ordemGlobal se existir
                     };
-                    
-                    console.log('[EdicaoItinerario] Aluno mapeado:', { 
-                        original: alunoIt, 
-                        completo: alunoCompleto,
-                        formatado: alunoFormatado 
-                    });
+
                     return alunoFormatado;
                 });
-                
-                // Ordenar pela ordem de embarque
-                alunosFormatados.sort((a, b) => (a.ordemEmbarque || 0) - (b.ordemEmbarque || 0));
-                
+
                 setAlunosItinerario(alunosFormatados);
             } else {
-                console.log('[EdicaoItinerario] Nenhum aluno no itinerário');
                 setAlunosItinerario([]);
             }
 
+            // Carregar escolas do itinerário
+            if (itinerarioData.escolas && itinerarioData.escolas.length > 0) {
+                const escolasFormatadas = itinerarioData.escolas.map((escolaIt, index) => {
+                     const escolaFormatada = {
+                        id: escolaIt.escolaId || escolaIt.idEscola || escolaIt.id || escolaIt.fkEscola,
+                        nome: escolaIt.nome || escolaIt.nomeEscola || escolaIt.escola?.nome || '-',
+                        cidade: escolaIt.cidade || escolaIt.escola?.cidade || '-',
+                        enderecoId: escolaIt.enderecoId || escolaIt.idEndereco || escolaIt.fkEndereco,
+                        ordemVisita: escolaIt.ordemVisita || escolaIt.ordem || (index + 1),
+                        ordemGlobal: escolaIt.ordemGlobal || (escolaIt.ordemVisita || (index + 1))  // Usar ordemGlobal se existir
+                    };
+                    
+                    return escolaFormatada;
+                });
+
+                setEscolasItinerario(escolasFormatadas);
+            } else {
+                setEscolasItinerario([]);
+            }
+
         } catch (error) {
-            console.error('[EdicaoItinerario] Erro ao carregar dados:', error);
             toast.error(`Erro ao carregar dados: ${error.message}`, { theme: "colored" });
         } finally {
             setIsLoading(false);
@@ -97,30 +136,141 @@ export default function EdicaoItinerario() {
         setAlunosItinerario(novoArray);
     };
 
+    const handleMoverItem = async (index, direcao) => {
+        const novoArray = [...itensTrajeto];
+        if (direcao === "up" && index > 0) {
+            [novoArray[index - 1], novoArray[index]] = [novoArray[index], novoArray[index - 1]];
+        }
+        if (direcao === "down" && index < novoArray.length - 1) {
+            [novoArray[index + 1], novoArray[index]] = [novoArray[index], novoArray[index + 1]];
+        }
+
+        // Atualizar as ordens e separar de volta em alunos e escolas
+        const alunosAtualizados = [];
+        const escolasAtualizadas = [];
+
+        novoArray.forEach((item, idx) => {
+            if (item.tipo === 'aluno') {
+                alunosAtualizados.push({ ...item, ordemEmbarque: idx + 1 });
+            } else {
+                escolasAtualizadas.push({ ...item, ordemVisita: idx + 1 });
+            }
+        });
+
+        try {
+            // Reordenar alunos via API
+            if (alunosAtualizados.length > 0) {
+                const idsAlunos = alunosAtualizados.map(a => a.id);
+                await ItinerarioService.reordenarAlunos(itinerarioId, idsAlunos);
+            }
+
+            // Reordenar escolas via API
+            if (escolasAtualizadas.length > 0) {
+                const idsEscolas = escolasAtualizadas.map(e => e.id);
+                await ItinerarioService.reordenarEscolas(itinerarioId, idsEscolas);
+            }
+
+            // Atualizar estado local
+            setAlunosItinerario(alunosAtualizados);
+            setEscolasItinerario(escolasAtualizadas);
+            
+            toast.success('Ordem atualizada com sucesso!', { theme: "colored" });
+        } catch (error) {
+            toast.error(`Erro ao reordenar: ${error.message}`, { theme: "colored" });
+        }
+    };
+
+    const handleRemoverItem = async (tipo, id) => {
+        if (tipo === 'aluno') {
+            await handleRemoverAluno(id);
+        } else {
+            await handleRemoverEscola(id);
+        }
+    };
+
+    const handleReordenarPorDrag = async (fromIndex, toIndex) => {
+        try {
+            // Criar cópia do array
+            const novoArray = [...itensTrajeto];
+            
+            // Remover o item da posição original e inserir na nova posição
+            const [itemMovido] = novoArray.splice(fromIndex, 1);
+            novoArray.splice(toIndex, 0, itemMovido);
+
+            // Calcular ordens específicas para cada tipo
+            let ordemAlunoAtual = 1;
+            let ordemEscolaAtual = 1;
+            
+            const paradas = novoArray.map((item, globalIndex) => {
+                if (item.tipo === 'aluno') {
+                    return {
+                        tipo: 'ALUNO',
+                        id: item.id,
+                        ordemGlobal: globalIndex + 1,
+                        ordemEspecifica: ordemAlunoAtual++
+                    };
+                } else {
+                    return {
+                        tipo: 'ESCOLA',
+                        id: item.id,
+                        ordemGlobal: globalIndex + 1,
+                        ordemEspecifica: ordemEscolaAtual++
+                    };
+                }
+            });
+
+            // Preparar dados para atualização
+            const dadosAtualizacao = {
+                nome: itinerario.nome,
+                horarioInicio: itinerario.horarioInicio,
+                horarioFim: itinerario.tipoViagem,
+                ativo: itinerario.ativo !== undefined ? itinerario.ativo : true,
+                paradas: paradas
+            };
+
+            // Atualizar via API usando PUT /itinerarios/{id}
+            await ItinerarioService.atualizar(itinerarioId, dadosAtualizacao);
+
+            // Recarregar dados para obter as ordens atualizadas do backend
+            await carregarDados();
+            
+            toast.success('Ordem atualizada com sucesso!', { theme: "colored" });
+        } catch (error) {
+            console.error('[handleReordenarPorDrag] ERRO:', error);
+            toast.error(`Erro ao reordenar: ${error.message}`, { theme: "colored" });
+            // Recarregar dados em caso de erro para manter sincronizado
+            await carregarDados();
+        }
+    };
+
     const handleAdicionarAluno = async (aluno, endereco) => {
         try {
-            // Calcular a próxima ordem de embarque (última posição + 1)
-            const proximaOrdem = alunosItinerario.length + 1;
-            
-            // Adicionar aluno ao itinerário via API
-            await ItinerarioService.adicionarAluno(itinerarioId, {
+            // Calcular a próxima ordem de embarque
+            const proximaOrdem = itensTrajeto.filter(item => item.tipo === 'aluno').length + 
+                               itensTrajeto.filter(item => item.tipo === 'escola').length + 1;
+
+            const dadosAluno = {
                 alunoId: aluno.id,
                 ordemEmbarque: proximaOrdem,
                 enderecoId: endereco.id
-            });
+            };
 
-            // Atualizar lista local garantindo que os campos estejam corretos
+            // Adicionar via API
+            await ItinerarioService.adicionarAluno(itinerarioId, dadosAluno);
+
+            // Atualizar lista local
             const alunoFormatado = {
                 id: aluno.id,
                 nomeAluno: aluno.nomeAluno || aluno.nome,
                 responsavel: aluno.responsavel || aluno.nomeResponsavel,
                 escola: aluno.escola,
                 endereco: `${endereco.logradouro}, ${endereco.numero} - ${endereco.bairro}`,
-                enderecoId: endereco.id
+                enderecoId: endereco.id,
+                ordemEmbarque: proximaOrdem
             };
-            
+
             setAlunosItinerario(prev => [...prev, alunoFormatado]);
-            toast.success(`Aluno adicionado na posição ${proximaOrdem}º`, { theme: "colored" });
+            toast.success(`Aluno ${aluno.nomeAluno || aluno.nome} adicionado com sucesso!`, { theme: "colored" });
         } catch (error) {
             toast.error(`Erro ao adicionar aluno: ${error.message}`, { theme: "colored" });
             throw error;
@@ -132,16 +282,84 @@ export default function EdicaoItinerario() {
             toast.error('ID do aluno inválido', { theme: "colored" });
             return;
         }
-        
+
         const confirmar = window.confirm("Tem certeza que deseja remover este aluno do itinerário?");
         if (!confirmar) return;
 
         try {
+            // Remover via API
             await ItinerarioService.removerAluno(itinerarioId, alunoId);
+            
+            // Atualizar lista local
             setAlunosItinerario(prev => prev.filter(a => a.id !== alunoId));
             toast.success("Aluno removido com sucesso!", { theme: "colored" });
         } catch (error) {
             toast.error(`Erro ao remover aluno: ${error.message}`, { theme: "colored" });
+        }
+    };
+
+    const handleMoverEscola = (index, direcao) => {
+        const novoArray = [...escolasItinerario];
+        if (direcao === "up" && index > 0) {
+            [novoArray[index - 1], novoArray[index]] = [novoArray[index], novoArray[index - 1]];
+        }
+        if (direcao === "down" && index < novoArray.length - 1) {
+            [novoArray[index + 1], novoArray[index]] = [novoArray[index], novoArray[index + 1]];
+        }
+        setEscolasItinerario(novoArray);
+    };
+
+    const handleAdicionarEscola = async (escola, endereco) => {
+        try {
+            // Calcular a próxima ordem de visita
+            const proximaOrdem = itensTrajeto.filter(item => item.tipo === 'aluno').length + 
+                               itensTrajeto.filter(item => item.tipo === 'escola').length + 1;
+
+            const dadosEscola = {
+                escolaId: escola.id,
+                ordemVisita: proximaOrdem,
+                enderecoId: endereco.id
+            };
+
+            // Adicionar via API
+            await ItinerarioService.adicionarEscola(itinerarioId, dadosEscola);
+
+            // Atualizar lista local
+            const escolaFormatada = {
+                id: escola.id,
+                nome: escola.nome,
+                cidade: escola.cidade || '-',
+                enderecoId: endereco.id,
+                endereco: `${endereco.logradouro}, ${endereco.numero} - ${endereco.bairro}`,
+                ordemVisita: proximaOrdem
+            };
+
+            setEscolasItinerario(prev => [...prev, escolaFormatada]);
+            toast.success(`Escola ${escola.nome} adicionada com sucesso!`, { theme: "colored" });
+        } catch (error) {
+            toast.error(`Erro ao adicionar escola: ${error.message}`, { theme: "colored" });
+            throw error;
+        }
+    };
+
+    const handleRemoverEscola = async (escolaId) => {
+        if (!escolaId || escolaId === 'undefined') {
+            toast.error('ID da escola inválido', { theme: "colored" });
+            return;
+        }
+
+        const confirmar = window.confirm("Tem certeza que deseja remover esta escola do itinerário?");
+        if (!confirmar) return;
+
+        try {
+            // Remover via API
+            await ItinerarioService.removerEscola(itinerarioId, escolaId);
+            
+            // Atualizar lista local
+            setEscolasItinerario(prev => prev.filter(e => e.id !== escolaId));
+            toast.success("Escola removida com sucesso!", { theme: "colored" });
+        } catch (error) {
+            toast.error(`Erro ao remover escola: ${error.message}`, { theme: "colored" });
         }
     };
 
@@ -150,7 +368,7 @@ export default function EdicaoItinerario() {
         try {
             // Validar se todos os alunos têm endereço
             const alunosSemEndereco = alunosItinerario.filter(aluno => !aluno.enderecoId);
-            
+
             if (alunosSemEndereco.length > 0) {
                 const nomesAlunos = alunosSemEndereco.map(a => a.nomeAluno).join(', ');
                 toast.error(
@@ -161,34 +379,51 @@ export default function EdicaoItinerario() {
                 return;
             }
 
-            // Preparar lista de alunos com ordem de embarque e endereço
-            const alunosComOrdem = alunosItinerario.map((aluno, index) => ({
-                alunoId: aluno.id,
-                ordemEmbarque: index + 1,
-                enderecoId: aluno.enderecoId
-            }));
+            // Recalcular ordens baseadas na lista unificada atual
+            const itensOrdenados = [...itensTrajeto];
+            
+            // Calcular ordens específicas para cada tipo
+            let ordemAlunoAtual = 1;
+            let ordemEscolaAtual = 1;
+            
+            const paradas = itensOrdenados.map((item, globalIndex) => {
+                if (item.tipo === 'aluno') {
+                    return {
+                        tipo: 'ALUNO',
+                        id: item.id,
+                        ordemGlobal: globalIndex + 1,
+                        ordemEspecifica: ordemAlunoAtual++
+                    };
+                } else {
+                    return {
+                        tipo: 'ESCOLA',
+                        id: item.id,
+                        ordemGlobal: globalIndex + 1,
+                        ordemEspecifica: ordemEscolaAtual++
+                    };
+                }
+            });
 
-            // Preparar dados do itinerário no formato esperado pelo backend
+            // Preparar dados do itinerário
             const dadosAtualizacao = {
                 nome: itinerario.nome,
                 horarioInicio: itinerario.horarioInicio,
                 horarioFim: itinerario.horarioFim,
                 tipoViagem: itinerario.tipoViagem,
                 ativo: itinerario.ativo !== undefined ? itinerario.ativo : true,
-                alunos: alunosComOrdem
+                paradas: paradas
             };
 
-            // Atualizar itinerário (inclui alunos e ordem)
+            // Atualizar itinerário
             await ItinerarioService.atualizar(itinerarioId, dadosAtualizacao);
 
             toast.success("Alterações salvas com sucesso!", { theme: "colored" });
-            
+
             // Aguardar um pouco para mostrar o toast antes de redirecionar
             setTimeout(() => {
                 navigate("/itinerarios");
             }, 1500);
         } catch (error) {
-            console.error('Erro ao salvar:', error);
             toast.error(`Erro ao salvar alterações: ${error.message}`, { theme: "colored" });
         } finally {
             setIsSaving(false);
@@ -247,7 +482,7 @@ export default function EdicaoItinerario() {
                         <div>
                             <h1 className="text-3xl font-bold text-navy-900 mb-1">Editar Itinerário</h1>
                             <p className="text-navy-600">
-                                Altere as informações e gerencie os alunos
+                                Altere as informações e gerencie o planejamento de rotas
                             </p>
                         </div>
                     </div>
@@ -314,41 +549,53 @@ export default function EdicaoItinerario() {
                     </div>
                 </div>
 
-                {/* Seção de Alunos */}
+                {/* Seção de Planejamento de Rotas (Alunos e Escolas) */}
                 <div className="bg-white rounded-xl shadow-sm border border-offwhite-200 p-8 mb-8">
                     <div className="flex items-center justify-between mb-6">
-                        <div>
-                            <h3 className="text-lg font-semibold text-navy-900">
-                                Ordem de Embarque dos Alunos ({alunosItinerario.length})
-                            </h3>
-                            <p className="text-sm text-navy-600 mt-1">
-                                A ordem define a sequência em que o motorista buscará os alunos
-                            </p>
+                        <div className="flex items-center gap-3">
+                            <div className="p-3 bg-gradient-to-r from-primary-50 to-green-50 rounded-xl">
+                                <RouteIcon className="text-primary-500 text-2xl" />
+                            </div>
+                            <div>
+                                <h3 className="text-lg font-semibold text-navy-900">
+                                    Planejamento de Rotas
+                                </h3>
+                                <p className="text-sm text-navy-600 mt-1">
+                                    {alunosItinerario.length} aluno(s) • {escolasItinerario.length} escola(s)
+                                </p>
+                            </div>
                         </div>
-                        <button
-                            onClick={() => setIsModalOpen(true)}
-                            className="flex items-center gap-2 px-5 py-2.5 bg-primary-400 hover:bg-primary-500 text-white rounded-lg font-semibold transition-all shadow-sm hover:shadow-md"
-                        >
-                            <PersonAddIcon fontSize="small" />
-                            Adicionar Aluno
-                        </button>
+                        <div className="flex gap-2">
+                            <button
+                                onClick={() => setIsModalOpen(true)}
+                                className="flex items-center gap-2 px-4 py-2.5 bg-primary-400 hover:bg-primary-500 text-white rounded-lg font-semibold transition-all shadow-sm hover:shadow-md"
+                            >
+                                <PersonAddIcon fontSize="small" />
+                                Adicionar Aluno
+                            </button>
+                            <button
+                                onClick={() => setIsModalEscolaOpen(true)}
+                                className="flex items-center gap-2 px-4 py-2.5 bg-green-500 hover:bg-green-600 text-white rounded-lg font-semibold transition-all shadow-sm hover:shadow-md"
+                            >
+                                <SchoolIcon fontSize="small" />
+                                Adicionar Escola
+                            </button>
+                        </div>
                     </div>
 
-                    {alunosItinerario.length === 0 ? (
+                    {itensTrajeto.length === 0 ? (
                         <div className="text-center py-12 border-2 border-dashed border-offwhite-300 rounded-xl bg-offwhite-50">
-                            <PersonAddIcon className="text-navy-300 text-6xl mx-auto mb-4 opacity-40" />
-                            <p className="text-navy-600 font-medium mb-2">Nenhum aluno adicionado</p>
-                            <p className="text-sm text-navy-500">
-                                Clique em "Adicionar Aluno" para começar
+                            <RouteIcon className="text-navy-300 text-6xl mx-auto mb-4 opacity-40" />
+                            <p className="text-navy-600 font-medium mb-2">Nenhum item no trajeto</p>
+                            <p className="text-sm text-navy-500 mb-4">
+                                Adicione alunos e escolas para planejar sua rota
                             </p>
                         </div>
                     ) : (
-                        <TabelaEdicaoItinerario
-                            cabecalho={cabecalho}
-                            dados={alunosItinerario}
-                            fields={fields}
-                            onMover={handleMoverAluno}
-                            onRemover={handleRemoverAluno}
+                        <TabelaPlanejamentoRotas
+                            dados={itensTrajeto}
+                            onRemover={handleRemoverItem}
+                            onReordenar={handleReordenarPorDrag}
                         />
                     )}
                 </div>
@@ -378,6 +625,15 @@ export default function EdicaoItinerario() {
                     onAdd={handleAdicionarAluno}
                     alunosDisponiveis={alunosDisponiveis}
                     alunosJaAdicionados={alunosItinerario}
+                />
+
+                {/* Modal de Adicionar Escola */}
+                <AdicionarEscolaModal
+                    isOpen={isModalEscolaOpen}
+                    onClose={() => setIsModalEscolaOpen(false)}
+                    onAdd={handleAdicionarEscola}
+                    escolasDisponiveis={escolasDisponiveis}
+                    escolasJaAdicionadas={escolasItinerario}
                 />
             </div>
         </div>

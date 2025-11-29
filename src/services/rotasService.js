@@ -22,7 +22,7 @@ const rotasService = {
             console.log('[RotasService] Enviando requisição:', dados);
             const response = await api.post('/rotas/otimizar', dados)
             console.log('[RotasService] Resposta da API:', response);
-            
+
             // O backend já retorna processado, não precisa processar novamente
             return response;
         } catch (error) {
@@ -140,7 +140,7 @@ const rotasService = {
             console.error('[RotasService] Erro ao reordenar alunos:', error)
             throw error
         }
-    },
+    }
 }
 
 export default rotasService

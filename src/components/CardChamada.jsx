@@ -16,23 +16,6 @@ export function CardChamada({
 
   return (
     <div className="bg-white rounded-xl shadow-lg px-8 py-8 border border-offwhite-200">
-      {/* Indicador de progresso */}
-      <div className="mb-6">
-        <div className="flex items-center justify-between mb-2">
-          <span className="text-sm font-medium text-navy-600">
-            Aluno {indiceAtual + 1} de {totalAlunos}
-          </span>
-          <span className="text-sm text-navy-500">
-            {aluno.ordemEmbarque}º na ordem de embarque
-          </span>
-        </div>
-        <div className="w-full bg-offwhite-200 rounded-full h-2">
-          <div
-            className="bg-primary-400 h-2 rounded-full transition-all duration-300"
-            style={{ width: `${((indiceAtual + 1) / totalAlunos) * 100}%` }}
-          />
-        </div>
-      </div>
 
       {/* Informações do aluno */}
       <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-6">

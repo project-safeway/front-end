@@ -39,7 +39,7 @@ chamadaAxios.interceptors.response.use(
 );
 
 class ChamadaService {
-  async _executarComRetry(fn, tentativas = 3, delay = 1000) {
+  async _executarComRetry(fn, tentativas = 1, delay = 1000) {
     for (let i = 0; i < tentativas; i++) {
       try {
         return await fn();

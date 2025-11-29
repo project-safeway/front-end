@@ -61,6 +61,34 @@ class EscolasService {
       return response.data
     })
   }
+
+  async getEscolaById(id) {
+    return this._executarComRetry(async () => {
+      const response = await escolasAxios.get(`/escolas/${id}`)
+      return response.data
+    })
+  }
+
+  async getEnderecoEscola(escolaId) {
+    return this._executarComRetry(async () => {
+      const response = await escolasAxios.get(`/escolas/${escolaId}/endereco`)
+      return response.data
+    })
+  }
+
+  async updateEscola(id, escolaData) {
+    return this._executarComRetry(async () => {
+      const response = await escolasAxios.put(`/escolas/${id}`, escolaData)
+      return response.data
+    })
+  }
+
+  async deleteEscola(id) {
+    return this._executarComRetry(async () => {
+      const response = await escolasAxios.delete(`/escolas/${id}`)
+      return response.data
+    })
+  }
 }
 
 export default new EscolasService()
