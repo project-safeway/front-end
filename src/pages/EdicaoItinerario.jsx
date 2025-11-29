@@ -283,8 +283,15 @@ export default function EdicaoItinerario() {
             return;
         }
 
-        const confirmar = window.confirm("Tem certeza que deseja remover este aluno do itinerário?");
-        if (!confirmar) return;
+            const { isConfirmed } = await MySwal.fire({
+              title: 'Remover aluno',
+              text: 'Tem certeza que deseja remover este aluno do itinerário?',
+              icon: 'warning',
+              showCancelButton: true,
+              confirmButtonText: 'Sim, remover',
+              cancelButtonText: 'Cancelar'
+            });
+            if (!isConfirmed) return;
 
         try {
             // Remover via API
@@ -348,8 +355,15 @@ export default function EdicaoItinerario() {
             return;
         }
 
-        const confirmar = window.confirm("Tem certeza que deseja remover esta escola do itinerário?");
-        if (!confirmar) return;
+            const { isConfirmed } = await MySwal.fire({
+              title: 'Remover escola',
+              text: 'Tem certeza que deseja remover esta escola do itinerário?',
+              icon: 'warning',
+              showCancelButton: true,
+              confirmButtonText: 'Sim, remover',
+              cancelButtonText: 'Cancelar'
+            });
+            if (!isConfirmed) return;
 
         try {
             // Remover via API

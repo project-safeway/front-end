@@ -125,11 +125,15 @@ export default function ItinerarioModal({
   const handleDelete = async () => {
     if (!itinerario?.id) return;
     
-    const confirmed = window.confirm(
-      `Tem certeza que deseja excluir o itinerário "${itinerario.nome}"?\n\nEsta ação não pode ser desfeita.`
-    );
-    
-    if (!confirmed) return;
+      const { isConfirmed } = await MySwal.fire({
+        title: 'Excluir itinerário',
+        text: `Tem certeza que deseja excluir o itinerário "${itinerario.nome}"?\n\nEsta ação não pode ser desfeita.`,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: 'Sim, excluir',
+        cancelButtonText: 'Cancelar'
+      });
+      if (!isConfirmed) return;
 
     setIsSubmitting(true);
     try {

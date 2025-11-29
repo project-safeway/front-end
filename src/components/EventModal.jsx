@@ -114,8 +114,15 @@ export default function EventModal({ isOpen, onClose, onSave, onDelete, event, s
   const handleDelete = async () => {
     if (!event?.id) return
 
-    const confirmed = window.confirm('Tem certeza que deseja excluir este evento?')
-    if (!confirmed) return
+      const { isConfirmed } = await MySwal.fire({
+        title: 'Excluir evento',
+        text: 'Tem certeza que deseja excluir este evento?',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: 'Sim, excluir',
+        cancelButtonText: 'Cancelar'
+      });
+      if (!isConfirmed) return;
 
     setIsSubmitting(true)
 

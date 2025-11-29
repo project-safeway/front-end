@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import MySwal from '../utils/swal';
 import { useNavigate, Link } from 'react-router-dom'
 import PersonIcon from '@mui/icons-material/Person'
 import EmailIcon from '@mui/icons-material/Email'
@@ -72,7 +73,12 @@ function Register() {
       }
 
       await register(userData)
-      alert('Usuário registrado com sucesso!')
+      await MySwal.fire({
+        title: 'Sucesso!',
+        text: 'Usuário registrado com sucesso!',
+        icon: 'success',
+        confirmButtonText: 'OK'
+      });
       navigate('/login')
     } catch (error) {
       setError(error.message || 'Erro ao registrar usuário')

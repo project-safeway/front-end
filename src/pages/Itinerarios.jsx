@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import MapIcon from "@mui/icons-material/Map";
+import MySwal from '../utils/swal';
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import { CardItinerario } from "../components/CardItinerario";
 import { Botao } from "../components/Botao";
@@ -63,11 +64,15 @@ export default function Itinerarios() {
   }
 
   const handleDeleteItinerario = async (id) => {
-    const confirmar = window.confirm(
-      'Tem certeza que deseja excluir este itinerário? Esta ação não pode ser desfeita.'
-    );
-
-    if (!confirmar) return;
+    const { isConfirmed } = await MySwal.fire({
+      title: 'Excluir itinerário',
+      text: 'Tem certeza que deseja excluir este itinerário? Esta ação não pode ser desfeita.',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'Sim, excluir',
+      cancelButtonText: 'Cancelar'
+    });
+    if (!isConfirmed) return;
 
     setIsDeleting(id);
     try {
