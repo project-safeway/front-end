@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useAuth } from '../contexts/AuthContext';
 import { useSearchParams, Link, useNavigate } from "react-router-dom";
 import EditIcon from "@mui/icons-material/Edit";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
@@ -19,6 +20,7 @@ export default function EdicaoItinerario() {
     const [searchParams] = useSearchParams();
     const navigate = useNavigate();
     const itinerarioId = Number(searchParams.get("itinerarioId"));
+    const { user } = useAuth();
 
     const [itinerario, setItinerario] = useState(null);
     const [alunosItinerario, setAlunosItinerario] = useState([]);
@@ -55,8 +57,9 @@ export default function EdicaoItinerario() {
     const carregarDados = async () => {
         setIsLoading(true);
         try {
-            // Carregar todos os alunos do transporte primeiro (para ter os dados completos)
-            const alunosTransporte = await TransporteService.listarAlunos(1);
+            // Carregar todos os alunos do transporte do usuário logado
+            const transporteId = user?.transportId || user?.idTransporte || 1;
+            const alunosTransporte = await TransporteService.listarAlunos(transporteId);
             setAlunosDisponiveis(alunosTransporte);
 
             // Carregar escolas disponíveis
@@ -220,8 +223,7 @@ export default function EdicaoItinerario() {
             const dadosAtualizacao = {
                 nome: itinerario.nome,
                 horarioInicio: itinerario.horarioInicio,
-                horarioFim: itinerario.horarioFim,
-                tipoViagem: itinerario.tipoViagem,
+                horarioFim: itinerario.tipoViagem,
                 ativo: itinerario.ativo !== undefined ? itinerario.ativo : true,
                 paradas: paradas
             };
