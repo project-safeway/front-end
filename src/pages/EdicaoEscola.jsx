@@ -30,29 +30,40 @@ export function EdicaoEscola() {
     async function bootstrap() {
       try {
         setCarregando(true)
+        
         const dados = await escolasService.getEscolaById(id)
         if (!alive) return
 
+        // Mapear os campos do backend para o estado
         setEscola({
           nome: dados?.nome ?? '',
-          nivel: dados?.nivel ?? '',
-          logradouro: dados?.logradouro ?? '',
-          numero: dados?.numero ?? '',
-          complemento: dados?.complemento ?? '',
-          bairro: dados?.bairro ?? '',
-          cidade: dados?.cidade ?? '',
-          uf: dados?.uf ?? '',
-          cep: dados?.cep ?? '',
+          nivel: dados?.nivel ?? dados?.nivelEnsino ?? '',
+          logradouro: dados?.logradouro ?? dados?.endereco?.logradouro ?? '',
+          numero: dados?.numero ?? dados?.endereco?.numero ?? '',
+          complemento: dados?.complemento ?? dados?.endereco?.complemento ?? '',
+          bairro: dados?.bairro ?? dados?.endereco?.bairro ?? '',
+          cidade: dados?.cidade ?? dados?.endereco?.cidade ?? '',
+          uf: dados?.uf ?? dados?.endereco?.uf ?? '',
+          cep: dados?.cep ?? dados?.endereco?.cep ?? '',
         })
       } catch (err) {
         console.error('[EdicaoEscolas] Erro ao carregar escola:', err)
+        if (alive) {
+          const mensagemErro = err.response?.data?.message || err.message || 'Erro ao carregar dados da escola'
+          toast.error(mensagemErro, { theme: 'colored' })
+          
+          // Se for erro 404 ou 403, redirecionar para listagem
+          if (err.response?.status === 404 || err.response?.status === 403) {
+            navigate('/alunos')
+          }
+        }
       } finally {
         if (alive) setCarregando(false)
       }
     }
     bootstrap()
     return () => { alive = false }
-  }, [id])
+  }, [id, navigate])
 
   function setCampo(campo, valor) {
     setEscola(prev => ({ ...prev, [campo]: valor }))
@@ -91,12 +102,27 @@ export function EdicaoEscola() {
   async function handleSubmit(e) {
     e.preventDefault()
     try {
-      await escolasService.updateEscola(id, escola)
+      const escolaPayload = {
+        nome: escola.nome,
+        nivelEnsino: escola.nivel,
+        endereco: {
+          logradouro: escola.logradouro,
+          numero: escola.numero,
+          complemento: escola.complemento || null,
+          bairro: escola.bairro,
+          cidade: escola.cidade,
+          uf: escola.uf,
+          cep: escola.cep.replace(/\D/g, '')
+        }
+      }
+
+      await escolasService.updateEscola(id, escolaPayload)
       toast.success('Escola atualizada com sucesso!')
       navigate('/alunos')
     } catch (err) {
       console.error('[EdicaoEscolas] Erro ao salvar edição:', err)
-      toast.error('Erro ao atualizar escola')
+      const mensagemErro = err.response?.data?.message || err.message || 'Erro ao atualizar escola'
+      toast.error(mensagemErro)
     }
   }
 

@@ -118,6 +118,13 @@ class TransporteService {
     })
   }
 
+  async listarTransportesUsuario() {
+    return this._executarComRetry(async () => {
+      const response = await transporteAxios.get('/transporte')
+      return response.data
+    })
+  }
+
   _tratarErro(error, mensagemPadrao) {
     console.error('[TransporteService] Erro:', error)
 

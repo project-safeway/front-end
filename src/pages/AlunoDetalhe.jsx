@@ -295,8 +295,8 @@ export default function AlunoDetalhe() {
                       onClick={() => setResponsavelSelecionado(i)}
                     >
                       <div className="flex items-center gap-2 mb-3">
-                        <div className={`p-2 rounded-lg ${responsavelSelecionado === i ? 'bg-primary-100' : 'bg-white'}`}>
-                          <PersonIcon className={responsavelSelecionado === i ? 'text-primary-500' : 'text-navy-400'} />
+                        <div className={`p-2 rounded-lg ${responsavelSelecionado === i ? 'bg-primary-500' : 'bg-white'}`}>
+                          <PersonIcon className={responsavelSelecionado === i ? 'text-white' : 'text-navy-400'} />
                         </div>
                         <p className="font-bold text-navy-900">{r.nome}</p>
                       </div>
