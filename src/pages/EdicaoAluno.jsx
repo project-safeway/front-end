@@ -5,6 +5,7 @@ import SchoolIcon from '@mui/icons-material/School'
 import ArrowBackIcon from '@mui/icons-material/ArrowBack'
 import escolasService from '../services/escolasService'
 import alunosService from '../services/alunosService'
+import transporteService from '../services/transporteService'
 import { maskCEP, buscarEnderecoPorCEP, maskCPF, maskPhone } from '../utils/formatters'
 
 export function EdicaoAlunos() {
@@ -16,7 +17,8 @@ export function EdicaoAlunos() {
   const [escolas, setEscolas] = useState([])
   const [dadosOriginais, setDadosOriginais] = useState(null)
   const [responsaveisParaDeletar, setResponsaveisParaDeletar] = useState([])
-  const [buscandoCEPs, setBuscandoCEPs] = useState([]) // Array para controlar estado de cada responsável
+  const [buscandoCEPs, setBuscandoCEPs] = useState([])
+  const [transporteId, setTransporteId] = useState(null)
 
   // estado principal do formulário
   const [aluno, setAluno] = useState({
@@ -40,12 +42,34 @@ export function EdicaoAlunos() {
       try {
         setCarregando(true)
 
+        // Carregar transporte do usuário primeiro
+        const transportes = await transporteService.listarTransportesUsuario()
+        
+        if (!alive) return
+        
+        if (!Array.isArray(transportes) || transportes.length === 0) {
+          toast.error('Você não possui um transporte cadastrado', { theme: 'colored' })
+          navigate('/alunos')
+          return
+        }
+
+        const transporte = transportes[0]
+        const idTransporte = transporte.idTransporte || transporte.id
+        setTransporteId(idTransporte)
+
         const [listaEscolas, dadosAluno] = await Promise.all([
           escolasService.getEscolas(),
           alunosService.getAlunoById(id),
         ])
 
         if (!alive) return
+        
+        // VALIDAÇÃO: Verificar se o aluno pertence ao transporte do usuário
+        if (dadosAluno?.fkTransporte && dadosAluno.fkTransporte !== idTransporte) {
+          toast.error('Você não tem permissão para editar este aluno', { theme: 'colored' })
+          navigate('/alunos')
+          return
+        }
 
         // Armazenar dados originais
         setDadosOriginais(dadosAluno)
@@ -94,7 +118,7 @@ export function EdicaoAlunos() {
           valorMensalidade: dadosAluno?.valorMensalidade?.toString() || dadosAluno?.valorPadraoMensalidade?.toString() || dadosAluno?.mensalidade?.toString() || '',
           diaVencimento: dadosAluno?.diaVencimento?.toString() || dadosAluno?.vencimentoDia?.toString() || '',
           fkEscola: fkEscola,
-          fkTransporte: dadosAluno?.fkTransporte || 1,
+          fkTransporte: idTransporte, // Sempre usar o transporte do usuário logado
         })
 
         // Preencher responsáveis
@@ -317,7 +341,7 @@ export function EdicaoAlunos() {
         valorMensalidade: parseFloat(aluno.valorMensalidade) || 0,
         diaVencimento: parseInt(aluno.diaVencimento) || 1,
         fkEscola: parseInt(aluno.fkEscola),
-        fkTransporte: parseInt(aluno.fkTransporte) || 1,
+        fkTransporte: transporteId || parseInt(aluno.fkTransporte), // Sempre usar o transporteId do usuário logado
         responsaveis: responsaveisPayload,
       }
 

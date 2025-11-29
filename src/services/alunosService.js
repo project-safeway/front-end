@@ -116,6 +116,13 @@ class AlunosService {
       return response.data
     })
   }
+
+  async deleteAluno(alunoId) {
+    return this._executarComRetry(async () => {
+      const response = await alunoAxios.delete(`/alunos/${alunoId}`)
+      return response.data
+    })
+  }
 }
 
 export default new AlunosService()

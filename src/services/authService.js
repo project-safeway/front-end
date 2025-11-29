@@ -25,6 +25,7 @@ class AuthService {
 
       const response = await authAxios.post('/login', { email, senha })
       const data = response.data
+      console.log('Dados recebidos no login:', data)
 
       // Salva o token e a data de expiração no localStorage
       if (data.accessToken) {
@@ -157,6 +158,15 @@ class AuthService {
   getUserRole() {
     const payload = this.getTokenPayload()
     return payload?.role || null
+  }
+
+  /**
+   * Retorna o ID do transporte do usuário do token
+   * @returns {number|null}
+   */
+  getTransportId() {
+    const payload = this.getTokenPayload()
+    return payload?.transportId || payload?.idTransporte || null
   }
 }
 
