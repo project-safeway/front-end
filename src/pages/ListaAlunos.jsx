@@ -8,11 +8,11 @@ import DeleteIcon from '@mui/icons-material/Delete'
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore'
 import ExpandLessIcon from '@mui/icons-material/ExpandLess'
 import ArrowBackIcon from '@mui/icons-material/ArrowBack'
-import DomainIcon from '@mui/icons-material/Domain'
 import SearchIcon from '@mui/icons-material/Search'
 import escolasService from '../services/escolasService'
 import alunosService from '../services/alunosService'
-import ConfirmDialog from '../components/ConfirmDialog'
+
+import { showSwal } from '../utils/swal.jsx'
 
 export default function ListaAlunos() {
   const navigate = useNavigate()
@@ -20,15 +20,7 @@ export default function ListaAlunos() {
   const [escolasComAlunos, setEscolasComAlunos] = useState([])
   const [aberto, setAberto] = useState({})
   const [busca, setBusca] = useState('')
-  const [dialogConfig, setDialogConfig] = useState({
-    isOpen: false,
-    title: '',
-    message: '',
-    onConfirm: null,
-    type: 'danger',
-    confirmText: '',
-    cancelText: ''
-  })
+
 
   useEffect(() => {
     let alive = true
@@ -68,76 +60,68 @@ export default function ListaAlunos() {
     )
   }
 
-  const handleDeleteEscola = (escolaId, escolaNome, alunos) => {
+  const handleDeleteEscola = async (escolaId, escolaNome, alunos) => {
     // Validar se há alunos vinculados à escola
     if (alunos && alunos.length > 0) {
-      setDialogConfig({
-        isOpen: true,
+      await showSwal({
         title: 'Não é possível excluir',
-        message: `Não é possível excluir a escola "${escolaNome}", pois existem ${alunos.length} aluno(s) vinculado(s) a ela. Remova os alunos antes de excluir a escola.`,
-        type: 'warning',
-        confirmText: 'Ok',
-        cancelText: '',
-        onConfirm: () => {
-          // Apenas fecha o dialog, não faz nada
-        }
-      })
-      return
+        html: `Não é possível excluir a escola "<b>${escolaNome}</b>", pois existem <b>${alunos.length}</b> aluno(s) vinculado(s) a ela.<br>Remova os alunos antes de excluir a escola.`,
+        icon: 'warning',
+        confirmButtonText: 'Ok',
+        showCancelButton: false,
+      });
+      return;
     }
 
-    // Se não houver alunos, permite a exclusão
-    setDialogConfig({
-      isOpen: true,
+    const swalResult = await showSwal({
       title: 'Excluir Escola',
-      message: `Tem certeza que deseja excluir a escola "${escolaNome}"? Esta ação não poderá ser desfeita.`,
-      type: 'danger',
-      confirmText: 'Excluir',
-      cancelText: 'Cancelar',
-      onConfirm: async () => {
-        try {
-          await escolasService.deleteEscola(escolaId)
-          toast.success('Escola excluída com sucesso!')
-          // Atualizar a lista removendo a escola
-          setEscolasComAlunos(prev => prev.filter(item => {
-            const escola = item.escola || item
-            return escola.id !== escolaId
-          }))
-        } catch (error) {
-          console.error('Erro ao excluir escola:', error)
-          const mensagemErro = error.response?.data?.message || error.message || 'Erro ao excluir escola'
-          toast.error(mensagemErro)
-        }
-      }
-    })
+      html: `Tem certeza que deseja excluir a escola "<b>${escolaNome}</b>"? Esta ação não poderá ser desfeita.`,
+      icon: 'warning',
+      confirmButtonText: 'Excluir',
+      cancelButtonText: 'Cancelar',
+      showCancelButton: true,
+    });
+    if (!swalResult.isConfirmed) return;
+    try {
+      await escolasService.deleteEscola(escolaId);
+      toast.success('Escola excluída com sucesso!');
+      setEscolasComAlunos(prev => prev.filter(item => {
+        const escola = item.escola || item;
+        return escola.id !== escolaId;
+      }));
+    } catch (error) {
+      console.error('Erro ao excluir escola:', error);
+      const mensagemErro = error.response?.data?.message || error.message || 'Erro ao excluir escola';
+      toast.error(mensagemErro);
+    }
   }
 
-  const handleDeleteAluno = (alunoId, alunoNome, e) => {
-    e.stopPropagation()
-    setDialogConfig({
-      isOpen: true,
+  const handleDeleteAluno = async (alunoId, alunoNome, e) => {
+    e.stopPropagation();
+    const swalResult = await showSwal({
       title: 'Excluir Aluno',
-      message: `Tem certeza que deseja excluir o aluno "${alunoNome}"? Esta ação não poderá ser desfeita.`,
-      type: 'danger',
-      onConfirm: async () => {
-        try {
-          await alunosService.deleteAluno(alunoId)
-          toast.success('Aluno excluído com sucesso!')
-          setEscolasComAlunos(prev => prev.map(item => {
-            const alunos = (item.alunos || []).filter(a => a.id !== alunoId)
-            return { ...item, alunos }
-          }))
-        } catch (error) {
-          console.error('Erro ao excluir aluno:', error)
-          const mensagemErro = error.response?.data?.message || error.message || 'Erro ao excluir aluno'
-          toast.error(mensagemErro)
-        }
-      }
-    })
+      html: `Tem certeza que deseja excluir o aluno "<b>${alunoNome}</b>"? Esta ação não poderá ser desfeita.`,
+      icon: 'warning',
+      confirmButtonText: 'Excluir',
+      cancelButtonText: 'Cancelar',
+      showCancelButton: true,
+    });
+    if (!swalResult.isConfirmed) return;
+    try {
+      await alunosService.deleteAluno(alunoId);
+      toast.success('Aluno excluído com sucesso!');
+      setEscolasComAlunos(prev => prev.map(item => {
+        const alunos = (item.alunos || []).filter(a => a.id !== alunoId);
+        return { ...item, alunos };
+      }));
+    } catch (error) {
+      console.error('Erro ao excluir aluno:', error);
+      const mensagemErro = error.response?.data?.message || error.message || 'Erro ao excluir aluno';
+      toast.error(mensagemErro);
+    }
   }
 
-  const closeDialog = () => {
-    setDialogConfig(prev => ({ ...prev, isOpen: false }))
-  }
+
 
 
 
@@ -164,17 +148,7 @@ export default function ListaAlunos() {
           <span>Voltar ao Início</span>
         </Link>
 
-        {/* Confirm Dialog */}
-        <ConfirmDialog
-          isOpen={dialogConfig.isOpen}
-          onClose={closeDialog}
-          onConfirm={dialogConfig.onConfirm}
-          title={dialogConfig.title}
-          message={dialogConfig.message}
-          type={dialogConfig.type}
-          confirmText={dialogConfig.confirmText || "Excluir"}
-          cancelText={dialogConfig.cancelText || "Cancelar"}
-        />
+
 
         {/* Header minimalista */}
         <div className="bg-white rounded-2xl shadow-sm border border-offwhite-200 p-8 mb-8">
