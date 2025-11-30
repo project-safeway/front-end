@@ -21,14 +21,25 @@ export function PaymentsPanel({ selectedMonth, selectedYear }) {
             setIsLoading(true)
             setError(null)
             
-            const data = await mensalidadeService.getMensalidadesPendentes(
+            // Busca mensalidades pendentes e atrasadas
+            const pendentesData = await mensalidadeService.getMensalidadesPendentes(
                 selectedMonth,
                 selectedYear
             )
             
-            // Garante que sempre temos um array
-            const mensalidadesArray = Array.isArray(data) ? data : []
-            setMensalidades(mensalidadesArray)
+            // Busca mensalidades pagas
+            const pagasData = await mensalidadeService.getMensalidadesPagas(
+                selectedMonth,
+                selectedYear
+            )
+            
+            // Combina os arrays
+            const allMensalidades = [
+                ...(Array.isArray(pendentesData) ? pendentesData : []),
+                ...(Array.isArray(pagasData) ? pagasData : [])
+            ]
+            
+            setMensalidades(allMensalidades)
         } catch (err) {
             console.error('Erro ao carregar mensalidades:', err)
             setError('Não foi possível carregar os pagamentos')

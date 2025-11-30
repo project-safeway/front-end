@@ -412,51 +412,65 @@ export default function Calendar({ onMonthChange }) {
             {/* Content */}
             <div className="flex-1 overflow-y-auto p-6">
               {eventosDoDia.length > 0 ? (
-                <ul className="space-y-3">
-                  {eventosDoDia.map((evento) => {
-                    const priorityBadge = getPriorityBadge(evento.priority)
-                    return (
-                      <li
-                        key={evento.id}
-                        className={`p-4 rounded-lg border-l-4 ${getEventColor(evento.type)} cursor-pointer hover:shadow-md transition-all group`}
-                        onClick={() => {
-                          setSelectedEvent(evento)
-                          setIsModalOpen(true)
-                          setIsDayEventsModalOpen(false)
-                        }}
-                      >
-                        <div className="flex justify-between items-start">
-                          <div className="flex-1">
-                            <span className="font-medium text-navy-900 block">{evento.title}</span>
-                            <div className="flex items-center gap-2 mt-1">
-                              <span className="text-xs text-navy-600 capitalize">
-                                {evento.type}
-                              </span>
-                              <span className={`text-xs px-2 py-0.5 rounded-full border ${priorityBadge.className}`}>
-                                {priorityBadge.label}
-                              </span>
+                <>
+                  <ul className="space-y-3">
+                    {eventosDoDia.map((evento) => {
+                      const priorityBadge = getPriorityBadge(evento.priority)
+                      return (
+                        <li
+                          key={evento.id}
+                          className={`p-4 rounded-lg border-l-4 ${getEventColor(evento.type)} cursor-pointer hover:shadow-md transition-all group`}
+                          onClick={() => {
+                            setSelectedEvent(evento)
+                            setIsModalOpen(true)
+                            setIsDayEventsModalOpen(false)
+                          }}
+                        >
+                          <div className="flex justify-between items-start">
+                            <div className="flex-1">
+                              <span className="font-medium text-navy-900 block">{evento.title}</span>
+                              <div className="flex items-center gap-2 mt-1">
+                                <span className="text-xs text-navy-600 capitalize">
+                                  {evento.type}
+                                </span>
+                                <span className={`text-xs px-2 py-0.5 rounded-full border ${priorityBadge.className}`}>
+                                  {priorityBadge.label}
+                                </span>
+                              </div>
+                              {evento.description && (
+                                <p className="text-xs text-navy-500 mt-1">{evento.description}</p>
+                              )}
                             </div>
-                            {evento.description && (
-                              <p className="text-xs text-navy-500 mt-1">{evento.description}</p>
-                            )}
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                setSelectedEvent(evento)
+                                setIsModalOpen(true)
+                                setIsDayEventsModalOpen(false)
+                              }}
+                              className="opacity-0 group-hover:opacity-100 transition-opacity p-1 hover:bg-white rounded"
+                              title="Editar evento"
+                            >
+                              <EditIcon fontSize="small" className="text-navy-600" />
+                            </button>
                           </div>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              setSelectedEvent(evento)
-                              setIsModalOpen(true)
-                              setIsDayEventsModalOpen(false)
-                            }}
-                            className="opacity-0 group-hover:opacity-100 transition-opacity p-1 hover:bg-white rounded"
-                            title="Editar evento"
-                          >
-                            <EditIcon fontSize="small" className="text-navy-600" />
-                          </button>
-                        </div>
-                      </li>
-                    )
-                  })}
-                </ul>
+                        </li>
+                      )
+                    })}
+                  </ul>
+                  <div className="mt-6 pt-4 border-t border-offwhite-200 text-center">
+                    <button
+                      onClick={() => {
+                        setSelectedEvent(null)
+                        setIsModalOpen(true)
+                        setIsDayEventsModalOpen(false)
+                      }}
+                      className="text-primary-500 hover:text-primary-600 text-sm font-medium"
+                    >
+                      Cadastrar novo evento para esse dia
+                    </button>
+                  </div>
+                </>
               ) : (
                 <div className="text-center py-8">
                   <EventIcon className="text-navy-300 text-5xl mb-2 mx-auto" />

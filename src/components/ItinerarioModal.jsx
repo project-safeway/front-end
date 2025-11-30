@@ -7,6 +7,7 @@ import DeleteIcon from "@mui/icons-material/Delete";
 import AccessTimeIcon from "@mui/icons-material/AccessTime";
 import DirectionsBusIcon from "@mui/icons-material/DirectionsBus";
 import RouteIcon from "@mui/icons-material/Route";
+import { showSwal } from '../utils/swal.jsx';
 
 export default function ItinerarioModal({ 
   isOpen, 
@@ -125,15 +126,14 @@ export default function ItinerarioModal({
   const handleDelete = async () => {
     if (!itinerario?.id) return;
     
-      const { isConfirmed } = await MySwal.fire({
+      const result = await showSwal({
         title: 'Excluir itinerário',
         text: `Tem certeza que deseja excluir o itinerário "${itinerario.nome}"?\n\nEsta ação não pode ser desfeita.`,
         icon: 'warning',
-        showCancelButton: true,
         confirmButtonText: 'Sim, excluir',
         cancelButtonText: 'Cancelar'
       });
-      if (!isConfirmed) return;
+      if (!result.isConfirmed) return;
 
     setIsSubmitting(true);
     try {

@@ -1,3 +1,5 @@
+import axios from 'axios'
+
 /**
 * Formata uma data usando o padrão brasileiro
  * @param {Date|string|number} date - Data a ser formatada
@@ -211,13 +213,11 @@ export async function buscarEnderecoPorCEP(cep) {
       throw new Error('CEP deve ter 8 dígitos')
     }
 
-    const response = await fetch(`https://viacep.com.br/ws/${cleanCEP}/json/`)
-    
-    if (!response.ok) {
-      throw new Error('Erro ao consultar CEP')
-    }
+    const response = await axios.get(`https://viacep.com.br/ws/${cleanCEP}/json/`, {
+      timeout: 3000 // Timeout de 3 segundos
+    })
 
-    const data = await response.json()
+    const data = response.data
 
     if (data.erro) {
       throw new Error('CEP não encontrado')
@@ -236,6 +236,9 @@ export async function buscarEnderecoPorCEP(cep) {
       siafi: data.siafi
     }
   } catch (error) {
+    if (error.code === 'ECONNABORTED' || error.message.includes('timeout')) {
+      throw new Error('Timeout ao consultar CEP')
+    }
     console.error('Erro ao buscar CEP:', error)
     throw error
   }
