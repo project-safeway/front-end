@@ -293,6 +293,43 @@ export default function Calendar({ onMonthChange }) {
         .custom-scrollbar::-webkit-scrollbar-thumb:hover {
           background: #EA580C;
         }
+
+        /* Responsividade para telas menores */
+        @media (max-width: 640px) {
+          .react-calendar__month-view__days {
+            gap: 4px !important;
+            grid-auto-rows: minmax(30px, 1fr) !important;
+          }
+
+          .react-calendar__tile {
+            height: 40px !important;
+            font-size: 0.75rem !important;
+            padding: 0.125rem !important;
+          }
+
+          .react-calendar__month-view__weekdays {
+            font-size: 0.625rem !important;
+            padding: 0.25rem !important;
+          }
+
+          .react-calendar__navigation button {
+            font-size: 0.875rem !important;
+            padding: 0.5rem !important;
+          }
+        }
+
+        /* Responsividade para telas médias */
+        @media (min-width: 641px) and (max-width: 1023px) {
+          .react-calendar__month-view__days {
+            gap: 5px !important;
+            grid-auto-rows: minmax(32px, 1fr) !important;
+          }
+
+          .react-calendar__tile {
+            height: 50px !important;
+            font-size: 0.8rem !important;
+          }
+        }
       `}</style>
 
       <div className="bg-offwhite-50 border border-offwhite-200 rounded-xl shadow-sm p-6 h-full flex flex-col">
