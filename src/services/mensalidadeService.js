@@ -19,6 +19,24 @@ const mensalidadeService = {
     }
   },
 
+  getMensalidadesPagas: async (mes = null, ano = null) => {
+    try {
+      const params = new URLSearchParams()
+      if (mes !== null) params.append('mes', mes)
+      if (ano !== null) params.append('ano', ano)
+      
+      const response = await api.get(`/mensalidades/pagas?${params.toString()}`)
+      
+      // Backend retorna Page<MensalidadeResponse>, então pegamos o conteúdo
+      const data = response.content || response.data?.content || []
+      
+      return data
+    } catch (error) {
+      console.error('Erro ao buscar mensalidades pagas:', error)
+      throw error
+    }
+  },
+
   marcarComoPago: async (mensalidadeId, pagamentoId) => {
     try {
       const response = await api.put(

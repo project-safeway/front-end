@@ -30,7 +30,16 @@ export function CadastroEscola() {
     
     if (cepLimpo.length !== 8) return
 
+    if (buscandoCEP) return // Evita múltiplas chamadas simultâneas
+
     setBuscandoCEP(true)
+
+    // Timeout de segurança para evitar travamento
+    const timeoutId = setTimeout(() => {
+      setBuscandoCEP(false)
+      toast.error('Timeout na busca de CEP', { theme: 'colored' })
+    }, 5000)
+
     try {
       const dados = await buscarEnderecoPorCEP(cepLimpo)
       
@@ -46,6 +55,7 @@ export function CadastroEscola() {
     } catch (error) {
       toast.error(error.message || 'CEP não encontrado', { theme: 'colored' })
     } finally {
+      clearTimeout(timeoutId)
       setBuscandoCEP(false)
     }
   }

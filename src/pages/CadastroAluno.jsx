@@ -63,9 +63,23 @@ export function CadastroAlunos() {
     
     if (cepLimpo.length !== 8) return
 
-    const novosBuscandoCEPs = [...buscandoCEPs]
-    novosBuscandoCEPs[i] = true
-    setBuscandoCEPs(novosBuscandoCEPs)
+    if (buscandoCEPs[i]) return // Evita múltiplas chamadas simultâneas
+
+    setBuscandoCEPs(prev => {
+      const newArr = [...prev]
+      newArr[i] = true
+      return newArr
+    })
+
+    // Timeout de segurança para evitar travamento
+    const timeoutId = setTimeout(() => {
+      setBuscandoCEPs(prev => {
+        const newArr = [...prev]
+        newArr[i] = false
+        return newArr
+      })
+      toast.error('Timeout na busca de CEP', { theme: 'colored' })
+    }, 5000)
 
     try {
       const dados = await buscarEnderecoPorCEP(cepLimpo)
@@ -84,8 +98,12 @@ export function CadastroAlunos() {
     } catch (error) {
       toast.error(error.message || 'CEP não encontrado', { theme: 'colored' })
     } finally {
-      novosBuscandoCEPs[i] = false
-      setBuscandoCEPs(novosBuscandoCEPs)
+      clearTimeout(timeoutId)
+      setBuscandoCEPs(prev => {
+        const newArr = [...prev]
+        newArr[i] = false
+        return newArr
+      })
     }
   }
 
