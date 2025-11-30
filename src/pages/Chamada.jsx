@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { showSwal } from '../utils/swal.jsx';
 import { Link, useSearchParams, useNavigate } from "react-router-dom";
 import AssignmentTurnedInIcon from "@mui/icons-material/AssignmentTurnedIn";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
@@ -109,10 +110,15 @@ export default function Chamada() {
     const alunosNaoRegistrados = alunos.filter((a) => a.presente === null);
     
     if (alunosNaoRegistrados.length > 0) {
-      const confirmar = window.confirm(
-        `Ainda há ${alunosNaoRegistrados.length} aluno(s) sem registro de presença. Deseja finalizar mesmo assim?`
-      );
-      if (!confirmar) return;
+      const { isConfirmed } = await showSwal({
+        title: 'Finalizar chamada',
+        text: `Ainda há ${alunosNaoRegistrados.length} aluno(s) sem registro de presença. Deseja finalizar mesmo assim?`,
+        icon: 'warning',
+        confirmButtonText: 'Sim, finalizar',
+        cancelButtonText: 'Cancelar',
+        showCancelButton: true
+      });
+      if (!isConfirmed) return;
     }
 
     setIsFinalizando(true);
@@ -144,10 +150,15 @@ export default function Chamada() {
   };
 
   const cancelarChamada = async () => {
-    const confirmar = window.confirm(
-      "Tem certeza que deseja cancelar esta chamada? Todos os registros serão perdidos."
-    );
-    if (!confirmar) return;
+    const { isConfirmed } = await showSwal({
+      title: 'Cancelar chamada',
+      text: 'Tem certeza que deseja cancelar esta chamada? Todos os registros serão perdidos.',
+      icon: 'warning',
+      confirmButtonText: 'Sim, cancelar',
+      cancelButtonText: 'Voltar',
+      showCancelButton: true
+    });
+    if (!isConfirmed) return;
 
     try {
       await ChamadaService.alterarStatusChamada(itinerarioId, "CANCELADA");

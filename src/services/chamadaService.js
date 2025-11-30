@@ -91,6 +91,41 @@ class ChamadaService {
     });
   }
 
+  /**
+   * Busca o histórico de chamadas de um itinerário com paginação
+   * @param {number} itinerarioId - ID do itinerário
+   * @param {Object} params - Parâmetros de filtro e paginação
+   * @param {Array<string>} params.status - Lista de status para filtrar (opcional)
+   * @param {number} params.page - Número da página (padrão: 0)
+   * @param {number} params.size - Tamanho da página (padrão: 10)
+   * @param {string} params.sortField - Campo de ordenação (padrão: 'id')
+   * @param {string} params.sortDirection - Direção de ordenação: 'asc' ou 'desc' (padrão: 'desc')
+   * @returns {Promise<Object>} Objeto com conteúdo paginado e metadados
+   */
+  async buscarHistoricoChamadas(itinerarioId, params = {}) {
+    return this._executarComRetry(async () => {
+      const queryParams = new URLSearchParams();
+      
+      if (params.status && params.status.length > 0) {
+        params.status.forEach(s => queryParams.append('status', s));
+      }
+      
+      queryParams.append('page', params.page || 0);
+      queryParams.append('size', params.size || 100);
+      
+      // Adiciona ordenação
+      const sortField = params.sortField || 'id';
+      const sortDirection = params.sortDirection || 'desc';
+      queryParams.append('sort', sortField);
+      queryParams.append('sort', sortDirection);
+
+      const response = await chamadaAxios.get(
+        `/chamada/historico/${itinerarioId}?${queryParams.toString()}`
+      );
+      return response.data;
+    });
+  }
+
   _tratarErro(error, mensagemPadrao) {
     console.error('[ChamadaService] Erro:', error);
     

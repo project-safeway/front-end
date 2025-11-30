@@ -15,6 +15,7 @@ import TransporteService from '../services/transporteService';
 import EscolasService from '../services/escolasService';
 import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import { showSwal } from '../utils/swal.jsx';
 
 export default function EdicaoItinerario() {
     const [searchParams] = useSearchParams();
@@ -188,6 +189,13 @@ export default function EdicaoItinerario() {
         }
     };
 
+    // Função utilitária para garantir formato HH:mm:ss
+    function padTime(t) {
+        if (t && t.length === 8) return t;
+        if (t && t.length === 5) return t + ':00';
+        return t;
+    }
+
     const handleReordenarPorDrag = async (fromIndex, toIndex) => {
         try {
             // Criar cópia do array
@@ -222,8 +230,9 @@ export default function EdicaoItinerario() {
             // Preparar dados para atualização
             const dadosAtualizacao = {
                 nome: itinerario.nome,
-                horarioInicio: itinerario.horarioInicio,
-                horarioFim: itinerario.tipoViagem,
+                horarioInicio: padTime(itinerario.horarioInicio),
+                horarioFim: padTime(itinerario.horarioFim),
+                tipoViagem: itinerario.tipoViagem,
                 ativo: itinerario.ativo !== undefined ? itinerario.ativo : true,
                 paradas: paradas
             };
@@ -283,8 +292,15 @@ export default function EdicaoItinerario() {
             return;
         }
 
-        const confirmar = window.confirm("Tem certeza que deseja remover este aluno do itinerário?");
-        if (!confirmar) return;
+            const { isConfirmed } = await showSwal({
+              title: 'Remover aluno',
+              text: 'Tem certeza que deseja remover este aluno do itinerário?',
+              icon: 'warning',
+              confirmButtonText: 'Sim, remover',
+              cancelButtonText: 'Cancelar',
+              showCancelButton: true
+            });
+            if (!isConfirmed) return;
 
         try {
             // Remover via API
@@ -348,8 +364,15 @@ export default function EdicaoItinerario() {
             return;
         }
 
-        const confirmar = window.confirm("Tem certeza que deseja remover esta escola do itinerário?");
-        if (!confirmar) return;
+            const { isConfirmed } = await showSwal({
+              title: 'Remover escola',
+              text: 'Tem certeza que deseja remover esta escola do itinerário?',
+              icon: 'warning',
+              confirmButtonText: 'Sim, remover',
+              cancelButtonText: 'Cancelar',
+              showCancelButton: true
+            });
+            if (!isConfirmed) return;
 
         try {
             // Remover via API
@@ -407,8 +430,8 @@ export default function EdicaoItinerario() {
             // Preparar dados do itinerário
             const dadosAtualizacao = {
                 nome: itinerario.nome,
-                horarioInicio: itinerario.horarioInicio,
-                horarioFim: itinerario.horarioFim,
+                horarioInicio: padTime(itinerario.horarioInicio),
+                horarioFim: padTime(itinerario.horarioFim),
                 tipoViagem: itinerario.tipoViagem,
                 ativo: itinerario.ativo !== undefined ? itinerario.ativo : true,
                 paradas: paradas

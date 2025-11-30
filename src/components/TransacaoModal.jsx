@@ -117,7 +117,15 @@ export default function TransacaoModal({
   }
 
   const handleDelete = async () => {
-    if (!transacao) return
+          const { isConfirmed } = await MySwal.fire({
+            title: 'Excluir transação',
+            text: 'Tem certeza que deseja excluir esta transação?',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: 'Sim, excluir',
+            cancelButtonText: 'Cancelar'
+          });
+          if (!isConfirmed) return;
 
     if (window.confirm('Tem certeza que deseja excluir esta transação?')) {
       setIsSubmitting(true)

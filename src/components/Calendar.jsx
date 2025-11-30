@@ -3,6 +3,8 @@ import { Calendar as ReactCalendar } from 'react-calendar'
 import 'react-calendar/dist/Calendar.css'
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline'
 import EditIcon from '@mui/icons-material/Edit'
+import CloseIcon from '@mui/icons-material/Close'
+import EventIcon from '@mui/icons-material/Event'
 import EventModal from './EventModal'
 import eventService from '../services/eventService'
 
@@ -14,6 +16,7 @@ export default function Calendar({ onMonthChange }) {
   const [selectedEvent, setSelectedEvent] = useState(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState(null)
+  const [isDayEventsModalOpen, setIsDayEventsModalOpen] = useState(false)
 
   useEffect(() => {
     loadEvents()
@@ -60,7 +63,7 @@ export default function Calendar({ onMonthChange }) {
 
   const handleDateClick = (date) => {
     setSelectedDate(date)
-    setSelectedEvent(null) // Limpa evento selecionado
+    setIsDayEventsModalOpen(true)
   }
 
   const handleActiveStartDateChange = ({ activeStartDate }) => {
@@ -92,6 +95,9 @@ export default function Calendar({ onMonthChange }) {
       
       // Recarrega eventos
       await loadEvents()
+      
+      // Notifica outros componentes sobre a atualização
+      window.dispatchEvent(new CustomEvent('eventUpdated'))
       
       return true
     } catch (err) {
@@ -158,27 +164,34 @@ export default function Calendar({ onMonthChange }) {
           font-family: inherit !important;
           background: #FAFAFA !important;
           border-radius: 0.75rem !important;
-          min-height: 380px !important;
+          display: flex !important;
+          flex-direction: column !important;
+          flex: 1 1 auto !important;
+          height: auto !important;
+          overflow: hidden !important;
+          box-sizing: border-box !important;
         }
 
-        /* Grid de dias do mês - altura fixa */
+        /* Grid de dias do mês - usa rows flexíveis para caber no container */
         .react-calendar__month-view__days {
           display: grid !important;
           grid-template-columns: repeat(7, 1fr) !important;
           gap: 6px !important;
-          height: 280px !important;
+          /* Allow rows to size so all month days fit inside the calendar container */
+          grid-auto-rows: minmax(34px, 1fr) !important;
+          align-content: start !important;
         }
 
-        /* Cada célula de dia */
+        /* Cada célula de dia - não usar aspect-ratio para evitar células muito grandes */
         .react-calendar__tile {
           max-width: 100% !important;
-          height: 38px !important;
+          height: 60px !important;
           display: flex !important;
           align-items: center !important;
           justify-content: center !important;
           padding: 0.25rem !important;
           font-size: 0.813rem !important;
-          aspect-ratio: unset !important;
+          box-sizing: border-box !important;
         }
 
         /* Dias do mês anterior/próximo */
@@ -280,6 +293,43 @@ export default function Calendar({ onMonthChange }) {
         .custom-scrollbar::-webkit-scrollbar-thumb:hover {
           background: #EA580C;
         }
+
+        /* Responsividade para telas menores */
+        @media (max-width: 640px) {
+          .react-calendar__month-view__days {
+            gap: 4px !important;
+            grid-auto-rows: minmax(30px, 1fr) !important;
+          }
+
+          .react-calendar__tile {
+            height: 40px !important;
+            font-size: 0.75rem !important;
+            padding: 0.125rem !important;
+          }
+
+          .react-calendar__month-view__weekdays {
+            font-size: 0.625rem !important;
+            padding: 0.25rem !important;
+          }
+
+          .react-calendar__navigation button {
+            font-size: 0.875rem !important;
+            padding: 0.5rem !important;
+          }
+        }
+
+        /* Responsividade para telas médias */
+        @media (min-width: 641px) and (max-width: 1023px) {
+          .react-calendar__month-view__days {
+            gap: 5px !important;
+            grid-auto-rows: minmax(32px, 1fr) !important;
+          }
+
+          .react-calendar__tile {
+            height: 50px !important;
+            font-size: 0.8rem !important;
+          }
+        }
       `}</style>
 
       <div className="bg-offwhite-50 border border-offwhite-200 rounded-xl shadow-sm p-6 h-full flex flex-col">
@@ -323,7 +373,7 @@ export default function Calendar({ onMonthChange }) {
           </div>
         ) : (
           <div className="flex-1 flex flex-col min-h-0">
-            <div className="calendar-container mb-4 flex-shrink-0">
+            <div className="calendar-container flex-1 flex flex-col">
               <ReactCalendar
                 onChange={handleDateChange}
                 value={selectedDate}
@@ -338,70 +388,97 @@ export default function Calendar({ onMonthChange }) {
                 }}
               />
             </div>
-
-            <div className="events-section">
-              <h4 className="font-semibold text-navy-800 mb-3">
-                Eventos para {selectedDate.toLocaleDateString('pt-BR')}
-              </h4>
-              <div className="max-h-64 overflow-y-auto pr-2 custom-scrollbar">
-                {eventosDoDia.length > 0 ? (
-                  <ul className="space-y-2">
-                    {eventosDoDia.map((evento) => {
-                      const priorityBadge = getPriorityBadge(evento.priority)
-                      return (
-                        <li
-                          key={evento.id}
-                          className={`p-3 rounded-lg border-l-4 ${getEventColor(evento.type)} cursor-pointer hover:shadow-md transition-all group`}
-                          onClick={() => handleEditEvent(evento)}
-                        >
-                          <div className="flex justify-between items-start">
-                            <div className="flex-1">
-                              <span className="font-medium text-navy-900 block">{evento.title}</span>
-                              <div className="flex items-center gap-2 mt-1">
-                                <span className="text-xs text-navy-600 capitalize">
-                                  {evento.type}
-                                </span>
-                                <span className={`text-xs px-2 py-0.5 rounded-full border ${priorityBadge.className}`}>
-                                  {priorityBadge.label}
-                                </span>
-                              </div>
-                              {evento.description && (
-                                <p className="text-xs text-navy-500 mt-1">{evento.description}</p>
-                              )}
-                            </div>
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation()
-                                handleEditEvent(evento)
-                              }}
-                              className="opacity-0 group-hover:opacity-100 transition-opacity p-1 hover:bg-white rounded"
-                              title="Editar evento"
-                            >
-                              <EditIcon fontSize="small" className="text-navy-600" />
-                            </button>
-                          </div>
-                        </li>
-                      )
-                    })}
-                  </ul>
-                ) : (
-                  <div className="text-center py-4 bg-offwhite-100 rounded-lg">
-                    <p className="text-navy-500 text-sm mb-2">
-                      Nenhum evento agendado para este dia.
-                    </p>
-                    <button
-                      onClick={handleCreateEvent}
-                      className="text-primary-500 hover:text-primary-600 text-sm font-medium"
-                    >
-                      Clique para adicionar um evento
-                    </button>
-                  </div>
-                )}
-              </div>
-            </div>
           </div>
         )}
       </div>
+
+      {/* Modal de eventos do dia */}
+      {isDayEventsModalOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-xl max-w-2xl w-full max-h-[80vh] overflow-hidden flex flex-col">
+            {/* Header */}
+            <div className="flex justify-between items-center p-6 border-b border-offwhite-200">
+              <h2 className="text-xl font-semibold text-navy-900">
+                Eventos para {selectedDate.toLocaleDateString('pt-BR')}
+              </h2>
+              <button
+                onClick={() => setIsDayEventsModalOpen(false)}
+                className="p-2 hover:bg-offwhite-100 rounded-lg transition-colors"
+              >
+                <CloseIcon className="text-navy-600" />
+              </button>
+            </div>
+
+            {/* Content */}
+            <div className="flex-1 overflow-y-auto p-6">
+              {eventosDoDia.length > 0 ? (
+                <ul className="space-y-3">
+                  {eventosDoDia.map((evento) => {
+                    const priorityBadge = getPriorityBadge(evento.priority)
+                    return (
+                      <li
+                        key={evento.id}
+                        className={`p-4 rounded-lg border-l-4 ${getEventColor(evento.type)} cursor-pointer hover:shadow-md transition-all group`}
+                        onClick={() => {
+                          setSelectedEvent(evento)
+                          setIsModalOpen(true)
+                          setIsDayEventsModalOpen(false)
+                        }}
+                      >
+                        <div className="flex justify-between items-start">
+                          <div className="flex-1">
+                            <span className="font-medium text-navy-900 block">{evento.title}</span>
+                            <div className="flex items-center gap-2 mt-1">
+                              <span className="text-xs text-navy-600 capitalize">
+                                {evento.type}
+                              </span>
+                              <span className={`text-xs px-2 py-0.5 rounded-full border ${priorityBadge.className}`}>
+                                {priorityBadge.label}
+                              </span>
+                            </div>
+                            {evento.description && (
+                              <p className="text-xs text-navy-500 mt-1">{evento.description}</p>
+                            )}
+                          </div>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              setSelectedEvent(evento)
+                              setIsModalOpen(true)
+                              setIsDayEventsModalOpen(false)
+                            }}
+                            className="opacity-0 group-hover:opacity-100 transition-opacity p-1 hover:bg-white rounded"
+                            title="Editar evento"
+                          >
+                            <EditIcon fontSize="small" className="text-navy-600" />
+                          </button>
+                        </div>
+                      </li>
+                    )
+                  })}
+                </ul>
+              ) : (
+                <div className="text-center py-8">
+                  <EventIcon className="text-navy-300 text-5xl mb-2 mx-auto" />
+                  <p className="text-navy-500 text-sm mb-4">
+                    Nenhum evento agendado para este dia.
+                  </p>
+                  <button
+                    onClick={() => {
+                      setSelectedEvent(null)
+                      setIsModalOpen(true)
+                      setIsDayEventsModalOpen(false)
+                    }}
+                    className="text-primary-500 hover:text-primary-600 text-sm font-medium"
+                  >
+                    Criar primeiro evento
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Modal de criação/edição */}
       <EventModal
