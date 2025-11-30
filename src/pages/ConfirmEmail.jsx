@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import MySwal from '../utils/swal';
+import { showSwal } from '../utils/swal.jsx';
 import { useLocation } from 'react-router-dom'
 
 function ConfirmEmail() {
@@ -15,10 +15,10 @@ function ConfirmEmail() {
       body: JSON.stringify({ email, confirmationCode: code }),
     })
     const data = await response.text()
-    MySwal.fire({
+    showSwal({
       title: 'Confirmação',
       text: data,
-      icon: 'info',
+      icon: 'warning',
       confirmButtonText: 'OK'
     });
   }

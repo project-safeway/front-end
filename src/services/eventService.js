@@ -56,11 +56,13 @@ const eventService = {
    */
   async createEvent(eventData) {
     try {
-      // Formata a data como YYYY-MM-DD para enviar ao backend sem timezone
+      // Formata a data como YYYY-MM-DD no horário local para evitar problemas de timezone
       const formattedData = {
         ...eventData,
         date: eventData.date instanceof Date 
-          ? eventData.date.toISOString().split('T')[0]
+          ? eventData.date.getFullYear() + '-' + 
+            String(eventData.date.getMonth() + 1).padStart(2, '0') + '-' + 
+            String(eventData.date.getDate()).padStart(2, '0')
           : eventData.date
       }
       const response = await api.post('/eventos', formattedData)
@@ -79,11 +81,13 @@ const eventService = {
    */
   async updateEvent(eventId, eventData) {
     try {
-      // Formata a data como YYYY-MM-DD para enviar ao backend sem timezone
+      // Formata a data como YYYY-MM-DD no horário local para evitar problemas de timezone
       const formattedData = {
         ...eventData,
         date: eventData.date instanceof Date 
-          ? eventData.date.toISOString().split('T')[0]
+          ? eventData.date.getFullYear() + '-' + 
+            String(eventData.date.getMonth() + 1).padStart(2, '0') + '-' + 
+            String(eventData.date.getDate()).padStart(2, '0')
           : eventData.date
       }
       const response = await api.put(`/eventos/${eventId}`, formattedData)

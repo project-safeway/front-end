@@ -5,7 +5,6 @@ import AttachMoneyIcon from '@mui/icons-material/AttachMoney'
 import NotificationsActiveIcon from '@mui/icons-material/NotificationsActive'
 import BuildIcon from '@mui/icons-material/Build'
 import GroupIcon from '@mui/icons-material/Group'
-import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline'
 import EventModal from './EventModal'
 import eventService from '../services/eventService'
 
@@ -22,6 +21,17 @@ export default function EventsPanel({ selectedMonth, selectedYear }) {
     }
   }, [activeTab])
 
+  useEffect(() => {
+    const handleEventUpdate = () => {
+      if (activeTab === 'eventos') {
+        loadEvents()
+      }
+    }
+
+    window.addEventListener('eventUpdated', handleEventUpdate)
+    return () => window.removeEventListener('eventUpdated', handleEventUpdate)
+  }, [activeTab])
+
   const loadEvents = async () => {
     try {
       setIsLoading(true)
@@ -30,19 +40,31 @@ export default function EventsPanel({ selectedMonth, selectedYear }) {
       const hoje = new Date()
       hoje.setHours(0, 0, 0, 0)
 
+      const amanha = new Date(hoje)
+      amanha.setDate(hoje.getDate() + 1)
+
       const proximaSemana = new Date()
       proximaSemana.setDate(hoje.getDate() + 7)
       proximaSemana.setHours(23, 59, 59, 999)
 
       const sortedEvents = data
-        .map((event) => ({
-          ...event,
-          date: new Date(event.date),
-        }))
+        .map((event) => {
+          let eventDate
+          if (typeof event.date === 'string') {
+            const [year, month, day] = event.date.split('T')[0].split('-')
+            eventDate = new Date(year, month - 1, day, 12, 0, 0)
+          } else {
+            eventDate = new Date(event.date)
+          }
+          return {
+            ...event,
+            date: eventDate,
+          }
+        })
         .filter((event) => {
           const eventDate = new Date(event.date)
           eventDate.setHours(0, 0, 0, 0)
-          return eventDate >= hoje && eventDate <= proximaSemana
+          return eventDate >= amanha && eventDate <= proximaSemana
         })
         .sort((a, b) => a.date - b.date)
 
@@ -190,13 +212,6 @@ export default function EventsPanel({ selectedMonth, selectedYear }) {
                   <h3 className="text-xl font-semibold text-navy-900">Próximos Eventos</h3>
                   <p className="text-xs text-navy-500 mt-1">Próximos 7 dias</p>
                 </div>
-                <button
-                  onClick={handleCreateEvent}
-                  className="p-2 hover:bg-primary-50 rounded-lg transition-colors"
-                  title="Adicionar novo evento"
-                >
-                  <AddCircleOutlineIcon className="text-primary-400" />
-                </button>
               </div>
 
               <div className="space-y-3 flex-1 overflow-y-auto pr-2 events-scrollbar min-h-0">
@@ -238,23 +253,8 @@ export default function EventsPanel({ selectedMonth, selectedYear }) {
                   <div className="text-center py-8">
                     <EventIcon className="text-navy-300 text-5xl mb-2" />
                     <p className="text-navy-500 text-sm mb-2">Nenhum evento próximo</p>
-                    <button
-                      onClick={handleCreateEvent}
-                      className="text-primary-500 hover:text-primary-600 text-sm font-medium"
-                    >
-                      Criar primeiro evento
-                    </button>
                   </div>
                 )}
-              </div>
-
-              <div className="mt-4 pt-4 border-t border-offwhite-200 flex-shrink-0">
-                <button
-                  onClick={handleCreateEvent}
-                  className="w-full text-primary-500 hover:text-primary-600 text-sm font-medium py-2 hover:bg-primary-50 rounded-lg transition-all"
-                >
-                  + Adicionar novo evento
-                </button>
               </div>
             </div>
           ) : (

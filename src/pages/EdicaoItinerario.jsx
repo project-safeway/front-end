@@ -15,6 +15,7 @@ import TransporteService from '../services/transporteService';
 import EscolasService from '../services/escolasService';
 import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import { showSwal } from '../utils/swal.jsx';
 
 export default function EdicaoItinerario() {
     const [searchParams] = useSearchParams();
@@ -291,13 +292,13 @@ export default function EdicaoItinerario() {
             return;
         }
 
-            const { isConfirmed } = await MySwal.fire({
+            const { isConfirmed } = await showSwal({
               title: 'Remover aluno',
               text: 'Tem certeza que deseja remover este aluno do itinerário?',
               icon: 'warning',
-              showCancelButton: true,
               confirmButtonText: 'Sim, remover',
-              cancelButtonText: 'Cancelar'
+              cancelButtonText: 'Cancelar',
+              showCancelButton: true
             });
             if (!isConfirmed) return;
 
@@ -363,13 +364,13 @@ export default function EdicaoItinerario() {
             return;
         }
 
-            const { isConfirmed } = await MySwal.fire({
+            const { isConfirmed } = await showSwal({
               title: 'Remover escola',
               text: 'Tem certeza que deseja remover esta escola do itinerário?',
               icon: 'warning',
-              showCancelButton: true,
               confirmButtonText: 'Sim, remover',
-              cancelButtonText: 'Cancelar'
+              cancelButtonText: 'Cancelar',
+              showCancelButton: true
             });
             if (!isConfirmed) return;
 

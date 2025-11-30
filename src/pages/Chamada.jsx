@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import MySwal from '../utils/swal';
+import { showSwal } from '../utils/swal.jsx';
 import { Link, useSearchParams, useNavigate } from "react-router-dom";
 import AssignmentTurnedInIcon from "@mui/icons-material/AssignmentTurnedIn";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
@@ -110,13 +110,13 @@ export default function Chamada() {
     const alunosNaoRegistrados = alunos.filter((a) => a.presente === null);
     
     if (alunosNaoRegistrados.length > 0) {
-      const { isConfirmed } = await MySwal.fire({
+      const { isConfirmed } = await showSwal({
         title: 'Finalizar chamada',
         text: `Ainda há ${alunosNaoRegistrados.length} aluno(s) sem registro de presença. Deseja finalizar mesmo assim?`,
         icon: 'warning',
-        showCancelButton: true,
         confirmButtonText: 'Sim, finalizar',
-        cancelButtonText: 'Cancelar'
+        cancelButtonText: 'Cancelar',
+        showCancelButton: true
       });
       if (!isConfirmed) return;
     }
@@ -150,13 +150,13 @@ export default function Chamada() {
   };
 
   const cancelarChamada = async () => {
-    const { isConfirmed } = await MySwal.fire({
+    const { isConfirmed } = await showSwal({
       title: 'Cancelar chamada',
       text: 'Tem certeza que deseja cancelar esta chamada? Todos os registros serão perdidos.',
       icon: 'warning',
-      showCancelButton: true,
       confirmButtonText: 'Sim, cancelar',
-      cancelButtonText: 'Voltar'
+      cancelButtonText: 'Voltar',
+      showCancelButton: true
     });
     if (!isConfirmed) return;
 
