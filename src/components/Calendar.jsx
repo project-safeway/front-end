@@ -27,7 +27,7 @@ export default function Calendar({ onMonthChange }) {
       setIsLoading(true)
       setError(null)
       const data = await eventService.getEvents()
-      
+
       const eventsWithDates = data.map((event) => {
         // Converte a data string para Date no horário local
         let eventDate
@@ -37,13 +37,13 @@ export default function Calendar({ onMonthChange }) {
         } else {
           eventDate = new Date(event.date)
         }
-        
+
         return {
           ...event,
           date: eventDate,
         }
       })
-      
+
       setEventos(eventsWithDates)
     } catch (err) {
       console.error('Erro ao carregar eventos:', err)
@@ -92,13 +92,13 @@ export default function Calendar({ onMonthChange }) {
         // Criar novo evento
         await eventService.createEvent(eventData)
       }
-      
+
       // Recarrega eventos
       await loadEvents()
-      
+
       // Notifica outros componentes sobre a atualização
       window.dispatchEvent(new CustomEvent('eventUpdated'))
-      
+
       return true
     } catch (err) {
       console.error('Erro ao salvar evento:', err)
@@ -109,10 +109,10 @@ export default function Calendar({ onMonthChange }) {
   const handleDeleteEvent = async (eventId) => {
     try {
       await eventService.deleteEvent(eventId)
-      
+
       // Recarrega eventos
       await loadEvents()
-      
+
       return true
     } catch (err) {
       console.error('Erro ao deletar evento:', err)
@@ -126,8 +126,8 @@ export default function Calendar({ onMonthChange }) {
   )
 
   // Filtra eventos por tipo
-  const eventosFiltrados = filter === 'todos' 
-    ? eventos 
+  const eventosFiltrados = filter === 'todos'
+    ? eventos
     : eventos.filter((e) => e.type === filter)
 
   const getEventColor = (type) => {
@@ -166,8 +166,8 @@ export default function Calendar({ onMonthChange }) {
           border-radius: 0.75rem !important;
           display: flex !important;
           flex-direction: column !important;
-          flex: 1 1 auto !important;
-          height: auto !important;
+          height: 400px !important;
+          flex: none !important;
           overflow: hidden !important;
           box-sizing: border-box !important;
         }
@@ -204,6 +204,11 @@ export default function Calendar({ onMonthChange }) {
           background: #FB923C !important;
           color: white !important;
           border-radius: 0.5rem !important;
+        }
+
+        .react-calendar__tile--active.has-event {
+          background: #FFEDD5 !important;
+          color: #102A43 !important;
         }
 
         .react-calendar__tile--now {
@@ -246,9 +251,24 @@ export default function Calendar({ onMonthChange }) {
           color: #FB923C !important;
         }
 
+        .react-calendar__tile--active.react-calendar__month-view__days__day--weekend,
+        .react-calendar__tile--active.react-calendar__month-view__days__day--weekend.has-event {
+          background: #FB923C !important;
+          color: white !important;
+          border-radius: 0.5rem !important;
+        }
+
         .react-calendar__navigation button {
           color: #102A43 !important;
           font-weight: 600 !important;
+          height: 2.5rem !important;
+        }
+          
+        .react-calendar__navigation__label {
+          height: 2.5rem !important;
+          text-align: center !important;
+          justify-content: center !important;
+          flex: 1 !important;
         }
 
         .react-calendar__navigation button:enabled:hover,
@@ -259,7 +279,8 @@ export default function Calendar({ onMonthChange }) {
 
         .react-calendar__tile--active:enabled:hover,
         .react-calendar__tile--active:enabled:focus {
-          background: #EA580C !important;
+          background: #FFF7ED !important;
+          color: #102A43 !important;
         }
 
         /* Cabeçalho dos dias da semana */
