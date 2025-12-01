@@ -4,8 +4,20 @@ import api from "./api";
  * Lista todos os funcionários
  */
 export async function listarFuncionarios() {
+  console.log('[funcionarioService] listarFuncionarios')
   const res = await api.get("/funcionario");
+  // res é um axios response; retorna o payload (res.data) para consumo no front
   return res.data;
+}
+
+/**
+ * Criar funcionário (POST /funcionario)
+ * payload deve seguir FuncionarioRequest (transporte, endereco, nome, cpf)
+ */
+export async function criarFuncionario(payload) {
+  console.log('[funcionarioService] criarFuncionario', payload)
+  const res = await api.post('/funcionario', payload)
+  return res.data
 }
 
 /**

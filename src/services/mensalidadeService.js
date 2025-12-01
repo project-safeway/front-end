@@ -7,10 +7,11 @@ const mensalidadeService = {
       if (mes !== null) params.append('mes', mes)
       if (ano !== null) params.append('ano', ano)
       
+      console.log('[mensalidadeService] getMensalidadesPendentes', { mes, ano })
       const response = await api.get(`/mensalidades/pendentes?${params.toString()}`)
       
-      // Backend retorna Page<MensalidadeResponse>, então pegamos o conteúdo
-      const data = response.content || response.data?.content || []
+      // Backend retorna Page<MensalidadeResponse> em response.data
+      const data = response.data?.content || []
       
       return data
     } catch (error) {
@@ -79,7 +80,7 @@ const mensalidadeService = {
  * params: { alunoId, dataInicio, dataFim, status, pageable }
  */
 export async function listarMensalidades(params = {}) {
-  // api.get deve retornar dados já tratados pelo wrapper (res.data) — ajusta se necessário
+  console.log('[mensalidadeService] listarMensalidades', params)
   return await api.get("/mensalidades", { params });
 }
 
