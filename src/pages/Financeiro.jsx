@@ -1,490 +1,1206 @@
-import React, { useEffect, useState } from "react";
-import { useLocation } from "react-router-dom";
-import axios from "axios";
+import React, { useEffect, useState, useCallback } from "react";
 import { Tabela } from "../components/Tabela";
+import { ModalConfirmacao } from "../components/ModalConfirmacao";
+import {
+  listarMensalidades,
+  pagarMensalidade,
+  criarMensalidade,
+  gerarMensalidadesMesAtual
+} from "../services/mensalidadeService";
+import {
+  listarPagamentos,
+  criarPagamento as criarPagamentoService,
+  atualizarPagamento,
+  excluirPagamento
+} from "../services/pagamentoService";
+
+// Material-UI Icons
+import AttachMoneyIcon from '@mui/icons-material/AttachMoney';
+import PaymentsIcon from '@mui/icons-material/Payments';
+import TrendingUpIcon from '@mui/icons-material/TrendingUp';
+import TrendingDownIcon from '@mui/icons-material/TrendingDown';
+import AddIcon from '@mui/icons-material/Add';
+import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import EditIcon from '@mui/icons-material/Edit';
+import DeleteIcon from '@mui/icons-material/Delete';
+import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';
+import ArrowDownwardIcon from '@mui/icons-material/ArrowDownward';
+import FilterListIcon from '@mui/icons-material/FilterList';
+import ClearIcon from '@mui/icons-material/Clear';
+
+// Função auxiliar para obter data local no formato YYYY-MM-DD
+function getDataLocal() {
+  const agora = new Date();
+  const ano = agora.getFullYear();
+  const mes = String(agora.getMonth() + 1).padStart(2, '0');
+  const dia = String(agora.getDate()).padStart(2, '0');
+  return `${ano}-${mes}-${dia}`;
+}
 
 export default function Financeiro() {
-  const location = useLocation();
-  const filtroStatusInicial = location.state?.filtroStatus || null;
+  const [aba, setAba] = useState("mensalidades");
+  const [mensalidades, setMensalidades] = useState([]);
+  const [pagamentos, setPagamentos] = useState([]);
+
+  // Filtros para mensalidades - otimizados
+  const [filtroTexto, setFiltroTexto] = useState("");
+  const [filtroStatus, setFiltroStatus] = useState([]);
+  const [filtroDataInicio, setFiltroDataInicio] = useState("");
+  const [filtroDataFim, setFiltroDataFim] = useState("");
+  const [filtroAlunoId, setFiltroAlunoId] = useState("");
   
-  const [recebimentos, setRecebimentos] = useState([]);
-  const [clients, setClients] = useState([]); // lista de clientes para o select
-  const [filter, setFilter] = useState("");
-  const [statusFilter, setStatusFilter] = useState(filtroStatusInicial); // Novo filtro de status
+  // Filtros específicos para pagamentos
+  const [filtroDescricao, setFiltroDescricao] = useState("");
+  const [filtroData, setFiltroData] = useState("");
+  const [filtroValor, setFiltroValor] = useState("");
 
-  // date filters
-  const [dateFilterCombinada, setDateFilterCombinada] = useState({ from: "", to: "" });
-  const [dateFilterRecebimento, setDateFilterRecebimento] = useState({ from: "", to: "" });
+  // Paginação
+  const [paginaAtualMensalidades, setPaginaAtualMensalidades] = useState(0);
+  const [totalPaginasMensalidades, setTotalPaginasMensalidades] = useState(0);
+  const [totalElementosMensalidades, setTotalElementosMensalidades] = useState(0);
 
-  // modal state
-  const [modalOpen, setModalOpen] = useState(false);
-  const [modalType, setModalType] = useState(null); // "novo" | "edit" | "pagamento"
-  const [modalData, setModalData] = useState(null);
-  const [modalForm, setModalForm] = useState({
-    // fields for novo / edit
-    cliente: "",
-    dataCombinada: "",
-    valorAReceber: "",
-    valorRecebido: "",
-    diaRecebimento: "",
-    // fields for pagamento
-    clientId: "", // id do recebimento/cliente selecionado
-    valor: "",
-    data: ""
+  const [paginaAtualPagamentos, setPaginaAtualPagamentos] = useState(0);
+  const [totalPaginasPagamentos, setTotalPaginasPagamentos] = useState(0);
+  const [totalElementosPagamentos, setTotalElementosPagamentos] = useState(0);
+
+  // Estado para ordenação de pagamentos
+  const [ordenacaoPagamentos, setOrdenacaoPagamentos] = useState({
+    campo: "idPagamento",
+    direcao: "desc"
   });
 
-  const sample = [
-    {
-      id: 1,
-      cliente: "João Silva",
-      dataCombinada: "2025-10-20",
-      valorAReceber: 200.0,
-      valorRecebido: 0.0,
-      diaRecebimento: "",
-      pagamentos: []
-    },
-    {
-      id: 2,
-      cliente: "Maria Souza",
-      dataCombinada: "2025-10-22",
-      valorAReceber: 150.0,
-      valorRecebido: 150.0,
-      diaRecebimento: "2025-10-22",
-      pagamentos: [{ id: 1, valor: 150.0, data: "2025-10-22" }]
-    }
-  ];
+  // Modais
+  const [modalAberto, setModalAberto] = useState(false);
+  const [modalContexto, setModalContexto] = useState(null);
+  const [modalItem, setModalItem] = useState(null);
 
-  // --- load recebimentos (backend-ready) ---
-  useEffect(() => {
-    async function load() {
-      try {
-        // futuro: const res = await axios.get("/api/recebimentos");
-        // setRecebimentos(res.data);
-        const stored = localStorage.getItem("recebimentos");
-        if (stored) setRecebimentos(JSON.parse(stored));
-        else setRecebimentos(sample);
-      } catch (err) {
-        const stored = localStorage.getItem("recebimentos");
-        if (stored) setRecebimentos(JSON.parse(stored));
-        else setRecebimentos(sample);
+  // Estados para edição
+  const [modoEdicao, setModoEdicao] = useState(false);
+  const [itemEditando, setItemEditando] = useState(null);
+
+  // Form de pagamento (despesa) simplificado
+  const [formPagamento, setFormPagamento] = useState({
+    valorPagamento: "",
+    descricao: "",
+    dataPagamento: getDataLocal()
+  });
+
+  const [formNovaMensalidade, setFormNovaMensalidade] = useState({
+    alunoId: "",
+    dataVencimento: getDataLocal(),
+    valorMensalidade: ""
+  });
+
+  // Estados para KPIs
+  const [kpisData, setKpisData] = useState({
+    receitaMes: 0,
+    despesasMes: 0,
+    mensalidadesRecebidas: 0,
+    carregandoKpis: false
+  });
+
+  // Estados para modal de confirmação
+  const [confirmacao, setConfirmacao] = useState({
+    aberto: false,
+    titulo: '',
+    mensagem: '',
+    tipo: 'warning',
+    onConfirmar: null
+  });
+
+  // Carregar mensalidades com filtros otimizados
+  const carregarMensalidades = useCallback(async function () {
+    try {
+      const params = {
+        page: paginaAtualMensalidades,
+        size: 10
+      };
+
+      // Filtro de período (data início e fim)
+      if (filtroDataInicio) params.dataInicio = filtroDataInicio;
+      if (filtroDataFim) params.dataFim = filtroDataFim;
+
+      if (filtroAlunoId) params.alunoId = parseInt(filtroAlunoId, 10);
+      if (filtroStatus.length > 0) params.status = filtroStatus;
+
+      console.log('[carregarMensalidades] Chamando API com params:', params);
+      const res = await listarMensalidades(params);
+      console.log('[carregarMensalidades] Resposta da API:', res);
+
+      if (res && typeof res === 'object' && 'content' in res) {
+        setMensalidades(res.content || []);
+        setTotalPaginasMensalidades(res.totalPages || 0);
+        setTotalElementosMensalidades(res.totalElements || 0);
+        
+        console.log('[carregarMensalidades] Mensalidades carregadas:', res.content?.length || 0);
+      } else if (Array.isArray(res)) {
+        setMensalidades(res);
+        setTotalPaginasMensalidades(1);
+        setTotalElementosMensalidades(res.length);
+      } else {
+        console.warn('[carregarMensalidades] Resposta inesperada:', res);
+        setMensalidades([]);
+        setTotalPaginasMensalidades(0);
+        setTotalElementosMensalidades(0);
       }
+    } catch (err) {
+      console.error("[carregarMensalidades] Erro:", err);
+      setMensalidades([]);
+      setTotalPaginasMensalidades(0);
+      setTotalElementosMensalidades(0);
     }
-    load();
+  }, [paginaAtualMensalidades, filtroAlunoId, filtroDataInicio, filtroDataFim, filtroStatus]);
+
+  // Carregar pagamentos (despesas) com filtros e paginação
+  const carregarPagamentos = useCallback(async function () {
+    try {
+      const params = {
+        page: paginaAtualPagamentos,
+        size: 10,
+        sort: `${ordenacaoPagamentos.campo},${ordenacaoPagamentos.direcao}`
+      };
+      
+      // Filtros específicos
+      if (filtroDescricao) params.descricao = filtroDescricao;
+      if (filtroData) {
+        params.dataInicio = filtroData;
+        params.dataFim = filtroData;
+      }
+      if (filtroValor) {
+        const valor = parseFloat(filtroValor);
+        if (!isNaN(valor)) {
+          params.valorMinimo = valor;
+          params.valorMaximo = valor;
+        }
+      }
+
+      const res = await listarPagamentos(params);
+      console.log(res);
+
+      if (res) {
+        setPagamentos(res.content || []);
+        setTotalPaginasPagamentos(res.totalPages || 0);
+        setTotalElementosPagamentos(res.totalElements || 0);
+      } else {
+        setPagamentos(Array.isArray(res) ? res : []);
+      }
+    } catch (err) {
+      console.error("carregarPagamentos:", err);
+      setPagamentos([]);
+    }
+  }, [paginaAtualPagamentos, filtroDescricao, filtroData, filtroValor, ordenacaoPagamentos]);
+
+  // Carregar KPIs do mês atual
+  const carregarKPIs = useCallback(async function () {
+    setKpisData(prev => ({ ...prev, carregandoKpis: true }));
+
+    try {
+      const hoje = new Date();
+      const anoAtual = hoje.getFullYear();
+      const mesAtual = hoje.getMonth() + 1;
+
+      const dataInicio = `${anoAtual}-${String(mesAtual).padStart(2, '0')}-01`;
+      const ultimoDia = new Date(anoAtual, mesAtual, 0).getDate();
+      const dataFim = `${anoAtual}-${String(mesAtual).padStart(2, '0')}-${ultimoDia}`;
+
+      // Buscar todos os dados do mês
+      const [resPagamentos, resMensalidades] = await Promise.all([
+        listarPagamentos({
+          dataInicio,
+          dataFim,
+          size: 1000
+        }),
+        listarMensalidades({
+          dataInicio,
+          dataFim,
+          status: ['PAGO'],
+          size: 1000
+        })
+      ]);
+
+      // Ambos já retornam o objeto direto (wrapper api.js)
+      const pagamentosMes = resPagamentos?.content || [];
+      const mensalidadesPagas = resMensalidades?.content || [];
+
+      // RECEITA = Mensalidades pagas
+      const receitaTotal = mensalidadesPagas.reduce((acc, m) => {
+        return acc + (Number(m.valorMensalidade) || 0);
+      }, 0);
+
+      // DESPESAS = Todos os pagamentos cadastrados
+      const despesasTotal = pagamentosMes.reduce((acc, p) => {
+        return acc + (Number(p.valorPagamento) || 0);
+      }, 0);
+
+      setKpisData({
+        receitaMes: receitaTotal,
+        despesasMes: despesasTotal,
+        mensalidadesRecebidas: mensalidadesPagas.length,
+        carregandoKpis: false
+      });
+
+    } catch (err) {
+      console.error("Erro ao carregar KPIs:", err);
+      setKpisData({
+        receitaMes: 0,
+        despesasMes: 0,
+        mensalidadesRecebidas: 0,
+        carregandoKpis: false
+      });
+    }
   }, []);
 
-  // --- Notifica quando chega com filtro de status ---
+  // Effects
   useEffect(() => {
-    if (filtroStatusInicial) {
-      const statusLabels = {
-        'PENDENTE': 'Pendentes',
-        'ATRASADO': 'Em Atraso',
-        'PAGO': 'Pagos'
-      };
-      console.log(`Filtro aplicado: ${statusLabels[filtroStatusInicial] || filtroStatusInicial}`);
-    }
-  }, [filtroStatusInicial]);
+    if (aba === "mensalidades") setPaginaAtualMensalidades(0);
+    if (aba === "pagamentos") setPaginaAtualPagamentos(0);
+  }, [aba]);
 
-  // --- populate clients for the pagamento select ---
   useEffect(() => {
-    async function loadClients() {
+    carregarKPIs();
+  }, [carregarKPIs]);
+
+  useEffect(() => {
+    if (aba === "mensalidades") carregarMensalidades();
+  }, [aba, carregarMensalidades, paginaAtualMensalidades]);
+
+  useEffect(() => {
+    if (aba === "pagamentos") carregarPagamentos();
+  }, [aba, carregarPagamentos, paginaAtualPagamentos]);
+
+  useEffect(() => {
+    async function verificarEGerarMensalidades() {
       try {
-        // ajustar endpoint quando a API estiver pronta
-        const res = await axios.get("/api/clientes");
-        // espera [{ id, nome }] ou similar; tenta mapear campos comuns
-        const mapped = res.data.map(c => ({
-          id: c.id ?? c.clientId ?? c.idCliente ?? c.id,
-          nome: c.nome ?? c.nomeCliente ?? c.nome_completo ?? c.clientName ?? String(c)
-        }));
-        setClients(mapped);
-      } catch (err) {
-        // fallback: derivar lista de clientes únicos a partir dos recebimentos atuais
-        const unique = [];
-        const seen = new Set();
-        recebimentos.forEach(r => {
-          const key = String(r.id) + "||" + (r.cliente ?? "");
-          if (!seen.has(key)) {
-            seen.add(key);
-            unique.push({ id: r.id, nome: r.cliente });
-          }
-        });
-        setClients(unique);
+        // Primeiro carrega as mensalidades
+        await carregarMensalidades();
+        
+        // Removido: geração automática de mensalidades
+        // if (mensalidades.length === 0) {
+        //   console.log('[Financeiro] Nenhuma mensalidade encontrada. Gerando automaticamente...');
+        //   await gerarMensalidadesMesAtual();
+        //   await Promise.all([carregarMensalidades(), carregarKPIs()]);
+        // }
+      } catch (error) {
+        console.error('[Financeiro] Erro:', error);
       }
     }
-    loadClients();
-  }, [recebimentos]);
 
-  useEffect(() => {
-    localStorage.setItem("recebimentos", JSON.stringify(recebimentos));
-  }, [recebimentos]);
+    verificarEGerarMensalidades();
+  }, []); // Executa apenas uma vez ao montar
 
-  const nextId = () => (recebimentos.length ? Math.max(...recebimentos.map(r => r.id)) + 1 : 1);
+  const saldoMes = kpisData.receitaMes - kpisData.despesasMes;
 
-  // delete (prepared for backend)
-  const handleDelete = async (id) => {
-    if (!window.confirm("Confirma exclusão deste recebimento?")) return;
-    try {
-      // futuro: await axios.delete(`/api/recebimentos/${id}`);
-      setRecebimentos(prev => prev.filter(r => r.id !== id));
-    } catch (err) {
-      setRecebimentos(prev => prev.filter(r => r.id !== id));
+  function formatCurrency(v) {
+    return `R$ ${Number(v || 0).toLocaleString('pt-BR', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    })}`;
+  }
+
+  // Ações
+  async function handlePagarMensalidade(id) {
+    setConfirmacao({
+      aberto: true,
+      titulo: 'Confirmar Pagamento',
+      mensagem: 'Deseja realmente marcar esta mensalidade como paga? Esta ação não poderá ser desfeita.',
+      tipo: 'success',
+      onConfirmar: async () => {
+        try {
+          await pagarMensalidade(id);
+          await Promise.all([carregarMensalidades(), carregarKPIs()]);
+          setConfirmacao(prev => ({ ...prev, aberto: false }));
+        } catch (err) {
+          console.error("handlePagarMensalidade:", err);
+          alert("Erro ao marcar como pago");
+        }
+      }
+    });
+  }
+
+  async function handleExcluirPagamento(id) {
+    setConfirmacao({
+      aberto: true,
+      titulo: 'Confirmar Exclusão',
+      mensagem: 'Tem certeza que deseja excluir este pagamento? Esta ação não poderá ser desfeita.',
+      tipo: 'danger',
+      onConfirmar: async () => {
+        try {
+          await excluirPagamento(id);
+          await Promise.all([carregarPagamentos(), carregarKPIs()]);
+          setConfirmacao(prev => ({ ...prev, aberto: false }));
+        } catch (err) {
+          console.error("handleExcluirPagamento:", err);
+          alert("Erro ao excluir pagamento");
+        }
+      }
+    });
+  }
+
+  async function handleGerarMensalidades() {
+    setConfirmacao({
+      aberto: true,
+      titulo: 'Gerar Mensalidades',
+      mensagem: 'Deseja gerar mensalidades para todos os alunos ativos do mês atual?',
+      tipo: 'warning',
+      onConfirmar: async () => {
+        try {
+          const resultado = await gerarMensalidadesMesAtual();
+          alert(`✅ ${resultado || 'Mensalidades geradas com sucesso!'}`);
+          await Promise.all([carregarMensalidades(), carregarKPIs()]);
+          setConfirmacao(prev => ({ ...prev, aberto: false }));
+        } catch (error) {
+          console.error('Erro ao gerar mensalidades:', error);
+          alert(`❌ Erro: ${error.message || error}`);
+        }
+      }
+    });
+  }
+
+  function fecharConfirmacao() {
+    setConfirmacao(prev => ({ ...prev, aberto: false }));
+  }
+
+  // Modais
+  function abrirModalPagamento(item = null, contexto = "pagamento") {
+    const ehEdicao = item && contexto === "editarPagamento";
+    setModoEdicao(ehEdicao);
+    setItemEditando(ehEdicao ? item : null);
+    setModalContexto(contexto);
+    setModalItem(item);
+
+    if (ehEdicao) {
+      setFormPagamento({
+        valorPagamento: String(item.valorPagamento || ""),
+        descricao: item.descricao || "",
+        dataPagamento: item.dataPagamento || new Date().toISOString().slice(0, 10)
+      });
+    } else {
+      setFormPagamento({
+        valorPagamento: "",
+        descricao: "",
+        dataPagamento: new Date().toISOString().slice(0, 10)
+      });
     }
-  };
 
-  // --- modal helpers ---
-  const openNewModal = () => {
-    setModalType("novo");
-    setModalData(null);
-    setModalForm({
-      cliente: "",
-      dataCombinada: "",
-      valorAReceber: "",
-      valorRecebido: "",
-      diaRecebimento: "",
-      clientId: "",
-      valor: "",
-      data: new Date().toISOString().slice(0, 10)
-    });
-    setModalOpen(true);
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  };
+    setModalAberto(true);
+  }
 
-  const openEditModal = (item) => {
-    setModalType("edit");
-    setModalData(item);
-    setModalForm({
-      cliente: item.cliente ?? "",
-      dataCombinada: item.dataCombinada ?? "",
-      valorAReceber: item.valorAReceber ?? "",
-      valorRecebido: item.valorRecebido ?? "",
-      diaRecebimento: item.diaRecebimento ?? "",
-      clientId: item.id ?? "",
-      valor: "",
-      data: ""
-    });
-    setModalOpen(true);
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  };
+  function fecharModal() {
+    setModalAberto(false);
+    setModalContexto(null);
+    setModalItem(null);
+    setModoEdicao(false);
+    setItemEditando(null);
+  }
 
-  const openPagamentoModal = (item) => {
-    setModalType("pagamento");
-    setModalData(item);
-    setModalForm(prev => ({
-      ...prev,
-      clientId: item?.id ?? (clients[0]?.id ?? ""),
-      valor: "",
-      data: new Date().toISOString().slice(0, 10)
+  async function salvarPagamento(e) {
+    e.preventDefault();
+
+    const valorPagamento = parseFloat(formPagamento.valorPagamento);
+    if (isNaN(valorPagamento) || valorPagamento <= 0) {
+      return alert("Informe um valor válido");
+    }
+    if (!formPagamento.descricao.trim()) {
+      return alert("Informe uma descrição");
+    }
+
+    const body = {
+      dataPagamento: formPagamento.dataPagamento,
+      valorPagamento: valorPagamento,
+      descricao: formPagamento.descricao
+    };
+
+    try {
+      if (modoEdicao && itemEditando) {
+        await atualizarPagamento(itemEditando.idPagamento, body);
+      } else {
+        await criarPagamentoService(body);
+      }
+
+      setPaginaAtualPagamentos(0); // <-- Resetar para página 0 dos pagamentos
+
+      await Promise.all([
+        carregarPagamentos(),
+        carregarMensalidades(),
+        carregarKPIs()
+      ]);
+      fecharModal();
+    } catch (err) {
+      console.error("salvarPagamento:", err);
+      alert(`Erro ao ${modoEdicao ? 'editar' : 'registrar'} pagamento`);
+    }
+  }
+
+  async function salvarNovaMensalidade(e) {
+    e.preventDefault();
+    const payload = {
+      alunoId: parseInt(formNovaMensalidade.alunoId, 10),
+      dataVencimento: formNovaMensalidade.dataVencimento,
+      valorMensalidade: parseFloat(formNovaMensalidade.valorMensalidade)
+    };
+
+    if (!payload.alunoId || isNaN(payload.alunoId)) return alert("ID do aluno é obrigatório");
+    if (isNaN(payload.valorMensalidade) || payload.valorMensalidade <= 0) return alert("Informe um valor válido");
+
+    try {
+      await criarMensalidade(payload);
+      await carregarMensalidades();
+      fecharModal();
+    } catch (err) {
+      console.error("salvarNovaMensalidade:", err);
+      alert("Erro ao criar mensalidade");
+    }
+  }
+
+  // Filtros
+  function limparFiltros() {
+    if (aba === "mensalidades") {
+      setFiltroTexto("");
+      setFiltroStatus([]);
+      setFiltroDataInicio("");
+      setFiltroDataFim("");
+      setFiltroAlunoId("");
+      setPaginaAtualMensalidades(0);
+    } else {
+      setFiltroDescricao("");
+      setFiltroData("");
+      setFiltroValor("");
+      setPaginaAtualPagamentos(0);
+    }
+  }
+
+  // Função auxiliar para definir período do mês atual
+  function definirMesAtual() {
+    const hoje = new Date();
+    const ano = hoje.getFullYear();
+    const mes = String(hoje.getMonth() + 1).padStart(2, '0');
+    const ultimoDia = new Date(ano, hoje.getMonth() + 1, 0).getDate();
+    
+    setFiltroDataInicio(`${ano}-${mes}-01`);
+    setFiltroDataFim(`${ano}-${mes}-${ultimoDia}`);
+    setPaginaAtualMensalidades(0);
+  }
+
+  function toggleStatus(status) {
+    setFiltroStatus(prev => 
+      prev.includes(status) 
+        ? prev.filter(s => s !== status)
+        : [...prev, status]
+    );
+    setPaginaAtualMensalidades(0);
+  }
+
+  function aplicarFiltros() {
+    if (aba === "mensalidades") {
+      setPaginaAtualMensalidades(0);
+      carregarMensalidades();
+    } else {
+      setPaginaAtualPagamentos(0);
+      carregarPagamentos();
+    }
+  }
+
+  function alterarOrdenacaoPagamentos(campo) {
+    setOrdenacaoPagamentos(prev => ({
+      campo,
+      direcao: prev.campo === campo && prev.direcao === "asc" ? "desc" : "asc"
     }));
-    setModalOpen(true);
-  };
+    setPaginaAtualPagamentos(0);
+  }
 
-  const closeModal = () => {
-    setModalOpen(false);
-    setModalType(null);
-    setModalData(null);
-    setModalForm({
-      cliente: "",
-      dataCombinada: "",
-      valorAReceber: "",
-      valorRecebido: "",
-      diaRecebimento: "",
-      clientId: "",
-      valor: "",
-      data: ""
+  function irParaPaginaMensalidades(pagina) {
+    if (pagina >= 0 && pagina < totalPaginasMensalidades) {
+      setPaginaAtualMensalidades(pagina);
+    }
+  }
+  function irParaPaginaPagamentos(pagina) {
+    if (pagina >= 0 && pagina < totalPaginasPagamentos) {
+      setPaginaAtualPagamentos(pagina);
+    }
+  }
+
+  // Filtros de texto locais (não afetam integração/backend)
+  const mensalidadesFiltradas = !filtroTexto
+    ? mensalidades
+    : mensalidades.filter(m => {
+        const s = filtroTexto.toLowerCase();
+        const id = String(m.idMensalidade || m.id || "");
+        const nome = (m.aluno?.nome || m.alunoNome || "").toLowerCase();
+        return id.includes(s) || nome.includes(s);
+      });
+
+  const pagamentosFiltrados = pagamentos;
+
+  // Adicione esta função após as outras funções (antes do return):
+  async function handleGerarMensalidades() {
+    setConfirmacao({
+      aberto: true,
+      titulo: 'Gerar Mensalidades',
+      mensagem: 'Deseja gerar mensalidades para todos os alunos ativos do mês atual?',
+      tipo: 'warning',
+      onConfirmar: async () => {
+        try {
+          const resultado = await gerarMensalidadesMesAtual();
+          alert(`✅ ${resultado || 'Mensalidades geradas com sucesso!'}`);
+          await Promise.all([carregarMensalidades(), carregarKPIs()]);
+          setConfirmacao(prev => ({ ...prev, aberto: false }));
+        } catch (error) {
+          console.error('Erro ao gerar mensalidades:', error);
+          alert(`❌ Erro: ${error.message || error}`);
+        }
+      }
     });
-  };
-
-  const handleModalFormChange = (e) => {
-    const { name, value } = e.target;
-    setModalForm(prev => ({ ...prev, [name]: value }));
-  };
-
-  // save novo via modal (prepared for backend)
-  const handleSaveNewModal = async (e) => {
-    e.preventDefault();
-    const novo = {
-      id: nextId(),
-      cliente: modalForm.cliente,
-      dataCombinada: modalForm.dataCombinada,
-      valorAReceber: parseFloat(modalForm.valorAReceber) || 0,
-      valorRecebido: parseFloat(modalForm.valorRecebido) || 0,
-      diaRecebimento: modalForm.diaRecebimento || "",
-      pagamentos: modalForm.valorRecebido ? [{ id: 1, valor: parseFloat(modalForm.valorRecebido), data: modalForm.diaRecebimento || "" }] : []
-    };
-    try {
-      // futuro: const res = await axios.post("/api/recebimentos", novo);
-      // setRecebimentos(prev => [res.data, ...prev]);
-      setRecebimentos(prev => [novo, ...prev]);
-      closeModal();
-    } catch (err) {
-      setRecebimentos(prev => [novo, ...prev]);
-      closeModal();
-    }
-  };
-
-  // save edit via modal (prepared for backend)
-  const handleSaveEditModal = async (e) => {
-    e.preventDefault();
-    if (!modalData) return;
-    const id = modalData.id;
-    const updatedItem = {
-      ...modalData,
-      cliente: modalForm.cliente ?? modalData.cliente,
-      dataCombinada: modalForm.dataCombinada ?? modalData.dataCombinada,
-      valorAReceber: parseFloat(modalForm.valorAReceber) || 0,
-      valorRecebido: parseFloat(modalForm.valorRecebido) || 0,
-      diaRecebimento: modalForm.diaRecebimento || ""
-    };
-    try {
-      // futuro: const res = await axios.put(`/api/recebimentos/${id}`, updatedItem);
-      // setRecebimentos(prev => prev.map(r => r.id === id ? res.data : r));
-      setRecebimentos(prev => prev.map(r => r.id === id ? updatedItem : r));
-      closeModal();
-    } catch (err) {
-      setRecebimentos(prev => prev.map(r => r.id === id ? updatedItem : r));
-      closeModal();
-    }
-  };
-
-  // add pagamento via modal (prepared for backend)
-  const handleSavePagamentoModal = async (e) => {
-    e.preventDefault();
-    // targetId vem do select clientId; se vazio, usa modalData.id
-    const targetId = parseInt(modalForm.clientId, 10) || modalData?.id;
-    if (!targetId) return alert("Selecione um cliente válido");
-    const valor = parseFloat(modalForm.valor);
-    const data = modalForm.data || new Date().toISOString().slice(0, 10);
-    if (isNaN(valor) || valor <= 0) return alert("Informe um valor válido");
-    try {
-      // futuro: const res = await axios.post(`/api/recebimentos/${targetId}/pagamento`, { valor, data });
-      setRecebimentos(prev => prev.map(r => {
-        if (r.id === targetId) {
-          const nextPagamentoId = (r.pagamentos && r.pagamentos.length) ? Math.max(...r.pagamentos.map(p => p.id)) + 1 : 1;
-          const novoPagamento = { id: nextPagamentoId, valor, data };
-          const pagamentos = [...(r.pagamentos || []), novoPagamento];
-          const valorRecebido = (r.valorRecebido || 0) + valor;
-          return { ...r, pagamentos, valorRecebido, diaRecebimento: data };
-        }
-        return r;
-      }));
-      closeModal();
-    } catch (err) {
-      setRecebimentos(prev => prev.map(r => {
-        if (r.id === targetId) {
-          const nextPagamentoId = (r.pagamentos && r.pagamentos.length) ? Math.max(...r.pagamentos.map(p => p.id)) + 1 : 1;
-          const novoPagamento = { id: nextPagamentoId, valor, data };
-          const pagamentos = [...(r.pagamentos || []), novoPagamento];
-          const valorRecebido = (r.valorRecebido || 0) + valor;
-          return { ...r, pagamentos, valorRecebido, diaRecebimento: data };
-        }
-        return r;
-      }));
-      closeModal();
-    }
-  };
-
-  // date helper
-  const inRange = (dateStr, from, to) => {
-    if (!from && !to) return true;
-    if (!dateStr) return false;
-    if (from && dateStr < from) return false;
-    if (to && dateStr > to) return false;
-    return true;
-  };
-
-  // filtro por id ou cliente + filtros de datas (data combinada e data de recebimento/pagamentos)
-  const filtered = recebimentos.filter(r => {
-    if (filter) {
-      const s = filter.toLowerCase();
-      if (!(String(r.id).includes(s) || r.cliente.toLowerCase().includes(s))) return false;
-    }
-
-    if (!inRange(r.dataCombinada, dateFilterCombinada.from, dateFilterCombinada.to)) return false;
-
-    if (dateFilterRecebimento.from || dateFilterRecebimento.to) {
-      const dia = r.diaRecebimento;
-      const pagamentos = r.pagamentos || [];
-      const anyPagamentoInRange = pagamentos.some(p => inRange(p.data, dateFilterRecebimento.from, dateFilterRecebimento.to));
-      const diaInRange = inRange(dia, dateFilterRecebimento.from, dateFilterRecebimento.to);
-      if (!diaInRange && !anyPagamentoInRange) return false;
-    }
-
-    return true;
-  });
-
-  // NOTE: removed 'Pagamentos' column from table header and fields per request
-  const cabecalho = ["ID", "Cliente", "Data combinada", "Valor a receber", "Valor recebido", "Dia do recebimento"];
-  const fields = ["id", "cliente", "dataCombinada", "valorAReceber", "valorRecebido", "diaRecebimento"];
-
-  const clearFilters = () => {
-    setFilter("");
-    setDateFilterCombinada({ from: "", to: "" });
-    setDateFilterRecebimento({ from: "", to: "" });
-  };
-
-  // expose startEdit for table actions
-  const startEdit = (item) => openEditModal(item);
+  }
 
   return (
     <div className="p-6 bg-gray-50 min-h-screen">
-      <div className="max-w-4xl mx-auto">
-        <h1 className="text-2xl font-bold mb-4">Financeiro - Recebimentos da Van</h1>
-
-        <section className="mt-2 bg-white p-4 rounded shadow flex flex-col sm:flex-row sm:items-center gap-3">
-          <div className="flex items-center gap-3">
-            <button onClick={openNewModal} className="px-4 py-2 bg-orange-400 text-white rounded cursor-pointer">Adicionar recebimento</button>
-          </div>
-
-          <div className="ml-auto w-full sm:w-auto">
-            <input
-              placeholder="Filtrar por ID ou cliente"
-              value={filter}
-              onChange={e => setFilter(e.target.value)}
-              className="p-2 border rounded w-full sm:w-64"
-            />
-          </div>
-        </section>
-
-        {/* date filters card */}
-        <section className="mt-4 bg-white p-4 rounded shadow">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="bg-gray-50 p-3 rounded">
-              <div className="text-sm font-medium mb-2">Período - Data combinada</div>
-              <div className="flex gap-2 items-center">
-                <input type="date" value={dateFilterCombinada.from} onChange={e => setDateFilterCombinada(prev => ({ ...prev, from: e.target.value }))} className="p-2 border rounded" />
-                <span className="mx-1">até</span>
-                <input type="date" value={dateFilterCombinada.to} onChange={e => setDateFilterCombinada(prev => ({ ...prev, to: e.target.value }))} className="p-2 border rounded" />
-              </div>
-            </div>
-
-            <div className="bg-gray-50 p-3 rounded">
-              <div className="text-sm font-medium mb-2">Período - Recebimento / Pagamentos</div>
-              <div className="flex gap-2 items-center">
-                <input type="date" value={dateFilterRecebimento.from} onChange={e => setDateFilterRecebimento(prev => ({ ...prev, from: e.target.value }))} className="p-2 border rounded" />
-                <span className="mx-1">até</span>
-                <input type="date" value={dateFilterRecebimento.to} onChange={e => setDateFilterRecebimento(prev => ({ ...prev, to: e.target.value }))} className="p-2 border rounded" />
-              </div>
-            </div>
-          </div>
-
-          <div className="flex justify-end mt-3">
-            <button type="button" onClick={clearFilters} className="px-3 py-2 bg-gray-200 rounded">Limpar filtros</button>
-          </div>
-        </section>
-
-        <section className="mt-6">
-          <Tabela
-            cabecalho={cabecalho}
-            dados={filtered}
-            fields={fields}
-            status={false}
-            renderCell={(row, key) => {
-              if (key === "valorAReceber" || key === "valorRecebido") return `R$ ${Number(row[key] || 0).toFixed(2)}`;
-              return row[key] ?? "-";
-            }}
-            renderActions={(row) => (
-              <div className="flex items-center justify-center gap-2">
-                <button onClick={() => startEdit(row)} className="px-2 py-1 bg-yellow-300 rounded">Editar</button>
-                <button onClick={() => handleDelete(row.id)} className="px-2 py-1 bg-red-500 text-white rounded">Excluir</button>
-                {/* botão de "Adicionar pagamento" removido da tabela conforme solicitado */}
-              </div>
-            )}
-          />
-        </section>
-
-        <p className="text-sm text-gray-500 mt-4">
-          Observação: os dados são salvos no localStorage enquanto o endpoint do backend não estiver pronto.
-        </p>
-      </div>
-
-      {/* Modal overlay (novo / edit / pagamento) */}
-      {modalOpen && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center"
-          role="dialog"
-          aria-modal="true"
-        >
-          <div className="absolute inset-0 bg-black opacity-50" onClick={closeModal} />
-          <div className="relative bg-white rounded-lg shadow-lg w-full max-w-md mx-4 p-6 z-10">
-            {/* Novo recebimento */}
-            {modalType === "novo" && (
-              <>
-                <h2 className="text-lg font-semibold mb-3">Adicionar recebimento</h2>
-                <form onSubmit={handleSaveNewModal} className="space-y-3">
-                  <input name="cliente" value={modalForm.cliente} onChange={handleModalFormChange} className="w-full p-2 border rounded" placeholder="Cliente" required />
-                  <span>Data Combinada para recebimento</span>
-                  <input type="date" name="dataCombinada" value={modalForm.dataCombinada} onChange={handleModalFormChange} className="w-full p-2 border rounded" />
-                  <div className="grid grid-cols-2 gap-2">
-                    <span>Valor a Receber</span>
-                    <input name="valorAReceber" value={modalForm.valorAReceber} onChange={handleModalFormChange} placeholder="Valor a receber" className="p-2 border rounded" />
-                    <span>Valor Recebido</span>
-                    <input name="valorRecebido" value={modalForm.valorRecebido} onChange={handleModalFormChange} placeholder="Valor recebido (opcional)" className="p-2 border rounded" />
-                  </div>
-                  <span>Data do Recebimento</span>
-                  <input type="date" name="diaRecebimento" value={modalForm.diaRecebimento} onChange={handleModalFormChange} className="w-full p-2 border rounded" />
-                  <div className="flex justify-end gap-2">
-                    <button type="button" onClick={closeModal} className="px-3 py-2 bg-gray-200 rounded">Cancelar</button>
-                    <button type="submit" className="px-3 py-2 bg-orange-400 text-white rounded">Adicionar</button>
-                  </div>
-                </form>
-              </>
-            )}
-
-            {/* Edit recebimento */}
-            {modalType === "edit" && modalData && (
-              <>
-                <h2 className="text-lg font-semibold mb-3">Editar recebimento #{modalData.id}</h2>
-                <form onSubmit={handleSaveEditModal} className="space-y-3">
-                  <input name="cliente" value={modalForm.cliente} onChange={handleModalFormChange} className="w-full p-2 border rounded" required />
-                  <div className="grid grid-cols-2 gap-2">
-                    <input type="date" name="dataCombinada" value={modalForm.dataCombinada} onChange={handleModalFormChange} className="p-2 border rounded" />
-                    <input type="date" name="diaRecebimento" value={modalForm.diaRecebimento} onChange={handleModalFormChange} className="p-2 border rounded" />
-                  </div>
-                  <div className="grid grid-cols-2 gap-2">
-                    <input name="valorAReceber" value={modalForm.valorAReceber} onChange={handleModalFormChange} placeholder="Valor a receber" className="p-2 border rounded" />
-                    <input name="valorRecebido" value={modalForm.valorRecebido} onChange={handleModalFormChange} placeholder="Valor recebido" className="p-2 border rounded" />
-                  </div>
-                  <div className="flex justify-end gap-2">
-                    <button type="button" onClick={closeModal} className="px-3 py-2 bg-gray-200 rounded">Cancelar</button>
-                    <button type="submit" className="px-3 py-2 bg-blue-600 text-white rounded">Salvar</button>
-                  </div>
-                </form>
-              </>
-            )}
-
-            {/* Pagamento (permanece disponível via modal, mas trigger removido da tabela) */}
-            {modalType === "pagamento" && (
-              <>
-                <h2 className="text-lg font-semibold mb-3">Adicionar pagamento</h2>
-
-                <form onSubmit={handleSavePagamentoModal} className="space-y-3">
-                  <div>
-                    <label className="block text-sm font-medium mb-1">Cliente</label>
-                    <select
-                      name="clientId"
-                      value={modalForm.clientId}
-                      onChange={handleModalFormChange}
-                      className="w-full p-2 border rounded"
-                      required
-                    >
-                      <option value="">Selecione um cliente...</option>
-                      {clients.map(c => (
-                        <option key={c.id} value={c.id}>{c.nome}</option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <input name="valor" value={modalForm.valor} onChange={handleModalFormChange} placeholder="Valor (ex: 50.00)" className="w-full p-2 border rounded" required />
-                  <input type="date" name="data" value={modalForm.data} onChange={handleModalFormChange} className="w-full p-2 border rounded" required />
-                  <div className="flex justify-end gap-2">
-                    <button type="button" onClick={closeModal} className="px-3 py-2 bg-gray-200 rounded">Cancelar</button>
-                    <button type="submit" className="px-3 py-2 bg-green-600 text-white rounded">Adicionar</button>
-                  </div>
-                </form>
-              </>
-            )}
+      <div className="max-w-7xl mx-auto">
+        <div className="flex justify-between items-center mb-4">
+          <h1 className="text-2xl font-bold">Gestão Financeira</h1>
+          <div className="text-sm text-gray-600">
+            {
+              (() => {
+                const data = new Date();
+                const mes = data.toLocaleDateString('pt-BR', { month: 'long' });
+                const mesCapitalizado = mes.charAt(0).toUpperCase() + mes.slice(1);
+                const ano = data.getFullYear();
+                return `${mesCapitalizado} de ${ano}`;
+              })()
+            }
           </div>
         </div>
-      )}
+
+        {/* KPIs */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+          <div className="p-4 bg-white rounded shadow">
+            <div className="flex items-center gap-2 text-sm text-gray-500 mb-2">
+              <AttachMoneyIcon fontSize="small" className="text-green-600" />
+              <span>Receita do Mês</span>
+            </div>
+            <span className="text-2xl font-bold block text-green-600">
+              {kpisData.carregandoKpis ? "Carregando..." : formatCurrency(kpisData.receitaMes)}
+            </span>
+            <span className="text-xs text-gray-400">
+              {kpisData.mensalidadesRecebidas} mensalidades recebidas
+            </span>
+          </div>
+
+          <div className="p-4 bg-white rounded shadow">
+            <div className="flex items-center gap-2 text-sm text-gray-500 mb-2">
+              <PaymentsIcon fontSize="small" className="text-red-600" />
+              <span>Despesas do Mês</span>
+            </div>
+            <span className="text-2xl font-bold block text-red-600">
+              {kpisData.carregandoKpis ? "Carregando..." : formatCurrency(kpisData.despesasMes)}
+            </span>
+            <span className="text-xs text-gray-400">
+              Todos os pagamentos
+            </span>
+          </div>
+
+          <div className={`p-4 rounded shadow ${saldoMes >= 0 ? "bg-green-50" : "bg-red-50"}`}>
+            <div className="flex items-center gap-2 text-sm text-gray-500 mb-2">
+              {saldoMes >= 0 ? (
+                <TrendingUpIcon fontSize="small" className="text-green-700" />
+              ) : (
+                <TrendingDownIcon fontSize="small" className="text-red-700" />
+              )}
+              <span>Lucro do Mês</span>
+            </div>
+            <span className={`text-2xl font-bold block ${saldoMes >= 0 ? "text-green-700" : "text-red-700"}`}>
+              {kpisData.carregandoKpis ? "Carregando..." : formatCurrency(saldoMes)}
+            </span>
+            <span className="text-xs text-gray-400">
+              {saldoMes >= 0 ? "Positivo ✅" : "Negativo ⚠️"}
+            </span>
+          </div>
+        </div>
+
+        {/* Abas */}
+        <div className="flex gap-2 mb-4">
+          <button
+            onClick={() => setAba("mensalidades")}
+            className={`px-4 py-2 rounded flex items-center gap-2 ${aba === "mensalidades" ? "bg-blue-600 text-white" : "bg-white border"}`}
+          >
+            <AttachMoneyIcon fontSize="small" />
+            Receitas (Mensalidades)
+          </button>
+          <button
+            onClick={() => setAba("pagamentos")}
+            className={`px-4 py-2 rounded flex items-center gap-2 ${aba === "pagamentos" ? "bg-blue-600 text-white" : "bg-white border"}`}
+          >
+            <PaymentsIcon fontSize="small" />
+            Despesas (Pagamentos)
+          </button>
+        </div>
+
+        {/* Filtros Otimizados */}
+        <div className="bg-white p-4 rounded shadow mb-4">
+          <div className="flex items-center gap-2 mb-3">
+            <FilterListIcon fontSize="small" />
+            <h3 className="font-medium">Filtros</h3>
+          </div>
+          
+          {aba === "mensalidades" ? (
+            <>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 mb-3">
+                <div>
+                  <label className="block text-xs text-gray-600 mb-1">Buscar por nome/ID</label>
+                  <input
+                    placeholder="Digite nome do aluno ou ID"
+                    value={filtroTexto}
+                    onChange={e => setFiltroTexto(e.target.value)}
+                    className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs text-gray-600 mb-1">Data Início</label>
+                  <input
+                    type="date"
+                    value={filtroDataInicio}
+                    onChange={e => {
+                      setFiltroDataInicio(e.target.value);
+                      setPaginaAtualMensalidades(0);
+                    }}
+                    className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs text-gray-600 mb-1">Data Fim</label>
+                  <input
+                    type="date"
+                    value={filtroDataFim}
+                    onChange={e => {
+                      setFiltroDataFim(e.target.value);
+                      setPaginaAtualMensalidades(0);
+                    }}
+                    className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs text-gray-600 mb-1">ID do Aluno</label>
+                  <input
+                    type="number"
+                    placeholder="Filtrar por ID específico"
+                    value={filtroAlunoId}
+                    onChange={e => {
+                      setFiltroAlunoId(e.target.value);
+                      setPaginaAtualMensalidades(0);
+                    }}
+                    className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+              </div>
+
+              {/* Botões de atalho para período */}
+              <div className="flex gap-2 mb-3 flex-wrap">
+                <span className="text-xs text-gray-600 self-center">Atalhos:</span>
+                <button
+                  type="button"
+                  onClick={definirMesAtual}
+                  className="px-3 py-1 bg-blue-100 text-blue-700 rounded text-sm hover:bg-blue-200"
+                >
+                  📅 Mês Atual
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const hoje = new Date();
+                    const dataHoje = hoje.toISOString().split('T')[0];
+                    setFiltroDataInicio(dataHoje);
+                    setFiltroDataFim(dataHoje);
+                    setPaginaAtualMensalidades(0);
+                  }}
+                  className="px-3 py-1 bg-purple-100 text-purple-700 rounded text-sm hover:bg-purple-200"
+                >
+                  📆 Hoje
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const hoje = new Date();
+                    const primeiroDia = new Date(hoje.getFullYear(), 0, 1).toISOString().split('T')[0];
+                    const ultimoDia = new Date(hoje.getFullYear(), 11, 31).toISOString().split('T')[0];
+                    setFiltroDataInicio(primeiroDia);
+                    setFiltroDataFim(ultimoDia);
+                    setPaginaAtualMensalidades(0);
+                  }}
+                  className="px-3 py-1 bg-indigo-100 text-indigo-700 rounded text-sm hover:bg-indigo-200"
+                >
+                  📊 Ano Atual
+                </button>
+              </div>
+
+              {/* Filtro de Status com botões visuais */}
+              <div className="mb-3">
+                <label className="block text-xs text-gray-600 mb-2">Status</label>
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    onClick={() => toggleStatus('PENDENTE')}
+                    className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
+                      filtroStatus.includes('PENDENTE')
+                        ? 'bg-yellow-500 text-white shadow-md'
+                        : 'bg-yellow-100 text-yellow-700 hover:bg-yellow-200'
+                    }`}
+                  >
+                    ⏳ Pendente
+                    {filtroStatus.includes('PENDENTE') && (
+                      <ClearIcon fontSize="small" className="ml-1" />
+                    )}
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => toggleStatus('PAGO')}
+                    className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
+                      filtroStatus.includes('PAGO')
+                        ? 'bg-green-500 text-white shadow-md'
+                        : 'bg-green-100 text-green-700 hover:bg-green-200'
+                    }`}
+                  >
+                    ✅ Pago
+                    {filtroStatus.includes('PAGO') && (
+                      <ClearIcon fontSize="small" className="ml-1" />
+                    )}
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => toggleStatus('ATRASADO')}
+                    className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
+                      filtroStatus.includes('ATRASADO')
+                        ? 'bg-red-500 text-white shadow-md'
+                        : 'bg-red-100 text-red-700 hover:bg-red-200'
+                    }`}
+                  >
+                    ⚠️ Atrasado
+                    {filtroStatus.includes('ATRASADO') && (
+                      <ClearIcon fontSize="small" className="ml-1" />
+                    )}
+                  </button>
+
+                  {filtroStatus.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setFiltroStatus([]);
+                        setPaginaAtualMensalidades(0);
+                      }}
+                      className="px-4 py-2 rounded-full text-sm font-medium bg-gray-200 text-gray-700 hover:bg-gray-300"
+                    >
+                      Limpar Status
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {/* Resumo dos filtros ativos */}
+              {(filtroTexto || filtroAlunoId || filtroDataInicio || filtroDataFim || filtroStatus.length > 0) && (
+                <div className="bg-blue-50 p-3 rounded border border-blue-200">
+                  <div className="flex items-center justify-between">
+                    <div className="text-sm text-blue-800">
+                      <span className="font-medium">Filtros ativos:</span>
+                      {filtroTexto && <span className="ml-2">• Busca: "{filtroTexto}"</span>}
+                      {filtroAlunoId && <span className="ml-2">• Aluno ID: {filtroAlunoId}</span>}
+                      {filtroDataInicio && (
+                        <span className="ml-2">
+                          • Período: {new Date(filtroDataInicio + 'T00:00:00').toLocaleDateString('pt-BR')}
+                          {filtroDataFim && ` até ${new Date(filtroDataFim + 'T00:00:00').toLocaleDateString('pt-BR')}`}
+                        </span>
+                      )}
+                      {filtroStatus.length > 0 && (
+                        <span className="ml-2">• Status: {filtroStatus.join(', ')}</span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
+            </>
+          ) : (
+            <>
+              {/* Filtros de Pagamentos */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                <div>
+                  <label className="block text-xs text-gray-600 mb-1">Descrição</label>
+                  <input
+                    placeholder="Ex: Funcionario, Gasolina..."
+                    value={filtroDescricao}
+                    onChange={e => setFiltroDescricao(e.target.value)}
+                    className="w-full p-2 border rounded"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs text-gray-600 mb-1">Data específica</label>
+                  <input
+                    type="date"
+                    value={filtroData}
+                    onChange={e => setFiltroData(e.target.value)}
+                    className="w-full p-2 border rounded"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs text-gray-600 mb-1">Valor exato</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    placeholder="Ex: 150.00"
+                    value={filtroValor}
+                    onChange={e => setFiltroValor(e.target.value)}
+                    className="w-full p-2 border rounded"
+                  />
+                </div>
+              </div>
+
+              <div className="flex gap-2 items-center mt-3">
+                <span className="text-sm text-gray-600">Ordenar por:</span>
+                <select
+                  value={ordenacaoPagamentos.campo}
+                  onChange={(e) => alterarOrdenacaoPagamentos(e.target.value)}
+                  className="p-2 border rounded text-sm"
+                >
+                  <option value="idPagamento">ID</option>
+                  <option value="dataPagamento">Data</option>
+                  <option value="valorPagamento">Valor</option>
+                </select>
+                <button
+                  onClick={() => setOrdenacaoPagamentos(prev => ({
+                    ...prev,
+                    direcao: prev.direcao === "asc" ? "desc" : "asc"
+                  }))}
+                  className="p-2 border rounded text-sm hover:bg-gray-100 flex items-center gap-1"
+                  title={ordenacaoPagamentos.direcao === "asc" ? "Crescente" : "Decrescente"}
+                >
+                  {ordenacaoPagamentos.direcao === "asc" ? (
+                    <>
+                      <ArrowUpwardIcon fontSize="small" />
+                      Crescente
+                    </>
+                  ) : (
+                    <>
+                      <ArrowDownwardIcon fontSize="small" />
+                      Decrescente
+                    </>
+                  )}
+                </button>
+              </div>
+            </>
+          )}
+
+          <div className="flex justify-end mt-3">
+            <button 
+              onClick={limparFiltros} 
+              className="px-4 py-2 bg-gray-200 rounded flex items-center gap-2 hover:bg-gray-300 transition-colors"
+            >
+              <ClearIcon fontSize="small" />
+              Limpar Filtros
+            </button>
+          </div>
+        </div>
+
+        {/* Conteúdo das abas */}
+        {aba === "mensalidades" && (
+          <section className="bg-white p-4 rounded shadow">
+            <div className="flex justify-between items-center mb-3 flex-wrap gap-2">
+              <h2 className="text-lg font-medium flex items-center gap-2">
+                <AttachMoneyIcon />
+                Receitas - Mensalidades
+              </h2>
+              <div className="flex gap-2">
+                {/* Botões comentados - para reativar, remova os comentários */}
+                {/* 
+                <button
+                  onClick={handleGerarMensalidades}
+                  className="px-3 py-2 bg-blue-600 text-white rounded flex items-center gap-2 hover:bg-blue-700"
+                >
+                  <AddIcon fontSize="small" />
+                  Gerar Mensalidades (Todos)
+                </button>
+                <button
+                  onClick={() => { setModalAberto(true); setModalContexto("novaMensalidade"); }}
+                  className="px-3 py-2 bg-green-600 text-white rounded flex items-center gap-2 hover:bg-green-700"
+                >
+                  <AddIcon fontSize="small" />
+                  Nova Mensalidade
+                </button>
+                */}
+              </div>
+            </div>
+
+            {mensalidadesFiltradas.length === 0 ? (
+              <div className="text-center py-12">
+                <AttachMoneyIcon style={{ fontSize: 64 }} className="text-gray-300 mb-4" />
+                <h3 className="text-lg font-medium text-gray-600 mb-2">
+                  Nenhuma mensalidade encontrada
+                </h3>
+                <p className="text-gray-500 mb-4">
+                  {filtroTexto || filtroAlunoId || filtroDataInicio || filtroDataFim
+                    ? "Tente ajustar os filtros ou cadastre uma nova mensalidade"
+                    : "Comece cadastrando uma nova mensalidade"}
+                </p>
+                <button
+                  onClick={() => { setModalAberto(true); setModalContexto("novaMensalidade"); }}
+                  className="px-4 py-2 bg-green-600 text-white rounded inline-flex items-center gap-2 hover:bg-green-700"
+                >
+                  <AddIcon fontSize="small" />
+                  Cadastrar Primeira Mensalidade
+                </button>
+              </div>
+            ) : (
+              <>
+                <Tabela
+                  cabecalho={["ID", "Aluno", "Vencimento", "Valor", "Status"]}
+                  dados={mensalidadesFiltradas.map(m => ({
+                    idMensalidade: m.idMensalidade,
+                    alunoNome: m.aluno?.nome || m.nomeAluno || "-",
+                    dataVencimento: m.dataVencimento,
+                    valorMensalidadeFormatado: formatCurrency(m.valorMensalidade),
+                    status: m.status,
+                    _original: m
+                  }))}
+                  fields={["idMensalidade", "alunoNome", "dataVencimento", "valorMensalidadeFormatado", "status"]}
+                  renderActions={(row) => (
+                    <div className="flex gap-2 justify-center">
+                      <button
+                        onClick={() => handlePagarMensalidade(row.idMensalidade)}
+                        className={`px-2 py-1 rounded text-sm flex items-center gap-1 ${
+                          row.status === 'PAGO'
+                            ? 'bg-gray-300 text-gray-600 cursor-not-allowed'
+                            : 'bg-green-600 text-white hover:bg-green-700'
+                        }`}
+                        disabled={row.status === 'PAGO'}
+                      >
+                        {row.status === 'PAGO' ? (
+                          <>
+                            <CheckCircleIcon fontSize="small" />
+                            Pago
+                          </>
+                        ) : (
+                          'Marcar Pago'
+                        )}
+                      </button>
+                    </div>
+                  )}
+                />
+
+                {/* Paginação das mensalidades */}
+                {totalPaginasMensalidades > 1 && (
+                  <div className="flex justify-center items-center gap-2 mt-4 flex-wrap">
+                    <button
+                      onClick={() => irParaPaginaMensalidades(paginaAtualMensalidades - 1)}
+                      disabled={paginaAtualMensalidades === 0}
+                      className="px-3 py-1 border rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-100"
+                    >
+                      Anterior
+                    </button>
+                    <span className="px-3 py-1 text-sm">
+                      Página {paginaAtualMensalidades + 1} de {totalPaginasMensalidades} ({totalElementosMensalidades} itens)
+                    </span>
+                    <button
+                      onClick={() => irParaPaginaMensalidades(paginaAtualMensalidades + 1)}
+                      disabled={paginaAtualMensalidades >= totalPaginasMensalidades - 1}
+                      className="px-3 py-1 border rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-100"
+                    >
+                      Próxima
+                    </button>
+                  </div>
+                )}
+              </>
+            )}
+          </section>
+        )}
+
+        {aba === "pagamentos" && (
+          <section className="bg-white p-4 rounded shadow">
+            <div className="flex justify-between items-center mb-3">
+              <h2 className="text-lg font-medium flex items-center gap-2">
+                <PaymentsIcon />
+                Despesas - Pagamentos
+              </h2>
+              <button
+                onClick={() => abrirModalPagamento()}
+                className="px-3 py-2 bg-red-600 text-white rounded flex items-center gap-2"
+              >
+                <AddIcon fontSize="small" />
+                Novo Pagamento
+              </button>
+            </div>
+
+            <Tabela
+              cabecalho={["ID", "Data", "Valor", "Descrição"]}
+              dados={pagamentosFiltrados.map(p => ({
+                idPagamento: p.idPagamento,
+                dataPagamento: p.dataPagamento,
+                valorPagamentoFormatado: formatCurrency(p.valorPagamento),
+                descricao: p.descricao || "-",
+                _original: p
+              }))}
+              fields={["idPagamento", "dataPagamento", "valorPagamentoFormatado", "descricao"]}
+              renderActions={(row) => (
+                <div className="flex gap-2 justify-center">
+                  <button
+                    onClick={() => abrirModalPagamento(row._original || row, "editarPagamento")}
+                    className="px-2 py-1 bg-blue-500 text-white rounded text-sm flex items-center gap-1"
+                  >
+                    <EditIcon fontSize="small" />
+                    Editar
+                  </button>
+                  <button
+                    onClick={() => handleExcluirPagamento(row.idPagamento)}
+                    className="px-2 py-1 bg-red-500 text-white rounded text-sm flex items-center gap-1"
+                  >
+                    <DeleteIcon fontSize="small" />
+                    Excluir
+                  </button>
+                </div>
+              )}
+            />
+
+            {/* Paginação dos pagamentos */}
+            {totalPaginasPagamentos > 1 && (
+              <div className="flex justify-center items-center gap-2 mt-4">
+                <button
+                  onClick={() => irParaPaginaPagamentos(paginaAtualPagamentos - 1)}
+                  disabled={paginaAtualPagamentos === 0}
+                  className="px-3 py-1 border rounded disabled:opacity-50"
+                >
+                  Anterior
+                </button>
+                <span className="px-3 py-1">
+                  Página {paginaAtualPagamentos + 1} de {totalPaginasPagamentos} ({totalElementosPagamentos} itens)
+                </span>
+                <button
+                  onClick={() => irParaPaginaPagamentos(paginaAtualPagamentos + 1)}
+                  disabled={paginaAtualPagamentos >= totalPaginasPagamentos - 1}
+                  className="px-3 py-1 border rounded disabled:opacity-50"
+                >
+                  Próxima
+                </button>
+              </div>
+            )}
+          </section>
+        )}
+
+        {/* Modal de Pagamento/Despesa */}
+        {modalAberto && modalContexto !== "novaMensalidade" && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center">
+            <div className="absolute inset-0 bg-black opacity-50" onClick={fecharModal} />
+            <div className="relative bg-white rounded-lg shadow-lg w-full max-w-md mx-4 p-6 z-10">
+              <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                <PaymentsIcon />
+                {modoEdicao ? "Editar Pagamento" : "Novo Pagamento"}
+              </h2>
+
+              <form onSubmit={salvarPagamento} className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium mb-1">Descrição *</label>
+                  <input
+                    value={formPagamento.descricao}
+                    onChange={e => setFormPagamento(prev => ({ ...prev, descricao: e.target.value }))}
+                    className="w-full p-2 border rounded"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1">Valor *</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    placeholder="0,00"
+                    value={formPagamento.valorPagamento}
+                    onChange={e => setFormPagamento(prev => ({ ...prev, valorPagamento: e.target.value }))}
+                    className="w-full p-2 border rounded"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1">Data *</label>
+                  <input
+                    type="date"
+                    value={formPagamento.dataPagamento}
+                    onChange={e => setFormPagamento(prev => ({ ...prev, dataPagamento: e.target.value }))}
+                    className="w-full p-2 border rounded"
+                    required
+                  />
+                </div>
+                <div className="flex justify-end gap-2 pt-4">
+                  <button type="button" onClick={fecharModal} className="px-4 py-2 bg-gray-200 rounded flex items-center gap-2">
+                    <ClearIcon fontSize="small" />
+                    Cancelar
+                  </button>
+                  <button type="submit" className="px-4 py-2 bg-red-600 text-white rounded flex items-center gap-2">
+                    <PaymentsIcon fontSize="small" />
+                    {modoEdicao ? "Atualizar" : "Registrar"} Pagamento
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+
+        {/* Modal Nova Mensalidade */}
+        {modalAberto && modalContexto === "novaMensalidade" && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center">
+            <div className="absolute inset-0 bg-black opacity-50" onClick={fecharModal} />
+            <div className="relative bg-white rounded-lg shadow-lg w-full max-w-md mx-4 p-6 z-10">
+              <h2 className="text-lg font-semibold mb-3 flex items-center gap-2">
+                <AttachMoneyIcon />
+                Nova Mensalidade
+              </h2>
+              <form onSubmit={salvarNovaMensalidade} className="space-y-3">
+                <input
+                  type="number"
+                  placeholder="ID do aluno *"
+                  value={formNovaMensalidade.alunoId}
+                  onChange={e => setFormNovaMensalidade(prev => ({ ...prev, alunoId: e.target.value }))}
+                  className="w-full p-2 border rounded"
+                  required
+                />
+                <input
+                  type="number"
+                  step="0.01"
+                  placeholder="Valor da mensalidade *"
+                  value={formNovaMensalidade.valorMensalidade}
+                  onChange={e => setFormNovaMensalidade(prev => ({ ...prev, valorMensalidade: e.target.value }))}
+                  className="w-full p-2 border rounded"
+                  required
+                />
+                <input
+                  type="date"
+                  value={formNovaMensalidade.dataVencimento}
+                  onChange={e => setFormNovaMensalidade(prev => ({ ...prev, dataVencimento: e.target.value }))}
+                  className="w-full p-2 border rounded"
+                  required
+                />
+
+                <div className="flex justify-end gap-2 pt-3">
+                  <button type="button" onClick={fecharModal} className="px-3 py-2 bg-gray-200 rounded flex items-center gap-2">
+                    <ClearIcon fontSize="small" />
+                    Cancelar
+                  </button>
+                  <button type="submit" className="px-3 py-2 bg-green-600 text-white rounded flex items-center gap-2">
+                    <AddIcon fontSize="small" />
+                    Criar Mensalidade
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+
+        {/* Modal de Confirmação */}
+        <ModalConfirmacao
+          aberto={confirmacao.aberto}
+          onFechar={fecharConfirmacao}
+          onConfirmar={confirmacao.onConfirmar}
+          titulo={confirmacao.titulo}
+          mensagem={confirmacao.mensagem}
+          tipo={confirmacao.tipo}
+        />
+      </div>
     </div>
   );
 }
