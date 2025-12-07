@@ -3,6 +3,7 @@ import CloseIcon from '@mui/icons-material/Close'
 import SaveIcon from '@mui/icons-material/Save'
 import DeleteIcon from '@mui/icons-material/Delete'
 import PropTypes from 'prop-types'
+import { showSwal } from '../utils/swal.jsx'
 
 /**
  * Modal para criar ou editar eventos
@@ -114,15 +115,14 @@ export default function EventModal({ isOpen, onClose, onSave, onDelete, event, s
   const handleDelete = async () => {
     if (!event?.id) return
 
-      const { isConfirmed } = await MySwal.fire({
+      const result = await showSwal({
         title: 'Excluir evento',
         text: 'Tem certeza que deseja excluir este evento?',
         icon: 'warning',
-        showCancelButton: true,
         confirmButtonText: 'Sim, excluir',
         cancelButtonText: 'Cancelar'
       });
-      if (!isConfirmed) return;
+      if (!result.isConfirmed) return;
 
     setIsSubmitting(true)
 

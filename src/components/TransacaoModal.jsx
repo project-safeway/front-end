@@ -4,6 +4,7 @@ import CloseIcon from '@mui/icons-material/Close'
 import AttachMoneyIcon from '@mui/icons-material/AttachMoney'
 import TrendingUpIcon from '@mui/icons-material/TrendingUp'
 import TrendingDownIcon from '@mui/icons-material/TrendingDown'
+import { showSwal } from '../utils/swal.jsx'
 
 export default function TransacaoModal({
   isOpen,
@@ -117,15 +118,14 @@ export default function TransacaoModal({
   }
 
   const handleDelete = async () => {
-          const { isConfirmed } = await MySwal.fire({
+          const result = await showSwal({
             title: 'Excluir transação',
             text: 'Tem certeza que deseja excluir esta transação?',
             icon: 'warning',
-            showCancelButton: true,
             confirmButtonText: 'Sim, excluir',
             cancelButtonText: 'Cancelar'
           });
-          if (!isConfirmed) return;
+          if (!result.isConfirmed) return;
 
     if (window.confirm('Tem certeza que deseja excluir esta transação?')) {
       setIsSubmitting(true)
