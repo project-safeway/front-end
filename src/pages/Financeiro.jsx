@@ -41,13 +41,11 @@ export default function Financeiro() {
   const [mensalidades, setMensalidades] = useState([]);
   const [pagamentos, setPagamentos] = useState([]);
 
-  // Filtros
+  // Filtros para mensalidades - otimizados
   const [filtroTexto, setFiltroTexto] = useState("");
   const [filtroStatus, setFiltroStatus] = useState([]);
   const [filtroDataInicio, setFiltroDataInicio] = useState("");
   const [filtroDataFim, setFiltroDataFim] = useState("");
-  const [filtroValorMinimo, setFiltroValorMinimo] = useState("");
-  const [filtroValorMaximo, setFiltroValorMaximo] = useState("");
   const [filtroAlunoId, setFiltroAlunoId] = useState("");
   
   // Filtros específicos para pagamentos
@@ -100,24 +98,25 @@ export default function Financeiro() {
     carregandoKpis: false
   });
 
-  // Carregar mensalidades com filtros e paginação
+  // Carregar mensalidades com filtros otimizados
   const carregarMensalidades = useCallback(async function () {
     try {
       const params = {
         page: paginaAtualMensalidades,
         size: 10
       };
-      if (filtroAlunoId) params.alunoId = parseInt(filtroAlunoId, 10);
+
+      // Filtro de período (data início e fim)
       if (filtroDataInicio) params.dataInicio = filtroDataInicio;
       if (filtroDataFim) params.dataFim = filtroDataFim;
+
+      if (filtroAlunoId) params.alunoId = parseInt(filtroAlunoId, 10);
       if (filtroStatus.length > 0) params.status = filtroStatus;
 
       console.log('[carregarMensalidades] Chamando API com params:', params);
       const res = await listarMensalidades(params);
       console.log('[carregarMensalidades] Resposta da API:', res);
 
-      // O wrapper api.js retorna response.data diretamente
-      // então res já é { content: [...], totalPages: ..., etc }
       if (res && typeof res === 'object' && 'content' in res) {
         setMensalidades(res.content || []);
         setTotalPaginasMensalidades(res.totalPages || 0);
@@ -125,7 +124,6 @@ export default function Financeiro() {
         
         console.log('[carregarMensalidades] Mensalidades carregadas:', res.content?.length || 0);
       } else if (Array.isArray(res)) {
-        // Fallback caso retorne array direto
         setMensalidades(res);
         setTotalPaginasMensalidades(1);
         setTotalElementosMensalidades(res.length);
@@ -421,6 +419,27 @@ export default function Financeiro() {
     }
   }
 
+  // Função auxiliar para definir período do mês atual
+  function definirMesAtual() {
+    const hoje = new Date();
+    const ano = hoje.getFullYear();
+    const mes = String(hoje.getMonth() + 1).padStart(2, '0');
+    const ultimoDia = new Date(ano, hoje.getMonth() + 1, 0).getDate();
+    
+    setFiltroDataInicio(`${ano}-${mes}-01`);
+    setFiltroDataFim(`${ano}-${mes}-${ultimoDia}`);
+    setPaginaAtualMensalidades(0);
+  }
+
+  function toggleStatus(status) {
+    setFiltroStatus(prev => 
+      prev.includes(status) 
+        ? prev.filter(s => s !== status)
+        : [...prev, status]
+    );
+    setPaginaAtualMensalidades(0);
+  }
+
   function aplicarFiltros() {
     if (aba === "mensalidades") {
       setPaginaAtualMensalidades(0);
@@ -560,7 +579,7 @@ export default function Financeiro() {
           </button>
         </div>
 
-        {/* Filtros */}
+        {/* Filtros Otimizados */}
         <div className="bg-white p-4 rounded shadow mb-4">
           <div className="flex items-center gap-2 mb-3">
             <FilterListIcon fontSize="small" />
@@ -569,37 +588,186 @@ export default function Financeiro() {
           
           {aba === "mensalidades" ? (
             <>
-              <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-3">
-                <input
-                  placeholder="Buscar por texto"
-                  value={filtroTexto}
-                  onChange={e => setFiltroTexto(e.target.value)}
-                  className="p-2 border rounded"
-                />
-                <input
-                  type="date"
-                  placeholder="Data início"
-                  value={filtroDataInicio}
-                  onChange={e => setFiltroDataInicio(e.target.value)}
-                  className="p-2 border rounded"
-                />
-                <input
-                  type="date"
-                  placeholder="Data fim"
-                  value={filtroDataFim}
-                  onChange={e => setFiltroDataFim(e.target.value)}
-                  className="p-2 border rounded"
-                />
-                <input
-                  placeholder="ID do aluno"
-                  value={filtroAlunoId}
-                  onChange={e => setFiltroAlunoId(e.target.value)}
-                  className="p-2 border rounded"
-                />
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 mb-3">
+                <div>
+                  <label className="block text-xs text-gray-600 mb-1">Buscar por nome/ID</label>
+                  <input
+                    placeholder="Digite nome do aluno ou ID"
+                    value={filtroTexto}
+                    onChange={e => setFiltroTexto(e.target.value)}
+                    className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs text-gray-600 mb-1">Data Início</label>
+                  <input
+                    type="date"
+                    value={filtroDataInicio}
+                    onChange={e => {
+                      setFiltroDataInicio(e.target.value);
+                      setPaginaAtualMensalidades(0);
+                    }}
+                    className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs text-gray-600 mb-1">Data Fim</label>
+                  <input
+                    type="date"
+                    value={filtroDataFim}
+                    onChange={e => {
+                      setFiltroDataFim(e.target.value);
+                      setPaginaAtualMensalidades(0);
+                    }}
+                    className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs text-gray-600 mb-1">ID do Aluno</label>
+                  <input
+                    type="number"
+                    placeholder="Filtrar por ID específico"
+                    value={filtroAlunoId}
+                    onChange={e => {
+                      setFiltroAlunoId(e.target.value);
+                      setPaginaAtualMensalidades(0);
+                    }}
+                    className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
               </div>
+
+              {/* Botões de atalho para período */}
+              <div className="flex gap-2 mb-3 flex-wrap">
+                <span className="text-xs text-gray-600 self-center">Atalhos:</span>
+                <button
+                  type="button"
+                  onClick={definirMesAtual}
+                  className="px-3 py-1 bg-blue-100 text-blue-700 rounded text-sm hover:bg-blue-200"
+                >
+                  📅 Mês Atual
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const hoje = new Date();
+                    const dataHoje = hoje.toISOString().split('T')[0];
+                    setFiltroDataInicio(dataHoje);
+                    setFiltroDataFim(dataHoje);
+                    setPaginaAtualMensalidades(0);
+                  }}
+                  className="px-3 py-1 bg-purple-100 text-purple-700 rounded text-sm hover:bg-purple-200"
+                >
+                  📆 Hoje
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const hoje = new Date();
+                    const primeiroDia = new Date(hoje.getFullYear(), 0, 1).toISOString().split('T')[0];
+                    const ultimoDia = new Date(hoje.getFullYear(), 11, 31).toISOString().split('T')[0];
+                    setFiltroDataInicio(primeiroDia);
+                    setFiltroDataFim(ultimoDia);
+                    setPaginaAtualMensalidades(0);
+                  }}
+                  className="px-3 py-1 bg-indigo-100 text-indigo-700 rounded text-sm hover:bg-indigo-200"
+                >
+                  📊 Ano Atual
+                </button>
+              </div>
+
+              {/* Filtro de Status com botões visuais */}
+              <div className="mb-3">
+                <label className="block text-xs text-gray-600 mb-2">Status</label>
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    onClick={() => toggleStatus('PENDENTE')}
+                    className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
+                      filtroStatus.includes('PENDENTE')
+                        ? 'bg-yellow-500 text-white shadow-md'
+                        : 'bg-yellow-100 text-yellow-700 hover:bg-yellow-200'
+                    }`}
+                  >
+                    ⏳ Pendente
+                    {filtroStatus.includes('PENDENTE') && (
+                      <ClearIcon fontSize="small" className="ml-1" />
+                    )}
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => toggleStatus('PAGO')}
+                    className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
+                      filtroStatus.includes('PAGO')
+                        ? 'bg-green-500 text-white shadow-md'
+                        : 'bg-green-100 text-green-700 hover:bg-green-200'
+                    }`}
+                  >
+                    ✅ Pago
+                    {filtroStatus.includes('PAGO') && (
+                      <ClearIcon fontSize="small" className="ml-1" />
+                    )}
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => toggleStatus('ATRASADO')}
+                    className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
+                      filtroStatus.includes('ATRASADO')
+                        ? 'bg-red-500 text-white shadow-md'
+                        : 'bg-red-100 text-red-700 hover:bg-red-200'
+                    }`}
+                  >
+                    ⚠️ Atrasado
+                    {filtroStatus.includes('ATRASADO') && (
+                      <ClearIcon fontSize="small" className="ml-1" />
+                    )}
+                  </button>
+
+                  {filtroStatus.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setFiltroStatus([]);
+                        setPaginaAtualMensalidades(0);
+                      }}
+                      className="px-4 py-2 rounded-full text-sm font-medium bg-gray-200 text-gray-700 hover:bg-gray-300"
+                    >
+                      Limpar Status
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {/* Resumo dos filtros ativos */}
+              {(filtroTexto || filtroAlunoId || filtroDataInicio || filtroDataFim || filtroStatus.length > 0) && (
+                <div className="bg-blue-50 p-3 rounded border border-blue-200">
+                  <div className="flex items-center justify-between">
+                    <div className="text-sm text-blue-800">
+                      <span className="font-medium">Filtros ativos:</span>
+                      {filtroTexto && <span className="ml-2">• Busca: "{filtroTexto}"</span>}
+                      {filtroAlunoId && <span className="ml-2">• Aluno ID: {filtroAlunoId}</span>}
+                      {filtroDataInicio && (
+                        <span className="ml-2">
+                          • Período: {new Date(filtroDataInicio + 'T00:00:00').toLocaleDateString('pt-BR')}
+                          {filtroDataFim && ` até ${new Date(filtroDataFim + 'T00:00:00').toLocaleDateString('pt-BR')}`}
+                        </span>
+                      )}
+                      {filtroStatus.length > 0 && (
+                        <span className="ml-2">• Status: {filtroStatus.join(', ')}</span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
             </>
           ) : (
             <>
+              {/* Filtros de Pagamentos */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                 <div>
                   <label className="block text-xs text-gray-600 mb-1">Descrição</label>
@@ -632,7 +800,6 @@ export default function Financeiro() {
                 </div>
               </div>
 
-              {/* Ordenação para Pagamentos */}
               <div className="flex gap-2 items-center mt-3">
                 <span className="text-sm text-gray-600">Ordenar por:</span>
                 <select
@@ -669,7 +836,10 @@ export default function Financeiro() {
           )}
 
           <div className="flex justify-end mt-3">
-            <button onClick={limparFiltros} className="px-4 py-2 bg-gray-200 rounded flex items-center gap-2 hover:bg-gray-300">
+            <button 
+              onClick={limparFiltros} 
+              className="px-4 py-2 bg-gray-200 rounded flex items-center gap-2 hover:bg-gray-300 transition-colors"
+            >
               <ClearIcon fontSize="small" />
               Limpar Filtros
             </button>
