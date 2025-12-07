@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useCallback } from "react";
 import { Tabela } from "../components/Tabela";
+import { ModalConfirmacao } from "../components/ModalConfirmacao";
 import {
   listarMensalidades,
   pagarMensalidade,
@@ -96,6 +97,15 @@ export default function Financeiro() {
     despesasMes: 0,
     mensalidadesRecebidas: 0,
     carregandoKpis: false
+  });
+
+  // Estados para modal de confirmação
+  const [confirmacao, setConfirmacao] = useState({
+    aberto: false,
+    titulo: '',
+    mensagem: '',
+    tipo: 'warning',
+    onConfirmar: null
   });
 
   // Carregar mensalidades com filtros otimizados
@@ -264,12 +274,12 @@ export default function Financeiro() {
         // Primeiro carrega as mensalidades
         await carregarMensalidades();
         
-        // Se não houver nenhuma mensalidade, gera automaticamente
-        if (mensalidades.length === 0) {
-          console.log('[Financeiro] Nenhuma mensalidade encontrada. Gerando automaticamente...');
-          await gerarMensalidadesMesAtual();
-          await Promise.all([carregarMensalidades(), carregarKPIs()]);
-        }
+        // Removido: geração automática de mensalidades
+        // if (mensalidades.length === 0) {
+        //   console.log('[Financeiro] Nenhuma mensalidade encontrada. Gerando automaticamente...');
+        //   await gerarMensalidadesMesAtual();
+        //   await Promise.all([carregarMensalidades(), carregarKPIs()]);
+        // }
       } catch (error) {
         console.error('[Financeiro] Erro:', error);
       }
@@ -289,25 +299,65 @@ export default function Financeiro() {
 
   // Ações
   async function handlePagarMensalidade(id) {
-    if (!window.confirm("Confirmar pagamento desta mensalidade?")) return;
-    try {
-      await pagarMensalidade(id);
-      await Promise.all([carregarMensalidades(), carregarKPIs()]);
-    } catch (err) {
-      console.error("handlePagarMensalidade:", err);
-      alert("Erro ao marcar como pago");
-    }
+    setConfirmacao({
+      aberto: true,
+      titulo: 'Confirmar Pagamento',
+      mensagem: 'Deseja realmente marcar esta mensalidade como paga? Esta ação não poderá ser desfeita.',
+      tipo: 'success',
+      onConfirmar: async () => {
+        try {
+          await pagarMensalidade(id);
+          await Promise.all([carregarMensalidades(), carregarKPIs()]);
+          setConfirmacao(prev => ({ ...prev, aberto: false }));
+        } catch (err) {
+          console.error("handlePagarMensalidade:", err);
+          alert("Erro ao marcar como pago");
+        }
+      }
+    });
   }
 
   async function handleExcluirPagamento(id) {
-    if (!window.confirm("Confirmar exclusão deste pagamento?")) return;
-    try {
-      await excluirPagamento(id);
-      await Promise.all([carregarPagamentos(), carregarKPIs()]);
-    } catch (err) {
-      console.error("handleExcluirPagamento:", err);
-      alert("Erro ao excluir pagamento");
-    }
+    setConfirmacao({
+      aberto: true,
+      titulo: 'Confirmar Exclusão',
+      mensagem: 'Tem certeza que deseja excluir este pagamento? Esta ação não poderá ser desfeita.',
+      tipo: 'danger',
+      onConfirmar: async () => {
+        try {
+          await excluirPagamento(id);
+          await Promise.all([carregarPagamentos(), carregarKPIs()]);
+          setConfirmacao(prev => ({ ...prev, aberto: false }));
+        } catch (err) {
+          console.error("handleExcluirPagamento:", err);
+          alert("Erro ao excluir pagamento");
+        }
+      }
+    });
+  }
+
+  async function handleGerarMensalidades() {
+    setConfirmacao({
+      aberto: true,
+      titulo: 'Gerar Mensalidades',
+      mensagem: 'Deseja gerar mensalidades para todos os alunos ativos do mês atual?',
+      tipo: 'warning',
+      onConfirmar: async () => {
+        try {
+          const resultado = await gerarMensalidadesMesAtual();
+          alert(`✅ ${resultado || 'Mensalidades geradas com sucesso!'}`);
+          await Promise.all([carregarMensalidades(), carregarKPIs()]);
+          setConfirmacao(prev => ({ ...prev, aberto: false }));
+        } catch (error) {
+          console.error('Erro ao gerar mensalidades:', error);
+          alert(`❌ Erro: ${error.message || error}`);
+        }
+      }
+    });
+  }
+
+  function fecharConfirmacao() {
+    setConfirmacao(prev => ({ ...prev, aberto: false }));
   }
 
   // Modais
@@ -483,18 +533,23 @@ export default function Financeiro() {
 
   // Adicione esta função após as outras funções (antes do return):
   async function handleGerarMensalidades() {
-    if (!window.confirm("Gerar mensalidades para todos os alunos ativos?")) {
-      return;
-    }
-
-    try {
-      const resultado = await gerarMensalidadesMesAtual();
-      alert(`✅ ${resultado || 'Mensalidades geradas com sucesso!'}`);
-      await Promise.all([carregarMensalidades(), carregarKPIs()]);
-    } catch (error) {
-      console.error('Erro ao gerar mensalidades:', error);
-      alert(`❌ Erro: ${error.message || error}`);
-    }
+    setConfirmacao({
+      aberto: true,
+      titulo: 'Gerar Mensalidades',
+      mensagem: 'Deseja gerar mensalidades para todos os alunos ativos do mês atual?',
+      tipo: 'warning',
+      onConfirmar: async () => {
+        try {
+          const resultado = await gerarMensalidadesMesAtual();
+          alert(`✅ ${resultado || 'Mensalidades geradas com sucesso!'}`);
+          await Promise.all([carregarMensalidades(), carregarKPIs()]);
+          setConfirmacao(prev => ({ ...prev, aberto: false }));
+        } catch (error) {
+          console.error('Erro ao gerar mensalidades:', error);
+          alert(`❌ Erro: ${error.message || error}`);
+        }
+      }
+    });
   }
 
   return (
@@ -772,7 +827,7 @@ export default function Financeiro() {
                 <div>
                   <label className="block text-xs text-gray-600 mb-1">Descrição</label>
                   <input
-                    placeholder="Ex: Aluguel, Energia..."
+                    placeholder="Ex: Funcionario, Gasolina..."
                     value={filtroDescricao}
                     onChange={e => setFiltroDescricao(e.target.value)}
                     className="w-full p-2 border rounded"
@@ -855,6 +910,8 @@ export default function Financeiro() {
                 Receitas - Mensalidades
               </h2>
               <div className="flex gap-2">
+                {/* Botões comentados - para reativar, remova os comentários */}
+                {/* 
                 <button
                   onClick={handleGerarMensalidades}
                   className="px-3 py-2 bg-blue-600 text-white rounded flex items-center gap-2 hover:bg-blue-700"
@@ -869,6 +926,7 @@ export default function Financeiro() {
                   <AddIcon fontSize="small" />
                   Nova Mensalidade
                 </button>
+                */}
               </div>
             </div>
 
@@ -1132,6 +1190,16 @@ export default function Financeiro() {
             </div>
           </div>
         )}
+
+        {/* Modal de Confirmação */}
+        <ModalConfirmacao
+          aberto={confirmacao.aberto}
+          onFechar={fecharConfirmacao}
+          onConfirmar={confirmacao.onConfirmar}
+          titulo={confirmacao.titulo}
+          mensagem={confirmacao.mensagem}
+          tipo={confirmacao.tipo}
+        />
       </div>
     </div>
   );
