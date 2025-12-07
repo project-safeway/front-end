@@ -3,7 +3,8 @@ import { Tabela } from "../components/Tabela";
 import {
   listarMensalidades,
   pagarMensalidade,
-  criarMensalidade
+  criarMensalidade,
+  gerarMensalidadesMesAtual
 } from "../services/mensalidadeService";
 import {
   listarPagamentos,
@@ -11,6 +12,29 @@ import {
   atualizarPagamento,
   excluirPagamento
 } from "../services/pagamentoService";
+
+// Material-UI Icons
+import AttachMoneyIcon from '@mui/icons-material/AttachMoney';
+import PaymentsIcon from '@mui/icons-material/Payments';
+import TrendingUpIcon from '@mui/icons-material/TrendingUp';
+import TrendingDownIcon from '@mui/icons-material/TrendingDown';
+import AddIcon from '@mui/icons-material/Add';
+import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import EditIcon from '@mui/icons-material/Edit';
+import DeleteIcon from '@mui/icons-material/Delete';
+import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';
+import ArrowDownwardIcon from '@mui/icons-material/ArrowDownward';
+import FilterListIcon from '@mui/icons-material/FilterList';
+import ClearIcon from '@mui/icons-material/Clear';
+
+// Função auxiliar para obter data local no formato YYYY-MM-DD
+function getDataLocal() {
+  const agora = new Date();
+  const ano = agora.getFullYear();
+  const mes = String(agora.getMonth() + 1).padStart(2, '0');
+  const dia = String(agora.getDate()).padStart(2, '0');
+  return `${ano}-${mes}-${dia}`;
+}
 
 export default function Financeiro() {
   const [aba, setAba] = useState("mensalidades");
@@ -25,6 +49,11 @@ export default function Financeiro() {
   const [filtroValorMinimo, setFiltroValorMinimo] = useState("");
   const [filtroValorMaximo, setFiltroValorMaximo] = useState("");
   const [filtroAlunoId, setFiltroAlunoId] = useState("");
+  
+  // Filtros específicos para pagamentos
+  const [filtroDescricao, setFiltroDescricao] = useState("");
+  const [filtroData, setFiltroData] = useState("");
+  const [filtroValor, setFiltroValor] = useState("");
 
   // Paginação
   const [paginaAtualMensalidades, setPaginaAtualMensalidades] = useState(0);
@@ -34,6 +63,12 @@ export default function Financeiro() {
   const [paginaAtualPagamentos, setPaginaAtualPagamentos] = useState(0);
   const [totalPaginasPagamentos, setTotalPaginasPagamentos] = useState(0);
   const [totalElementosPagamentos, setTotalElementosPagamentos] = useState(0);
+
+  // Estado para ordenação de pagamentos
+  const [ordenacaoPagamentos, setOrdenacaoPagamentos] = useState({
+    campo: "idPagamento",
+    direcao: "desc"
+  });
 
   // Modais
   const [modalAberto, setModalAberto] = useState(false);
@@ -48,12 +83,12 @@ export default function Financeiro() {
   const [formPagamento, setFormPagamento] = useState({
     valorPagamento: "",
     descricao: "",
-    dataPagamento: new Date().toISOString().slice(0, 10)
+    dataPagamento: getDataLocal()
   });
 
   const [formNovaMensalidade, setFormNovaMensalidade] = useState({
     alunoId: "",
-    dataVencimento: new Date().toISOString().slice(0, 10),
+    dataVencimento: getDataLocal(),
     valorMensalidade: ""
   });
 
@@ -77,18 +112,34 @@ export default function Financeiro() {
       if (filtroDataFim) params.dataFim = filtroDataFim;
       if (filtroStatus.length > 0) params.status = filtroStatus;
 
+      console.log('[carregarMensalidades] Chamando API com params:', params);
       const res = await listarMensalidades(params);
+      console.log('[carregarMensalidades] Resposta da API:', res);
 
-      if (res.data) {
-        setMensalidades(res.data.content || []);
-        setTotalPaginasMensalidades(res.data.totalPages || 0);
-        setTotalElementosMensalidades(res.data.totalElements || 0);
+      // O wrapper api.js retorna response.data diretamente
+      // então res já é { content: [...], totalPages: ..., etc }
+      if (res && typeof res === 'object' && 'content' in res) {
+        setMensalidades(res.content || []);
+        setTotalPaginasMensalidades(res.totalPages || 0);
+        setTotalElementosMensalidades(res.totalElements || 0);
+        
+        console.log('[carregarMensalidades] Mensalidades carregadas:', res.content?.length || 0);
+      } else if (Array.isArray(res)) {
+        // Fallback caso retorne array direto
+        setMensalidades(res);
+        setTotalPaginasMensalidades(1);
+        setTotalElementosMensalidades(res.length);
       } else {
-        setMensalidades(Array.isArray(res) ? res : []);
+        console.warn('[carregarMensalidades] Resposta inesperada:', res);
+        setMensalidades([]);
+        setTotalPaginasMensalidades(0);
+        setTotalElementosMensalidades(0);
       }
     } catch (err) {
-      console.error("carregarMensalidades:", err);
+      console.error("[carregarMensalidades] Erro:", err);
       setMensalidades([]);
+      setTotalPaginasMensalidades(0);
+      setTotalElementosMensalidades(0);
     }
   }, [paginaAtualMensalidades, filtroAlunoId, filtroDataInicio, filtroDataFim, filtroStatus]);
 
@@ -97,12 +148,23 @@ export default function Financeiro() {
     try {
       const params = {
         page: paginaAtualPagamentos,
-        size: 10
+        size: 10,
+        sort: `${ordenacaoPagamentos.campo},${ordenacaoPagamentos.direcao}`
       };
-      if (filtroDataInicio) params.dataInicio = filtroDataInicio;
-      if (filtroDataFim) params.dataFim = filtroDataFim;
-      if (filtroValorMinimo) params.valorMinimo = parseFloat(filtroValorMinimo);
-      if (filtroValorMaximo) params.valorMaximo = parseFloat(filtroValorMaximo);
+      
+      // Filtros específicos
+      if (filtroDescricao) params.descricao = filtroDescricao;
+      if (filtroData) {
+        params.dataInicio = filtroData;
+        params.dataFim = filtroData;
+      }
+      if (filtroValor) {
+        const valor = parseFloat(filtroValor);
+        if (!isNaN(valor)) {
+          params.valorMinimo = valor;
+          params.valorMaximo = valor;
+        }
+      }
 
       const res = await listarPagamentos(params);
       console.log(res);
@@ -118,7 +180,7 @@ export default function Financeiro() {
       console.error("carregarPagamentos:", err);
       setPagamentos([]);
     }
-  }, [paginaAtualPagamentos, filtroDataInicio, filtroDataFim, filtroValorMinimo, filtroValorMaximo]);
+  }, [paginaAtualPagamentos, filtroDescricao, filtroData, filtroValor, ordenacaoPagamentos]);
 
   // Carregar KPIs do mês atual
   const carregarKPIs = useCallback(async function () {
@@ -148,15 +210,16 @@ export default function Financeiro() {
         })
       ]);
 
-      const pagamentosMes = resPagamentos.data?.content || [];
-      const mensalidadesPagas = resMensalidades.data?.content || [];
+      // Ambos já retornam o objeto direto (wrapper api.js)
+      const pagamentosMes = resPagamentos?.content || [];
+      const mensalidadesPagas = resMensalidades?.content || [];
 
       // RECEITA = Mensalidades pagas
       const receitaTotal = mensalidadesPagas.reduce((acc, m) => {
         return acc + (Number(m.valorMensalidade) || 0);
       }, 0);
 
-      // DESPESAS = Todos os pagamentos
+      // DESPESAS = Todos os pagamentos cadastrados
       const despesasTotal = pagamentosMes.reduce((acc, p) => {
         return acc + (Number(p.valorPagamento) || 0);
       }, 0);
@@ -196,6 +259,26 @@ export default function Financeiro() {
   useEffect(() => {
     if (aba === "pagamentos") carregarPagamentos();
   }, [aba, carregarPagamentos, paginaAtualPagamentos]);
+
+  useEffect(() => {
+    async function verificarEGerarMensalidades() {
+      try {
+        // Primeiro carrega as mensalidades
+        await carregarMensalidades();
+        
+        // Se não houver nenhuma mensalidade, gera automaticamente
+        if (mensalidades.length === 0) {
+          console.log('[Financeiro] Nenhuma mensalidade encontrada. Gerando automaticamente...');
+          await gerarMensalidadesMesAtual();
+          await Promise.all([carregarMensalidades(), carregarKPIs()]);
+        }
+      } catch (error) {
+        console.error('[Financeiro] Erro:', error);
+      }
+    }
+
+    verificarEGerarMensalidades();
+  }, []); // Executa apenas uma vez ao montar
 
   const saldoMes = kpisData.receitaMes - kpisData.despesasMes;
 
@@ -323,20 +406,37 @@ export default function Financeiro() {
 
   // Filtros
   function limparFiltros() {
-    setFiltroTexto("");
-    setFiltroStatus([]);
-    setFiltroDataInicio("");
-    setFiltroDataFim("");
-    setFiltroValorMinimo("");
-    setFiltroValorMaximo("");
-    setFiltroAlunoId("");
-    setPaginaAtualMensalidades(0);
-    setPaginaAtualPagamentos(0);
+    if (aba === "mensalidades") {
+      setFiltroTexto("");
+      setFiltroStatus([]);
+      setFiltroDataInicio("");
+      setFiltroDataFim("");
+      setFiltroAlunoId("");
+      setPaginaAtualMensalidades(0);
+    } else {
+      setFiltroDescricao("");
+      setFiltroData("");
+      setFiltroValor("");
+      setPaginaAtualPagamentos(0);
+    }
   }
 
   function aplicarFiltros() {
-    if (aba === "mensalidades") setPaginaAtualMensalidades(0);
-    if (aba === "pagamentos") setPaginaAtualPagamentos(0);
+    if (aba === "mensalidades") {
+      setPaginaAtualMensalidades(0);
+      carregarMensalidades();
+    } else {
+      setPaginaAtualPagamentos(0);
+      carregarPagamentos();
+    }
+  }
+
+  function alterarOrdenacaoPagamentos(campo) {
+    setOrdenacaoPagamentos(prev => ({
+      campo,
+      direcao: prev.campo === campo && prev.direcao === "asc" ? "desc" : "asc"
+    }));
+    setPaginaAtualPagamentos(0);
   }
 
   function irParaPaginaMensalidades(pagina) {
@@ -360,8 +460,23 @@ export default function Financeiro() {
         return id.includes(s) || nome.includes(s);
       });
 
-  // DESATIVE OS FILTROS DE TEXTO PARA PAGAMENTOS
   const pagamentosFiltrados = pagamentos;
+
+  // Adicione esta função após as outras funções (antes do return):
+  async function handleGerarMensalidades() {
+    if (!window.confirm("Gerar mensalidades para todos os alunos ativos?")) {
+      return;
+    }
+
+    try {
+      const resultado = await gerarMensalidadesMesAtual();
+      alert(`✅ ${resultado || 'Mensalidades geradas com sucesso!'}`);
+      await Promise.all([carregarMensalidades(), carregarKPIs()]);
+    } catch (error) {
+      console.error('Erro ao gerar mensalidades:', error);
+      alert(`❌ Erro: ${error.message || error}`);
+    }
+  }
 
   return (
     <div className="p-6 bg-gray-50 min-h-screen">
@@ -384,8 +499,11 @@ export default function Financeiro() {
         {/* KPIs */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
           <div className="p-4 bg-white rounded shadow">
-            <span className="text-sm text-gray-500">💰 Receita do Mês</span>
-            <span className="text-2xl font-bold mt-2 block text-green-600">
+            <div className="flex items-center gap-2 text-sm text-gray-500 mb-2">
+              <AttachMoneyIcon fontSize="small" className="text-green-600" />
+              <span>Receita do Mês</span>
+            </div>
+            <span className="text-2xl font-bold block text-green-600">
               {kpisData.carregandoKpis ? "Carregando..." : formatCurrency(kpisData.receitaMes)}
             </span>
             <span className="text-xs text-gray-400">
@@ -394,8 +512,11 @@ export default function Financeiro() {
           </div>
 
           <div className="p-4 bg-white rounded shadow">
-            <span className="text-sm text-gray-500">💸 Despesas do Mês</span>
-            <span className="text-2xl font-bold mt-2 block text-red-600">
+            <div className="flex items-center gap-2 text-sm text-gray-500 mb-2">
+              <PaymentsIcon fontSize="small" className="text-red-600" />
+              <span>Despesas do Mês</span>
+            </div>
+            <span className="text-2xl font-bold block text-red-600">
               {kpisData.carregandoKpis ? "Carregando..." : formatCurrency(kpisData.despesasMes)}
             </span>
             <span className="text-xs text-gray-400">
@@ -404,8 +525,15 @@ export default function Financeiro() {
           </div>
 
           <div className={`p-4 rounded shadow ${saldoMes >= 0 ? "bg-green-50" : "bg-red-50"}`}>
-            <span className="text-sm text-gray-500">📈 Lucro do Mês</span>
-            <span className={`text-2xl font-bold mt-2 block ${saldoMes >= 0 ? "text-green-700" : "text-red-700"}`}>
+            <div className="flex items-center gap-2 text-sm text-gray-500 mb-2">
+              {saldoMes >= 0 ? (
+                <TrendingUpIcon fontSize="small" className="text-green-700" />
+              ) : (
+                <TrendingDownIcon fontSize="small" className="text-red-700" />
+              )}
+              <span>Lucro do Mês</span>
+            </div>
+            <span className={`text-2xl font-bold block ${saldoMes >= 0 ? "text-green-700" : "text-red-700"}`}>
               {kpisData.carregandoKpis ? "Carregando..." : formatCurrency(saldoMes)}
             </span>
             <span className="text-xs text-gray-400">
@@ -418,76 +546,132 @@ export default function Financeiro() {
         <div className="flex gap-2 mb-4">
           <button
             onClick={() => setAba("mensalidades")}
-            className={`px-4 py-2 rounded ${aba === "mensalidades" ? "bg-blue-600 text-white" : "bg-white border"}`}
+            className={`px-4 py-2 rounded flex items-center gap-2 ${aba === "mensalidades" ? "bg-blue-600 text-white" : "bg-white border"}`}
           >
-            💰 Receitas (Mensalidades)
+            <AttachMoneyIcon fontSize="small" />
+            Receitas (Mensalidades)
           </button>
           <button
             onClick={() => setAba("pagamentos")}
-            className={`px-4 py-2 rounded ${aba === "pagamentos" ? "bg-blue-600 text-white" : "bg-white border"}`}
+            className={`px-4 py-2 rounded flex items-center gap-2 ${aba === "pagamentos" ? "bg-blue-600 text-white" : "bg-white border"}`}
           >
-            💸 Despesas (Pagamentos)
+            <PaymentsIcon fontSize="small" />
+            Despesas (Pagamentos)
           </button>
         </div>
 
         {/* Filtros */}
         <div className="bg-white p-4 rounded shadow mb-4">
-          <h3 className="font-medium mb-3">Filtros</h3>
-          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-3">
-            <input
-              placeholder="Buscar por texto"
-              value={filtroTexto}
-              onChange={e => setFiltroTexto(e.target.value)}
-              className="p-2 border rounded"
-            />
-            <input
-              type="date"
-              placeholder="Data início"
-              value={filtroDataInicio}
-              onChange={e => setFiltroDataInicio(e.target.value)}
-              className="p-2 border rounded"
-            />
-            <input
-              type="date"
-              placeholder="Data fim"
-              value={filtroDataFim}
-              onChange={e => setFiltroDataFim(e.target.value)}
-              className="p-2 border rounded"
-            />
-
-            {aba === "mensalidades" && (
-              <input
-                placeholder="ID do aluno"
-                value={filtroAlunoId}
-                onChange={e => setFiltroAlunoId(e.target.value)}
-                className="p-2 border rounded"
-              />
-            )}
-
-            {aba === "pagamentos" && (
-              <>
-                <input
-                  placeholder="Valor mínimo"
-                  value={filtroValorMinimo}
-                  onChange={e => setFiltroValorMinimo(e.target.value)}
-                  className="p-2 border rounded"
-                />
-                <input
-                  placeholder="Valor máximo"
-                  value={filtroValorMaximo}
-                  onChange={e => setFiltroValorMaximo(e.target.value)}
-                  className="p-2 border rounded"
-                />
-              </>
-            )}
+          <div className="flex items-center gap-2 mb-3">
+            <FilterListIcon fontSize="small" />
+            <h3 className="font-medium">Filtros</h3>
           </div>
+          
+          {aba === "mensalidades" ? (
+            <>
+              <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-3">
+                <input
+                  placeholder="Buscar por texto"
+                  value={filtroTexto}
+                  onChange={e => setFiltroTexto(e.target.value)}
+                  className="p-2 border rounded"
+                />
+                <input
+                  type="date"
+                  placeholder="Data início"
+                  value={filtroDataInicio}
+                  onChange={e => setFiltroDataInicio(e.target.value)}
+                  className="p-2 border rounded"
+                />
+                <input
+                  type="date"
+                  placeholder="Data fim"
+                  value={filtroDataFim}
+                  onChange={e => setFiltroDataFim(e.target.value)}
+                  className="p-2 border rounded"
+                />
+                <input
+                  placeholder="ID do aluno"
+                  value={filtroAlunoId}
+                  onChange={e => setFiltroAlunoId(e.target.value)}
+                  className="p-2 border rounded"
+                />
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                <div>
+                  <label className="block text-xs text-gray-600 mb-1">Descrição</label>
+                  <input
+                    placeholder="Ex: Aluguel, Energia..."
+                    value={filtroDescricao}
+                    onChange={e => setFiltroDescricao(e.target.value)}
+                    className="w-full p-2 border rounded"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs text-gray-600 mb-1">Data específica</label>
+                  <input
+                    type="date"
+                    value={filtroData}
+                    onChange={e => setFiltroData(e.target.value)}
+                    className="w-full p-2 border rounded"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs text-gray-600 mb-1">Valor exato</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    placeholder="Ex: 150.00"
+                    value={filtroValor}
+                    onChange={e => setFiltroValor(e.target.value)}
+                    className="w-full p-2 border rounded"
+                  />
+                </div>
+              </div>
 
-          <div className="flex gap-2 mt-3">
-            <button onClick={aplicarFiltros} className="px-4 py-2 bg-blue-600 text-white rounded">
-              Aplicar Filtros
-            </button>
-            <button onClick={limparFiltros} className="px-4 py-2 bg-gray-200 rounded">
-              Limpar
+              {/* Ordenação para Pagamentos */}
+              <div className="flex gap-2 items-center mt-3">
+                <span className="text-sm text-gray-600">Ordenar por:</span>
+                <select
+                  value={ordenacaoPagamentos.campo}
+                  onChange={(e) => alterarOrdenacaoPagamentos(e.target.value)}
+                  className="p-2 border rounded text-sm"
+                >
+                  <option value="idPagamento">ID</option>
+                  <option value="dataPagamento">Data</option>
+                  <option value="valorPagamento">Valor</option>
+                </select>
+                <button
+                  onClick={() => setOrdenacaoPagamentos(prev => ({
+                    ...prev,
+                    direcao: prev.direcao === "asc" ? "desc" : "asc"
+                  }))}
+                  className="p-2 border rounded text-sm hover:bg-gray-100 flex items-center gap-1"
+                  title={ordenacaoPagamentos.direcao === "asc" ? "Crescente" : "Decrescente"}
+                >
+                  {ordenacaoPagamentos.direcao === "asc" ? (
+                    <>
+                      <ArrowUpwardIcon fontSize="small" />
+                      Crescente
+                    </>
+                  ) : (
+                    <>
+                      <ArrowDownwardIcon fontSize="small" />
+                      Decrescente
+                    </>
+                  )}
+                </button>
+              </div>
+            </>
+          )}
+
+          <div className="flex justify-end mt-3">
+            <button onClick={limparFiltros} className="px-4 py-2 bg-gray-200 rounded flex items-center gap-2 hover:bg-gray-300">
+              <ClearIcon fontSize="small" />
+              Limpar Filtros
             </button>
           </div>
         </div>
@@ -495,59 +679,108 @@ export default function Financeiro() {
         {/* Conteúdo das abas */}
         {aba === "mensalidades" && (
           <section className="bg-white p-4 rounded shadow">
-            <div className="flex justify-between items-center mb-3">
-              <h2 className="text-lg font-medium">💰 Receitas - Mensalidades</h2>
-              <button
-                onClick={() => { setModalAberto(true); setModalContexto("novaMensalidade"); }}
-                className="px-3 py-2 bg-green-600 text-white rounded"
-              >
-                Nova Mensalidade
-              </button>
-            </div>
-
-            <Tabela
-              cabecalho={["ID", "Aluno", "Vencimento", "Valor", "Status"]}
-              dados={mensalidadesFiltradas.map(m => ({
-                ...m,
-                idMensalidade: m.idMensalidade,
-                alunoNome: m.aluno?.nome || "-",
-                valorMensalidade: formatCurrency(m.valorMensalidade)
-              }))}
-              fields={["idMensalidade", "alunoNome", "dataVencimento", "valorMensalidade", "status"]}
-              renderActions={(row) => (
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => handlePagarMensalidade(row.idMensalidade)}
-                    className="px-2 py-1 bg-green-600 text-white rounded text-sm"
-                    disabled={row.status === 'PAGO'}
-                  >
-                    {row.status === 'PAGO' ? '✅ Pago' : 'Marcar Pago'}
-                  </button>
-                </div>
-              )}
-            />
-
-            {/* Paginação das mensalidades */}
-            {totalPaginasMensalidades > 1 && (
-              <div className="flex justify-center items-center gap-2 mt-4">
+            <div className="flex justify-between items-center mb-3 flex-wrap gap-2">
+              <h2 className="text-lg font-medium flex items-center gap-2">
+                <AttachMoneyIcon />
+                Receitas - Mensalidades
+              </h2>
+              <div className="flex gap-2">
                 <button
-                  onClick={() => irParaPaginaMensalidades(paginaAtualMensalidades - 1)}
-                  disabled={paginaAtualMensalidades === 0}
-                  className="px-3 py-1 border rounded disabled:opacity-50"
+                  onClick={handleGerarMensalidades}
+                  className="px-3 py-2 bg-blue-600 text-white rounded flex items-center gap-2 hover:bg-blue-700"
                 >
-                  Anterior
+                  <AddIcon fontSize="small" />
+                  Gerar Mensalidades (Todos)
                 </button>
-                <span className="px-3 py-1">
-                  Página {paginaAtualMensalidades + 1} de {totalPaginasMensalidades} ({totalElementosMensalidades} itens)
-                </span>
                 <button
-                  onClick={() => irParaPaginaMensalidades(paginaAtualMensalidades + 1)}
-                  disabled={paginaAtualMensalidades >= totalPaginasMensalidades - 1}
-                  className="px-3 py-1 border rounded disabled:opacity-50"
+                  onClick={() => { setModalAberto(true); setModalContexto("novaMensalidade"); }}
+                  className="px-3 py-2 bg-green-600 text-white rounded flex items-center gap-2 hover:bg-green-700"
                 >
-                  Próxima
+                  <AddIcon fontSize="small" />
+                  Nova Mensalidade
                 </button>
               </div>
+            </div>
+
+            {mensalidadesFiltradas.length === 0 ? (
+              <div className="text-center py-12">
+                <AttachMoneyIcon style={{ fontSize: 64 }} className="text-gray-300 mb-4" />
+                <h3 className="text-lg font-medium text-gray-600 mb-2">
+                  Nenhuma mensalidade encontrada
+                </h3>
+                <p className="text-gray-500 mb-4">
+                  {filtroTexto || filtroAlunoId || filtroDataInicio || filtroDataFim
+                    ? "Tente ajustar os filtros ou cadastre uma nova mensalidade"
+                    : "Comece cadastrando uma nova mensalidade"}
+                </p>
+                <button
+                  onClick={() => { setModalAberto(true); setModalContexto("novaMensalidade"); }}
+                  className="px-4 py-2 bg-green-600 text-white rounded inline-flex items-center gap-2 hover:bg-green-700"
+                >
+                  <AddIcon fontSize="small" />
+                  Cadastrar Primeira Mensalidade
+                </button>
+              </div>
+            ) : (
+              <>
+                <Tabela
+                  cabecalho={["ID", "Aluno", "Vencimento", "Valor", "Status"]}
+                  dados={mensalidadesFiltradas.map(m => ({
+                    idMensalidade: m.idMensalidade,
+                    alunoNome: m.aluno?.nome || m.nomeAluno || "-",
+                    dataVencimento: m.dataVencimento,
+                    valorMensalidadeFormatado: formatCurrency(m.valorMensalidade),
+                    status: m.status,
+                    _original: m
+                  }))}
+                  fields={["idMensalidade", "alunoNome", "dataVencimento", "valorMensalidadeFormatado", "status"]}
+                  renderActions={(row) => (
+                    <div className="flex gap-2 justify-center">
+                      <button
+                        onClick={() => handlePagarMensalidade(row.idMensalidade)}
+                        className={`px-2 py-1 rounded text-sm flex items-center gap-1 ${
+                          row.status === 'PAGO'
+                            ? 'bg-gray-300 text-gray-600 cursor-not-allowed'
+                            : 'bg-green-600 text-white hover:bg-green-700'
+                        }`}
+                        disabled={row.status === 'PAGO'}
+                      >
+                        {row.status === 'PAGO' ? (
+                          <>
+                            <CheckCircleIcon fontSize="small" />
+                            Pago
+                          </>
+                        ) : (
+                          'Marcar Pago'
+                        )}
+                      </button>
+                    </div>
+                  )}
+                />
+
+                {/* Paginação das mensalidades */}
+                {totalPaginasMensalidades > 1 && (
+                  <div className="flex justify-center items-center gap-2 mt-4 flex-wrap">
+                    <button
+                      onClick={() => irParaPaginaMensalidades(paginaAtualMensalidades - 1)}
+                      disabled={paginaAtualMensalidades === 0}
+                      className="px-3 py-1 border rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-100"
+                    >
+                      Anterior
+                    </button>
+                    <span className="px-3 py-1 text-sm">
+                      Página {paginaAtualMensalidades + 1} de {totalPaginasMensalidades} ({totalElementosMensalidades} itens)
+                    </span>
+                    <button
+                      onClick={() => irParaPaginaMensalidades(paginaAtualMensalidades + 1)}
+                      disabled={paginaAtualMensalidades >= totalPaginasMensalidades - 1}
+                      className="px-3 py-1 border rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-100"
+                    >
+                      Próxima
+                    </button>
+                  </div>
+                )}
+              </>
             )}
           </section>
         )}
@@ -555,11 +788,15 @@ export default function Financeiro() {
         {aba === "pagamentos" && (
           <section className="bg-white p-4 rounded shadow">
             <div className="flex justify-between items-center mb-3">
-              <h2 className="text-lg font-medium">💸 Despesas - Pagamentos</h2>
+              <h2 className="text-lg font-medium flex items-center gap-2">
+                <PaymentsIcon />
+                Despesas - Pagamentos
+              </h2>
               <button
                 onClick={() => abrirModalPagamento()}
-                className="px-3 py-2 bg-red-600 text-white rounded"
+                className="px-3 py-2 bg-red-600 text-white rounded flex items-center gap-2"
               >
+                <AddIcon fontSize="small" />
                 Novo Pagamento
               </button>
             </div>
@@ -571,22 +808,23 @@ export default function Financeiro() {
                 dataPagamento: p.dataPagamento,
                 valorPagamentoFormatado: formatCurrency(p.valorPagamento),
                 descricao: p.descricao || "-",
-                // Manter o objeto completo para as ações
                 _original: p
               }))}
               fields={["idPagamento", "dataPagamento", "valorPagamentoFormatado", "descricao"]}
               renderActions={(row) => (
-                <div className="flex gap-2">
+                <div className="flex gap-2 justify-center">
                   <button
                     onClick={() => abrirModalPagamento(row._original || row, "editarPagamento")}
-                    className="px-2 py-1 bg-blue-500 text-white rounded text-sm"
+                    className="px-2 py-1 bg-blue-500 text-white rounded text-sm flex items-center gap-1"
                   >
+                    <EditIcon fontSize="small" />
                     Editar
                   </button>
                   <button
                     onClick={() => handleExcluirPagamento(row.idPagamento)}
-                    className="px-2 py-1 bg-red-500 text-white rounded text-sm"
+                    className="px-2 py-1 bg-red-500 text-white rounded text-sm flex items-center gap-1"
                   >
+                    <DeleteIcon fontSize="small" />
                     Excluir
                   </button>
                 </div>
@@ -623,8 +861,9 @@ export default function Financeiro() {
           <div className="fixed inset-0 z-50 flex items-center justify-center">
             <div className="absolute inset-0 bg-black opacity-50" onClick={fecharModal} />
             <div className="relative bg-white rounded-lg shadow-lg w-full max-w-md mx-4 p-6 z-10">
-              <h2 className="text-lg font-semibold mb-4">
-                💸 {modoEdicao ? "Editar Pagamento" : "Novo Pagamento"}
+              <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                <PaymentsIcon />
+                {modoEdicao ? "Editar Pagamento" : "Novo Pagamento"}
               </h2>
 
               <form onSubmit={salvarPagamento} className="space-y-4">
@@ -660,11 +899,13 @@ export default function Financeiro() {
                   />
                 </div>
                 <div className="flex justify-end gap-2 pt-4">
-                  <button type="button" onClick={fecharModal} className="px-4 py-2 bg-gray-200 rounded">
+                  <button type="button" onClick={fecharModal} className="px-4 py-2 bg-gray-200 rounded flex items-center gap-2">
+                    <ClearIcon fontSize="small" />
                     Cancelar
                   </button>
-                  <button type="submit" className="px-4 py-2 bg-red-600 text-white rounded">
-                    💸 {modoEdicao ? "Atualizar" : "Registrar"} Pagamento
+                  <button type="submit" className="px-4 py-2 bg-red-600 text-white rounded flex items-center gap-2">
+                    <PaymentsIcon fontSize="small" />
+                    {modoEdicao ? "Atualizar" : "Registrar"} Pagamento
                   </button>
                 </div>
               </form>
@@ -677,7 +918,10 @@ export default function Financeiro() {
           <div className="fixed inset-0 z-50 flex items-center justify-center">
             <div className="absolute inset-0 bg-black opacity-50" onClick={fecharModal} />
             <div className="relative bg-white rounded-lg shadow-lg w-full max-w-md mx-4 p-6 z-10">
-              <h2 className="text-lg font-semibold mb-3">💰 Nova Mensalidade</h2>
+              <h2 className="text-lg font-semibold mb-3 flex items-center gap-2">
+                <AttachMoneyIcon />
+                Nova Mensalidade
+              </h2>
               <form onSubmit={salvarNovaMensalidade} className="space-y-3">
                 <input
                   type="number"
@@ -705,10 +949,12 @@ export default function Financeiro() {
                 />
 
                 <div className="flex justify-end gap-2 pt-3">
-                  <button type="button" onClick={fecharModal} className="px-3 py-2 bg-gray-200 rounded">
+                  <button type="button" onClick={fecharModal} className="px-3 py-2 bg-gray-200 rounded flex items-center gap-2">
+                    <ClearIcon fontSize="small" />
                     Cancelar
                   </button>
-                  <button type="submit" className="px-3 py-2 bg-green-600 text-white rounded">
+                  <button type="submit" className="px-3 py-2 bg-green-600 text-white rounded flex items-center gap-2">
+                    <AddIcon fontSize="small" />
                     Criar Mensalidade
                   </button>
                 </div>
