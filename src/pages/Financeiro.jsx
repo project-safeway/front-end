@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useCallback } from "react";
 import { useLocation, Link } from "react-router-dom";
 import { Tabela } from "../components/Tabela";
-import { ModalConfirmacao } from "../components/ModalConfirmacao";
+import { showSwal } from "../utils/swal";
 import {
   listarMensalidades,
   pagarMensalidade,
@@ -46,6 +46,8 @@ export default function Financeiro() {
   const [aba, setAba] = useState("mensalidades");
   const [mensalidades, setMensalidades] = useState([]);
   const [pagamentos, setPagamentos] = useState([]);
+  const [inicializado, setInicializado] = useState(false);
+  const [filtroNavegacao, setFiltroNavegacao] = useState(undefined);
 
   // Filtros para mensalidades - otimizados
   const [filtroTexto, setFiltroTexto] = useState("");
@@ -53,21 +55,74 @@ export default function Financeiro() {
   const [filtroDataInicio, setFiltroDataInicio] = useState("");
   const [filtroDataFim, setFiltroDataFim] = useState("");
   const [filtroAlunoId, setFiltroAlunoId] = useState("");
-  const [atalhoDataAtivo, setAtalhoDataAtivo] = useState("");
+  const [atalhoDataAtivo, setAtalhoDataAtivo] = useState("mes");
+  const [filtroMesAtualPadrao, setFiltroMesAtualPadrao] = useState(true);
   
-  // Aplicar filtro inicial vindo da Home
+  // Aplicar filtro inicial vindo da Home - EXECUTAR PRIMEIRO
   useEffect(() => {
-    if (location.state?.filtroStatus) {
-      setFiltroStatus([location.state.filtroStatus]);
+    // Só processa na montagem inicial ou quando há um state válido
+    if (location.state?.filtroStatus && filtroNavegacao === undefined) {
+      const status = location.state.filtroStatus;
+      
+      // Marca que veio da navegação
+      setFiltroNavegacao(status);
+      
       // Limpar o estado após aplicar para não reaplicar
       window.history.replaceState({}, document.title);
+    } else if (filtroNavegacao === undefined && !location.state?.filtroStatus) {
+      // Se não veio da navegação na montagem inicial, marca como null
+      setFiltroNavegacao(null);
     }
-  }, [location.state]);
+  }, [location.state, filtroNavegacao]);
+  
+  // Aplicar configurações iniciais após detectar origem
+  useEffect(() => {
+    if (filtroNavegacao !== null && filtroNavegacao !== undefined) {
+      // Veio da navegação - aplicar filtro de status
+      console.log('[Financeiro] Configurando filtro de navegação:', filtroNavegacao)
+      console.log('[Financeiro] Tipo do filtroNavegacao:', typeof filtroNavegacao)
+      const hoje = new Date();
+      const ano = hoje.getFullYear();
+      const mes = String(hoje.getMonth() + 1).padStart(2, '0');
+      const ultimoDia = new Date(ano, hoje.getMonth() + 1, 0).getDate();
+      
+      setFiltroDataInicio(`${ano}-${mes}-01`);
+      setFiltroDataFim(`${ano}-${mes}-${ultimoDia}`);
+      console.log('[Financeiro] Definindo filtroStatus como array:', [filtroNavegacao])
+      setFiltroStatus([filtroNavegacao]);
+      setFiltroMesAtualPadrao(false);
+      setPaginaAtualMensalidades(0);
+      setInicializado(true);
+    } else if (filtroNavegacao === null) {
+      // Acesso direto - apenas filtro de data
+      console.log('[Financeiro] Configurando filtro inicial (acesso direto)');
+      const hoje = new Date();
+      const ano = hoje.getFullYear();
+      const mes = String(hoje.getMonth() + 1).padStart(2, '0');
+      const ultimoDia = new Date(ano, hoje.getMonth() + 1, 0).getDate();
+      
+      setFiltroDataInicio(`${ano}-${mes}-01`);
+      setFiltroDataFim(`${ano}-${mes}-${ultimoDia}`);
+      setInicializado(true);
+    }
+  }, [filtroNavegacao]);
   
   // Filtros específicos para pagamentos
   const [filtroDescricao, setFiltroDescricao] = useState("");
-  const [filtroData, setFiltroData] = useState("");
-  const [filtroValor, setFiltroValor] = useState("");
+  const [filtroDataInicioPag, setFiltroDataInicioPag] = useState("");
+  const [filtroDataFimPag, setFiltroDataFimPag] = useState("");
+  const [atalhoDataAtivoPag, setAtalhoDataAtivoPag] = useState("mes");
+  
+  // Aplicar filtro do mês atual por padrão para pagamentos também
+  useEffect(() => {
+    const hoje = new Date();
+    const ano = hoje.getFullYear();
+    const mes = String(hoje.getMonth() + 1).padStart(2, '0');
+    const ultimoDia = new Date(ano, hoje.getMonth() + 1, 0).getDate();
+    
+    setFiltroDataInicioPag(`${ano}-${mes}-01`);
+    setFiltroDataFimPag(`${ano}-${mes}-${ultimoDia}`);
+  }, []);
 
   // Paginação
   const [paginaAtualMensalidades, setPaginaAtualMensalidades] = useState(0);
@@ -114,15 +169,6 @@ export default function Financeiro() {
     carregandoKpis: false
   });
 
-  // Estados para modal de confirmação
-  const [confirmacao, setConfirmacao] = useState({
-    aberto: false,
-    titulo: '',
-    mensagem: '',
-    tipo: 'warning',
-    onConfirmar: null
-  });
-
   // Carregar mensalidades com filtros otimizados
   const carregarMensalidades = useCallback(async function () {
     try {
@@ -138,28 +184,23 @@ export default function Financeiro() {
       if (filtroAlunoId) params.alunoId = parseInt(filtroAlunoId, 10);
       if (filtroStatus.length > 0) params.status = filtroStatus;
 
-      console.log('[carregarMensalidades] Chamando API com params:', params);
       const res = await listarMensalidades(params);
-      console.log('[carregarMensalidades] Resposta da API:', res);
 
       if (res && typeof res === 'object' && 'content' in res) {
         setMensalidades(res.content || []);
         setTotalPaginasMensalidades(res.totalPages || 0);
         setTotalElementosMensalidades(res.totalElements || 0);
-        
-        console.log('[carregarMensalidades] Mensalidades carregadas:', res.content?.length || 0);
       } else if (Array.isArray(res)) {
         setMensalidades(res);
         setTotalPaginasMensalidades(1);
         setTotalElementosMensalidades(res.length);
       } else {
-        console.warn('[carregarMensalidades] Resposta inesperada:', res);
         setMensalidades([]);
         setTotalPaginasMensalidades(0);
         setTotalElementosMensalidades(0);
       }
     } catch (err) {
-      console.error("[carregarMensalidades] Erro:", err);
+      console.error("Erro ao carregar mensalidades:", err);
       setMensalidades([]);
       setTotalPaginasMensalidades(0);
       setTotalElementosMensalidades(0);
@@ -177,17 +218,8 @@ export default function Financeiro() {
       
       // Filtros específicos
       if (filtroDescricao) params.descricao = filtroDescricao;
-      if (filtroData) {
-        params.dataInicio = filtroData;
-        params.dataFim = filtroData;
-      }
-      if (filtroValor) {
-        const valor = parseFloat(filtroValor);
-        if (!isNaN(valor)) {
-          params.valorMinimo = valor;
-          params.valorMaximo = valor;
-        }
-      }
+      if (filtroDataInicioPag) params.dataInicio = filtroDataInicioPag;
+      if (filtroDataFimPag) params.dataFim = filtroDataFimPag;
 
       const res = await listarPagamentos(params);
       console.log(res);
@@ -203,7 +235,7 @@ export default function Financeiro() {
       console.error("carregarPagamentos:", err);
       setPagamentos([]);
     }
-  }, [paginaAtualPagamentos, filtroDescricao, filtroData, filtroValor, ordenacaoPagamentos]);
+  }, [paginaAtualPagamentos, filtroDescricao, filtroDataInicioPag, filtroDataFimPag, ordenacaoPagamentos]);
 
   // Carregar KPIs do mês atual
   const carregarKPIs = useCallback(async function () {
@@ -276,8 +308,10 @@ export default function Financeiro() {
   }, [carregarKPIs]);
 
   useEffect(() => {
-    if (aba === "mensalidades") carregarMensalidades();
-  }, [aba, carregarMensalidades, paginaAtualMensalidades]);
+    if (aba === "mensalidades" && inicializado) {
+      carregarMensalidades();
+    }
+  }, [aba, carregarMensalidades, paginaAtualMensalidades, filtroStatus, inicializado]);
 
   useEffect(() => {
     if (aba === "pagamentos") carregarPagamentos();
@@ -314,22 +348,23 @@ export default function Financeiro() {
 
   // Ações
   async function handlePagarMensalidade(id) {
-    setConfirmacao({
-      aberto: true,
-      titulo: 'Confirmar Pagamento',
-      mensagem: 'Deseja realmente marcar esta mensalidade como paga?',
-      tipo: 'success',
-      onConfirmar: async () => {
-        try {
-          await pagarMensalidade(id);
-          await Promise.all([carregarMensalidades(), carregarKPIs()]);
-          setConfirmacao(prev => ({ ...prev, aberto: false }));
-        } catch (err) {
-          console.error("handlePagarMensalidade:", err);
-          alert("Erro ao marcar como pago");
-        }
-      }
+    const result = await showSwal({
+      title: 'Confirmar Pagamento',
+      html: 'Deseja realmente marcar esta mensalidade como <strong>paga</strong>?',
+      icon: 'success',
+      confirmButtonText: 'Sim, marcar como paga',
+      cancelButtonText: 'Cancelar'
     });
+
+    if (result.isConfirmed) {
+      try {
+        await pagarMensalidade(id);
+        await Promise.all([carregarMensalidades(), carregarKPIs()]);
+      } catch (err) {
+        console.error("handlePagarMensalidade:", err);
+        alert("Erro ao marcar como pago");
+      }
+    }
   }
 
   async function handleReverterPagamento(id) {
@@ -344,46 +379,48 @@ export default function Financeiro() {
   }
 
   async function handleExcluirPagamento(id) {
-    setConfirmacao({
-      aberto: true,
-      titulo: 'Confirmar Exclusão',
-      mensagem: 'Tem certeza que deseja excluir este pagamento? Esta ação não poderá ser desfeita.',
-      tipo: 'danger',
-      onConfirmar: async () => {
-        try {
-          await excluirPagamento(id);
-          await Promise.all([carregarPagamentos(), carregarKPIs()]);
-          setConfirmacao(prev => ({ ...prev, aberto: false }));
-        } catch (err) {
-          console.error("handleExcluirPagamento:", err);
-          alert("Erro ao excluir pagamento");
-        }
-      }
+    const result = await showSwal({
+      title: 'Confirmar Exclusão',
+      html: 'Tem certeza que deseja <strong>excluir</strong> este pagamento?<br/>Esta ação não poderá ser desfeita.',
+      icon: 'warning',
+      confirmButtonText: 'Sim, excluir',
+      cancelButtonText: 'Cancelar'
     });
+
+    if (result.isConfirmed) {
+      try {
+        await excluirPagamento(id);
+        await Promise.all([carregarPagamentos(), carregarKPIs()]);
+      } catch (err) {
+        console.error("handleExcluirPagamento:", err);
+        alert("Erro ao excluir pagamento");
+      }
+    }
   }
 
   async function handleGerarMensalidades() {
-    setConfirmacao({
-      aberto: true,
-      titulo: 'Gerar Mensalidades',
-      mensagem: 'Deseja gerar mensalidades para todos os alunos ativos do mês atual?',
-      tipo: 'warning',
-      onConfirmar: async () => {
-        try {
-          const resultado = await gerarMensalidadesMesAtual();
-          alert(`✅ ${resultado || 'Mensalidades geradas com sucesso!'}`);
-          await Promise.all([carregarMensalidades(), carregarKPIs()]);
-          setConfirmacao(prev => ({ ...prev, aberto: false }));
-        } catch (error) {
-          console.error('Erro ao gerar mensalidades:', error);
-          alert(`❌ Erro: ${error.message || error}`);
-        }
-      }
+    const result = await showSwal({
+      title: 'Gerar Mensalidades',
+      html: 'Deseja gerar mensalidades para todos os alunos ativos do mês atual?',
+      icon: 'warning',
+      confirmButtonText: 'Sim, gerar',
+      cancelButtonText: 'Cancelar'
     });
+
+    if (result.isConfirmed) {
+      try {
+        const resultado = await gerarMensalidadesMesAtual();
+        alert(`✅ ${resultado || 'Mensalidades geradas com sucesso!'}`);
+        await Promise.all([carregarMensalidades(), carregarKPIs()]);
+      } catch (error) {
+        console.error('Erro ao gerar mensalidades:', error);
+        alert(`❌ Erro: ${error.message || error}`);
+      }
+    }
   }
 
   function fecharConfirmacao() {
-    setConfirmacao(prev => ({ ...prev, aberto: false }));
+    // Função mantida para compatibilidade, mas não mais utilizada
   }
 
   // Modais
@@ -398,13 +435,13 @@ export default function Financeiro() {
       setFormPagamento({
         valorPagamento: String(item.valorPagamento || ""),
         descricao: item.descricao || "",
-        dataPagamento: item.dataPagamento || new Date().toISOString().slice(0, 10)
+        dataPagamento: item.dataPagamento || getDataLocal()
       });
     } else {
       setFormPagamento({
         valorPagamento: "",
         descricao: "",
-        dataPagamento: new Date().toISOString().slice(0, 10)
+        dataPagamento: getDataLocal()
       });
     }
 
@@ -483,49 +520,91 @@ export default function Financeiro() {
     if (aba === "mensalidades") {
       setFiltroTexto("");
       setFiltroStatus([]);
-      setFiltroDataInicio("");
-      setFiltroDataFim("");
       setFiltroAlunoId("");
-      setAtalhoDataAtivo("");
+      
+      // Voltar ao filtro padrão do mês atual
+      const hoje = new Date();
+      const ano = hoje.getFullYear();
+      const mes = String(hoje.getMonth() + 1).padStart(2, '0');
+      const ultimoDia = new Date(ano, hoje.getMonth() + 1, 0).getDate();
+      
+      setFiltroDataInicio(`${ano}-${mes}-01`);
+      setFiltroDataFim(`${ano}-${mes}-${ultimoDia}`);
+      setAtalhoDataAtivo("mes");
+      setFiltroMesAtualPadrao(true);
       setPaginaAtualMensalidades(0);
     } else {
       setFiltroDescricao("");
-      setFiltroData("");
-      setFiltroValor("");
+      
+      // Voltar ao filtro padrão do mês atual para pagamentos
+      const hoje = new Date();
+      const ano = hoje.getFullYear();
+      const mes = String(hoje.getMonth() + 1).padStart(2, '0');
+      const ultimoDia = new Date(ano, hoje.getMonth() + 1, 0).getDate();
+      
+      setFiltroDataInicioPag(`${ano}-${mes}-01`);
+      setFiltroDataFimPag(`${ano}-${mes}-${ultimoDia}`);
+      setAtalhoDataAtivoPag("mes");
       setPaginaAtualPagamentos(0);
     }
   }
 
   // Função auxiliar para definir período do mês atual
   function definirMesAtual() {
-    const hoje = new Date();
-    const ano = hoje.getFullYear();
-    const mes = String(hoje.getMonth() + 1).padStart(2, '0');
-    const ultimoDia = new Date(ano, hoje.getMonth() + 1, 0).getDate();
-    
-    setFiltroDataInicio(`${ano}-${mes}-01`);
-    setFiltroDataFim(`${ano}-${mes}-${ultimoDia}`);
-    setAtalhoDataAtivo('mes');
+    if (atalhoDataAtivo === 'mes') {
+      // Se já está ativo, desativa e volta ao padrão
+      const hoje = new Date();
+      const ano = hoje.getFullYear();
+      const mes = String(hoje.getMonth() + 1).padStart(2, '0');
+      const ultimoDia = new Date(ano, hoje.getMonth() + 1, 0).getDate();
+      
+      setFiltroDataInicio(`${ano}-${mes}-01`);
+      setFiltroDataFim(`${ano}-${mes}-${ultimoDia}`);
+      setAtalhoDataAtivo('mes');
+      setFiltroMesAtualPadrao(true);
+    } else {
+      const hoje = new Date();
+      const ano = hoje.getFullYear();
+      const mes = String(hoje.getMonth() + 1).padStart(2, '0');
+      const ultimoDia = new Date(ano, hoje.getMonth() + 1, 0).getDate();
+      
+      setFiltroDataInicio(`${ano}-${mes}-01`);
+      setFiltroDataFim(`${ano}-${mes}-${ultimoDia}`);
+      setAtalhoDataAtivo('mes');
+      setFiltroMesAtualPadrao(false);
+    }
     setPaginaAtualMensalidades(0);
   }
 
   function definirHoje() {
-    const hoje = new Date();
-    const dataHoje = hoje.toISOString().split('T')[0];
-    setFiltroDataInicio(dataHoje);
-    setFiltroDataFim(dataHoje);
-    setAtalhoDataAtivo('hoje');
-    setPaginaAtualMensalidades(0);
+    if (atalhoDataAtivo === 'hoje') {
+      // Se já está ativo, desativa e volta ao padrão
+      limparFiltros();
+    } else {
+      const hoje = new Date();
+      const dataHoje = hoje.toISOString().split('T')[0];
+      setFiltroDataInicio(dataHoje);
+      setFiltroDataFim(dataHoje);
+      setAtalhoDataAtivo('hoje');
+      setFiltroMesAtualPadrao(false);
+      setPaginaAtualMensalidades(0);
+    }
   }
 
   function definirAnoAtual() {
-    const hoje = new Date();
-    const primeiroDia = new Date(hoje.getFullYear(), 0, 1).toISOString().split('T')[0];
-    const ultimoDia = new Date(hoje.getFullYear(), 11, 31).toISOString().split('T')[0];
-    setFiltroDataInicio(primeiroDia);
-    setFiltroDataFim(ultimoDia);
-    setAtalhoDataAtivo('ano');
-    setPaginaAtualMensalidades(0);
+    if (atalhoDataAtivo === 'ano') {
+      // Se já está ativo, desativa e volta ao padrão
+      limparFiltros();
+    } else {
+      const hoje = new Date();
+      const primeiroDia = new Date(hoje.getFullYear(), 0, 1).toISOString().split('T')[0];
+      const ultimoDia = new Date(hoje.getFullYear(), 11, 31).toISOString().split('T')[0];
+      setFiltroDataInicio(primeiroDia);
+      setFiltroDataFim(ultimoDia);
+      setAtalhoDataAtivo('ano');
+      setFiltroMesAtualPadrao(false);
+      setPaginaAtualMensalidades(0);
+    }
   }
 
   function toggleStatus(status) {
@@ -534,7 +613,52 @@ export default function Financeiro() {
         ? prev.filter(s => s !== status)
         : [...prev, status]
     );
+    setFiltroMesAtualPadrao(false);
     setPaginaAtualMensalidades(0);
+  }
+
+  // Funções de atalho para pagamentos
+  function definirMesAtualPag() {
+    if (atalhoDataAtivoPag === 'mes') {
+      limparFiltros();
+    } else {
+      const hoje = new Date();
+      const ano = hoje.getFullYear();
+      const mes = String(hoje.getMonth() + 1).padStart(2, '0');
+      const ultimoDia = new Date(ano, hoje.getMonth() + 1, 0).getDate();
+      
+      setFiltroDataInicioPag(`${ano}-${mes}-01`);
+      setFiltroDataFimPag(`${ano}-${mes}-${ultimoDia}`);
+      setAtalhoDataAtivoPag('mes');
+      setPaginaAtualPagamentos(0);
+    }
+  }
+
+  function definirHojePag() {
+    if (atalhoDataAtivoPag === 'hoje') {
+      limparFiltros();
+    } else {
+      const hoje = new Date();
+      const dataHoje = hoje.toISOString().split('T')[0];
+      setFiltroDataInicioPag(dataHoje);
+      setFiltroDataFimPag(dataHoje);
+      setAtalhoDataAtivoPag('hoje');
+      setPaginaAtualPagamentos(0);
+    }
+  }
+
+  function definirAnoAtualPag() {
+    if (atalhoDataAtivoPag === 'ano') {
+      limparFiltros();
+    } else {
+      const hoje = new Date();
+      const primeiroDia = new Date(hoje.getFullYear(), 0, 1).toISOString().split('T')[0];
+      const ultimoDia = new Date(hoje.getFullYear(), 11, 31).toISOString().split('T')[0];
+      setFiltroDataInicioPag(primeiroDia);
+      setFiltroDataFimPag(ultimoDia);
+      setAtalhoDataAtivoPag('ano');
+      setPaginaAtualPagamentos(0);
+    }
   }
 
   function aplicarFiltros() {
@@ -577,27 +701,6 @@ export default function Financeiro() {
       });
 
   const pagamentosFiltrados = pagamentos;
-
-  // Adicione esta função após as outras funções (antes do return):
-  async function handleGerarMensalidades() {
-    setConfirmacao({
-      aberto: true,
-      titulo: 'Gerar Mensalidades',
-      mensagem: 'Deseja gerar mensalidades para todos os alunos ativos do mês atual?',
-      tipo: 'warning',
-      onConfirmar: async () => {
-        try {
-          const resultado = await gerarMensalidadesMesAtual();
-          alert(`✅ ${resultado || 'Mensalidades geradas com sucesso!'}`);
-          await Promise.all([carregarMensalidades(), carregarKPIs()]);
-          setConfirmacao(prev => ({ ...prev, aberto: false }));
-        } catch (error) {
-          console.error('Erro ao gerar mensalidades:', error);
-          alert(`❌ Erro: ${error.message || error}`);
-        }
-      }
-    });
-  }
 
   return (
     <>
@@ -736,22 +839,22 @@ export default function Financeiro() {
         </div>
 
         {/* Filtros Otimizados */}
-        <div className="bg-white border border-offwhite-200 p-6 rounded-xl shadow-sm mb-6">
-          <div className="flex items-center gap-2 mb-4">
+        <div className="bg-white border border-offwhite-200 p-4 rounded-xl shadow-sm mb-6">
+          <div className="flex items-center gap-2 mb-3">
             <FilterListIcon fontSize="small" className="text-navy-600" />
-            <h3 className="font-semibold text-navy-900">Filtros</h3>
+            <h3 className="font-semibold text-navy-900 text-sm">Filtros</h3>
           </div>
           
           {aba === "mensalidades" ? (
             <>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-3">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-2 mb-2">
                 <div>
                   <label className="block text-xs text-navy-600 font-medium mb-1">Buscar por nome</label>
                   <input
                     placeholder="Digite o nome do aluno"
                     value={filtroTexto}
                     onChange={e => setFiltroTexto(e.target.value)}
-                    className="w-full p-2 border border-offwhite-200 rounded-lg focus:ring-2 focus:ring-primary-400 focus:border-primary-400 outline-none"
+                    className="w-full px-2 py-1.5 text-sm border border-offwhite-200 rounded-lg focus:ring-2 focus:ring-primary-400 focus:border-primary-400 outline-none"
                   />
                 </div>
 
@@ -763,9 +866,10 @@ export default function Financeiro() {
                     onChange={e => {
                       setFiltroDataInicio(e.target.value);
                       setAtalhoDataAtivo('');
+                      setFiltroMesAtualPadrao(false);
                       setPaginaAtualMensalidades(0);
                     }}
-                    className="w-full p-2 border border-offwhite-200 rounded-lg focus:ring-2 focus:ring-primary-400 focus:border-primary-400 outline-none text-navy-700 date-input"
+                    className="w-full px-2 py-1.5 text-sm border border-offwhite-200 rounded-lg focus:ring-2 focus:ring-primary-400 focus:border-primary-400 outline-none text-navy-700 date-input"
                   />
                 </div>
 
@@ -777,165 +881,205 @@ export default function Financeiro() {
                     onChange={e => {
                       setFiltroDataFim(e.target.value);
                       setAtalhoDataAtivo('');
+                      setFiltroMesAtualPadrao(false);
                       setPaginaAtualMensalidades(0);
                     }}
-                    className="w-full p-2 border border-offwhite-200 rounded-lg focus:ring-2 focus:ring-primary-400 focus:border-primary-400 outline-none text-navy-700 date-input"
+                    className="w-full px-2 py-1.5 text-sm border border-offwhite-200 rounded-lg focus:ring-2 focus:ring-primary-400 focus:border-primary-400 outline-none text-navy-700 date-input"
                   />
                 </div>
               </div>
 
-              {/* Botões de atalho para período */}
-              <div className="flex gap-2 mb-3 flex-wrap">
-                <span className="text-xs text-navy-600 font-medium self-center">Atalhos:</span>
+              {/* Filtros de atalhos e status em uma linha */}
+              <div className="flex gap-2 mb-2 flex-wrap items-center">
+                <span className="text-xs text-navy-600 font-medium">Atalhos:</span>
                 <button
                   type="button"
                   onClick={definirMesAtual}
-                  className={`px-3 py-1 bg-gray-100 rounded-lg text-sm font-medium transition-colors hover:bg-gray-200 ${
+                  className={`px-3 py-1 bg-gray-100 rounded-lg text-sm font-medium transition-colors hover:bg-gray-200 flex items-center gap-1 ${
                     atalhoDataAtivo === 'mes'
                       ? 'text-primary-500'
                       : 'text-gray-700'
                   }`}
                 >
                   Mês Atual
+                  {atalhoDataAtivo === 'mes' && !filtroMesAtualPadrao && (
+                    <ClearIcon fontSize="small" className="ml-0.5" style={{ fontSize: '16px' }} />
+                  )}
                 </button>
                 <button
                   type="button"
                   onClick={definirHoje}
-                  className={`px-3 py-1 bg-gray-100 rounded-lg text-sm font-medium transition-colors hover:bg-gray-200 ${
+                  className={`px-3 py-1 bg-gray-100 rounded-lg text-sm font-medium transition-colors hover:bg-gray-200 flex items-center gap-1 ${
                     atalhoDataAtivo === 'hoje'
                       ? 'text-primary-500'
                       : 'text-gray-700'
                   }`}
                 >
                   Hoje
+                  {atalhoDataAtivo === 'hoje' && (
+                    <ClearIcon fontSize="small" className="ml-0.5" style={{ fontSize: '16px' }} />
+                  )}
                 </button>
                 <button
                   type="button"
                   onClick={definirAnoAtual}
-                  className={`px-3 py-1 bg-gray-100 rounded-lg text-sm font-medium transition-colors hover:bg-gray-200 ${
+                  className={`px-3 py-1 bg-gray-100 rounded-lg text-sm font-medium transition-colors hover:bg-gray-200 flex items-center gap-1 ${
                     atalhoDataAtivo === 'ano'
                       ? 'text-primary-500'
                       : 'text-gray-700'
                   }`}
                 >
                   Ano Atual
+                  {atalhoDataAtivo === 'ano' && (
+                    <ClearIcon fontSize="small" className="ml-0.5" style={{ fontSize: '16px' }} />
+                  )}
+                </button>
+
+                <div className="w-px h-6 bg-gray-300 mx-2"></div>
+
+                <span className="text-xs text-navy-600 font-medium">Status:</span>
+                <button
+                  type="button"
+                  onClick={() => toggleStatus('PENDENTE')}
+                  className={`px-3 py-1 rounded-lg text-sm font-medium transition-colors flex items-center gap-1 ${
+                    filtroStatus.includes('PENDENTE')
+                      ? 'bg-yellow-500 text-white'
+                      : 'bg-yellow-100 text-yellow-700 hover:bg-yellow-200'
+                  }`}
+                >
+                  Pendente
+                  {filtroStatus.includes('PENDENTE') && (
+                    <ClearIcon fontSize="small" className="ml-0.5" style={{ fontSize: '16px' }} />
+                  )}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => toggleStatus('PAGO')}
+                  className={`px-3 py-1 rounded-lg text-sm font-medium transition-colors flex items-center gap-1 ${
+                    filtroStatus.includes('PAGO')
+                      ? 'bg-green-500 text-white'
+                      : 'bg-green-100 text-green-700 hover:bg-green-200'
+                  }`}
+                >
+                  Pago
+                  {filtroStatus.includes('PAGO') && (
+                    <ClearIcon fontSize="small" className="ml-0.5" style={{ fontSize: '16px' }} />
+                  )}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => toggleStatus('ATRASADO')}
+                  className={`px-3 py-1 rounded-lg text-sm font-medium transition-colors flex items-center gap-1 ${
+                    filtroStatus.includes('ATRASADO')
+                      ? 'bg-red-500 text-white'
+                      : 'bg-red-100 text-red-700 hover:bg-red-200'
+                  }`}
+                >
+                  Atrasado
+                  {filtroStatus.includes('ATRASADO') && (
+                    <ClearIcon fontSize="small" className="ml-0.5" style={{ fontSize: '16px' }} />
+                  )}
                 </button>
               </div>
-
-              {/* Filtro de Status com botões visuais */}
-              <div className="mb-3">
-                <label className="block text-xs text-navy-600 font-medium mb-2">Status:</label>
-                <div className="flex flex-wrap gap-2">
-                  <button
-                    type="button"
-                    onClick={() => toggleStatus('PENDENTE')}
-                    className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
-                      filtroStatus.includes('PENDENTE')
-                        ? 'bg-yellow-500 text-white shadow-md'
-                        : 'bg-yellow-100 text-yellow-700 hover:bg-yellow-200'
-                    }`}
-                  >
-                    Pendente
-                    {filtroStatus.includes('PENDENTE') && (
-                      <ClearIcon fontSize="small" className="ml-1" />
-                    )}
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => toggleStatus('PAGO')}
-                    className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
-                      filtroStatus.includes('PAGO')
-                        ? 'bg-green-500 text-white shadow-md'
-                        : 'bg-green-100 text-green-700 hover:bg-green-200'
-                    }`}
-                  >
-                    Pago
-                    {filtroStatus.includes('PAGO') && (
-                      <ClearIcon fontSize="small" className="ml-1" />
-                    )}
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => toggleStatus('ATRASADO')}
-                    className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
-                      filtroStatus.includes('ATRASADO')
-                        ? 'bg-red-500 text-white shadow-md'
-                        : 'bg-red-100 text-red-700 hover:bg-red-200'
-                    }`}
-                  >
-                    Atrasado
-                    {filtroStatus.includes('ATRASADO') && (
-                      <ClearIcon fontSize="small" className="ml-1" />
-                    )}
-                  </button>
-                </div>
-              </div>
-
-              {/* Resumo dos filtros ativos */}
-              {(filtroTexto || filtroAlunoId || filtroDataInicio || filtroDataFim || filtroStatus.length > 0) && (
-                <div className="bg-primary-50 p-3 rounded-lg border border-primary-200">
-                  <div className="flex items-center justify-between">
-                    <div className="text-sm text-primary-800">
-                      <span className="font-medium">Filtros ativos:</span>
-                      {filtroTexto && <span className="ml-2">• Busca: "{filtroTexto}"</span>}
-                      {filtroAlunoId && <span className="ml-2">• Aluno ID: {filtroAlunoId}</span>}
-                      {filtroDataInicio && (
-                        <span className="ml-2">
-                          • Período: {new Date(filtroDataInicio + 'T00:00:00').toLocaleDateString('pt-BR')}
-                          {filtroDataFim && ` até ${new Date(filtroDataFim + 'T00:00:00').toLocaleDateString('pt-BR')}`}
-                        </span>
-                      )}
-                      {filtroStatus.length > 0 && (
-                        <span className="ml-2">• Status: {filtroStatus.join(', ')}</span>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              )}
             </>
           ) : (
             <>
               {/* Filtros de Pagamentos */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-2 mb-2">
                 <div>
                   <label className="block text-xs text-navy-600 font-medium mb-1">Descrição</label>
                   <input
                     placeholder="Ex: Funcionario, Gasolina..."
                     value={filtroDescricao}
                     onChange={e => setFiltroDescricao(e.target.value)}
-                    className="w-full p-2 border border-offwhite-200 rounded-lg focus:ring-2 focus:ring-primary-400 focus:border-primary-400 outline-none"
+                    className="w-full px-2 py-1.5 text-sm border border-offwhite-200 rounded-lg focus:ring-2 focus:ring-primary-400 focus:border-primary-400 outline-none"
                   />
                 </div>
+
                 <div>
-                  <label className="block text-xs text-navy-600 font-medium mb-1">Data específica</label>
+                  <label className="block text-xs text-navy-600 font-medium mb-1">Data Início</label>
                   <input
                     type="date"
-                    value={filtroData}
-                    onChange={e => setFiltroData(e.target.value)}
-                    className="w-full p-2 border border-offwhite-200 rounded-lg focus:ring-2 focus:ring-primary-400 focus:border-primary-400 outline-none"
+                    value={filtroDataInicioPag}
+                    onChange={e => {
+                      setFiltroDataInicioPag(e.target.value);
+                      setAtalhoDataAtivoPag('');
+                      setPaginaAtualPagamentos(0);
+                    }}
+                    className="w-full px-2 py-1.5 text-sm border border-offwhite-200 rounded-lg focus:ring-2 focus:ring-primary-400 focus:border-primary-400 outline-none text-navy-700 date-input"
                   />
                 </div>
+
                 <div>
-                  <label className="block text-xs text-navy-600 font-medium mb-1">Valor exato</label>
+                  <label className="block text-xs text-navy-600 font-medium mb-1">Data Fim</label>
                   <input
-                    type="number"
-                    step="0.01"
-                    placeholder="Ex: 150.00"
-                    value={filtroValor}
-                    onChange={e => setFiltroValor(e.target.value)}
-                    className="w-full p-2 border border-offwhite-200 rounded-lg focus:ring-2 focus:ring-primary-400 focus:border-primary-400 outline-none"
+                    type="date"
+                    value={filtroDataFimPag}
+                    onChange={e => {
+                      setFiltroDataFimPag(e.target.value);
+                      setAtalhoDataAtivoPag('');
+                      setPaginaAtualPagamentos(0);
+                    }}
+                    className="w-full px-2 py-1.5 text-sm border border-offwhite-200 rounded-lg focus:ring-2 focus:ring-primary-400 focus:border-primary-400 outline-none text-navy-700 date-input"
                   />
                 </div>
               </div>
 
-              <div className="flex gap-2 items-center mt-3">
-                <span className="text-sm text-navy-600 font-medium">Ordenar por:</span>
+              {/* Atalhos de data para pagamentos */}
+              <div className="flex gap-2 mb-2 flex-wrap items-center">
+                <span className="text-xs text-navy-600 font-medium">Atalhos:</span>
+                <button
+                  type="button"
+                  onClick={definirMesAtualPag}
+                  className={`px-3 py-1 bg-gray-100 rounded-lg text-sm font-medium transition-colors hover:bg-gray-200 flex items-center gap-1 ${
+                    atalhoDataAtivoPag === 'mes'
+                      ? 'text-primary-500'
+                      : 'text-gray-700'
+                  }`}
+                >
+                  Mês Atual
+                  {atalhoDataAtivoPag === 'mes' && (
+                    <ClearIcon fontSize="small" className="ml-0.5" style={{ fontSize: '16px' }} />
+                  )}
+                </button>
+                <button
+                  type="button"
+                  onClick={definirHojePag}
+                  className={`px-3 py-1 bg-gray-100 rounded-lg text-sm font-medium transition-colors hover:bg-gray-200 flex items-center gap-1 ${
+                    atalhoDataAtivoPag === 'hoje'
+                      ? 'text-primary-500'
+                      : 'text-gray-700'
+                  }`}
+                >
+                  Hoje
+                  {atalhoDataAtivoPag === 'hoje' && (
+                    <ClearIcon fontSize="small" className="ml-0.5" style={{ fontSize: '16px' }} />
+                  )}
+                </button>
+                <button
+                  type="button"
+                  onClick={definirAnoAtualPag}
+                  className={`px-3 py-1 bg-gray-100 rounded-lg text-sm font-medium transition-colors hover:bg-gray-200 flex items-center gap-1 ${
+                    atalhoDataAtivoPag === 'ano'
+                      ? 'text-primary-500'
+                      : 'text-gray-700'
+                  }`}
+                >
+                  Ano Atual
+                  {atalhoDataAtivoPag === 'ano' && (
+                    <ClearIcon fontSize="small" className="ml-0.5" style={{ fontSize: '16px' }} />
+                  )}
+                </button>
+
+                <div className="w-px h-6 bg-gray-300 mx-2"></div>
+
+                <span className="text-xs text-navy-600 font-medium">Ordenar por:</span>
                 <select
                   value={ordenacaoPagamentos.campo}
                   onChange={(e) => alterarOrdenacaoPagamentos(e.target.value)}
-                  className="p-2 border border-offwhite-200 rounded-lg text-sm focus:ring-2 focus:ring-primary-400 focus:border-primary-400 outline-none"
+                  className="px-3 py-1 border border-offwhite-200 rounded-lg text-sm focus:ring-2 focus:ring-primary-400 focus:border-primary-400 outline-none"
                 >
                   <option value="idPagamento">ID</option>
                   <option value="dataPagamento">Data</option>
@@ -946,7 +1090,7 @@ export default function Financeiro() {
                     ...prev,
                     direcao: prev.direcao === "asc" ? "desc" : "asc"
                   }))}
-                  className="p-2 border border-offwhite-200 rounded-lg text-sm hover:bg-offwhite-50 flex items-center gap-1 transition-colors"
+                  className="px-3 py-1 border border-offwhite-200 rounded-lg text-sm hover:bg-offwhite-100 flex items-center gap-1 transition-colors"
                   title={ordenacaoPagamentos.direcao === "asc" ? "Crescente" : "Decrescente"}
                 >
                   {ordenacaoPagamentos.direcao === "asc" ? (
@@ -965,10 +1109,10 @@ export default function Financeiro() {
             </>
           )}
 
-          <div className="flex justify-end mt-4">
+          <div className="flex justify-end mt-3">
             <button 
               onClick={limparFiltros} 
-              className="px-4 py-2 bg-offwhite-100 text-navy-700 rounded-lg flex items-center gap-2 hover:bg-offwhite-200 transition-colors font-medium"
+              className="px-3 py-1.5 text-sm bg-offwhite-100 text-navy-700 rounded-lg flex items-center gap-2 hover:bg-offwhite-200 transition-colors font-medium"
             >
               <ClearIcon fontSize="small" />
               Limpar Filtros
@@ -1027,7 +1171,7 @@ export default function Financeiro() {
             ) : (
               <>
                 <Tabela
-                  cabecalho={["ID", "Aluno", "Vencimento", "Valor", "Status"]}
+                  cabecalho={["ID", "Aluno", "Vencimento", "Valor"]}
                   dados={mensalidadesFiltradas.map(m => ({
                     idMensalidade: m.idMensalidade,
                     alunoNome: m.aluno?.nome || m.nomeAluno || "-",
@@ -1036,7 +1180,9 @@ export default function Financeiro() {
                     status: m.status,
                     _original: m
                   }))}
-                  fields={["idMensalidade", "alunoNome", "dataVencimento", "valorMensalidadeFormatado", "status"]}
+                  fields={["idMensalidade", "alunoNome", "dataVencimento", "valorMensalidadeFormatado"]}
+                  status={true}
+                  statusField="status"
                   renderActions={(row) => (
                     <div className="flex gap-2 justify-center items-center">
                       {row.status === 'PAGO' ? (
@@ -1278,16 +1424,6 @@ export default function Financeiro() {
             </div>
           </div>
         )}
-
-        {/* Modal de Confirmação */}
-        <ModalConfirmacao
-          aberto={confirmacao.aberto}
-          onFechar={fecharConfirmacao}
-          onConfirmar={confirmacao.onConfirmar}
-          titulo={confirmacao.titulo}
-          mensagem={confirmacao.mensagem}
-          tipo={confirmacao.tipo}
-        />
       </div>
     </div>
     </>

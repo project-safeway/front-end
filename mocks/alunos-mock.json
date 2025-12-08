@@ -318,5 +318,325 @@
                 }
             }
         ]
+    },
+    {
+        "nome": "Isabella Lima",
+        "professor": "Prof. Carlos",
+        "dtNascimento": "2011-05-30",
+        "serie": 7,
+        "sala": "7C",
+        "valorMensalidade": 505.00,
+        "diaVencimento": 6,
+        "fkEscola": 1,
+        "fkTransporte": 1,
+        "responsaveis": [
+            {
+                "nome": "Fabiana Lima",
+                "cpf": "88776655432",
+                "tel1": "917776655",
+                "tel2": null,
+                "email": "fabiana.lima@email.com",
+                "endereco": {
+                    "logradouro": "Avenida Rebouças",
+                    "numero": "1800",
+                    "complemento": "Torre A - Apto 501",
+                    "bairro": "Pinheiros",
+                    "cidade": "São Paulo",
+                    "uf": "SP",
+                    "cep": "05402-100",
+                    "latitude": -23.567200,
+                    "longitude": -46.685400,
+                    "tipo": "RESIDENCIAL"
+                }
+            }
+        ]
+    },
+    {
+        "nome": "Pedro Carvalho",
+        "professor": "Prof. Ana",
+        "dtNascimento": "2010-09-12",
+        "serie": 8,
+        "sala": "8A",
+        "valorMensalidade": 520.00,
+        "diaVencimento": 10,
+        "fkEscola": 1,
+        "fkTransporte": 1,
+        "responsaveis": [
+            {
+                "nome": "Marcia Carvalho",
+                "cpf": "91233456781",
+                "tel1": "11988776655",
+                "tel2": null,
+                "email": "marcia.carvalho@email.com",
+                "endereco": {
+                    "logradouro": "Rua Capote Valente",
+                    "numero": "450",
+                    "complemento": "Casa 2",
+                    "bairro": "Pinheiros",
+                    "cidade": "São Paulo",
+                    "uf": "SP",
+                    "cep": "05409-001",
+                    "latitude": -23.561900,
+                    "longitude": -46.680500,
+                    "tipo": "RESIDENCIAL"
+                }
+            }
+        ]
+    },
+    {
+        "nome": "Laura Mendes",
+        "professor": "Prof. João",
+        "dtNascimento": "2012-03-22",
+        "serie": 6,
+        "sala": "6B",
+        "valorMensalidade": 498.00,
+        "diaVencimento": 8,
+        "fkEscola": 1,
+        "fkTransporte": 1,
+        "responsaveis": [
+            {
+                "nome": "Bruna Mendes",
+                "cpf": "88122345098",
+                "tel1": "11991234567",
+                "tel2": null,
+                "email": "bruna.mendes@email.com",
+                "endereco": {
+                    "logradouro": "Rua dos Pinheiros",
+                    "numero": "999",
+                    "complemento": "Apto 84",
+                    "bairro": "Pinheiros",
+                    "cidade": "São Paulo",
+                    "uf": "SP",
+                    "cep": "05422-001",
+                    "latitude": -23.566500,
+                    "longitude": -46.682300,
+                    "tipo": "RESIDENCIAL"
+                }
+            }
+        ]
+    },
+    {
+        "nome": "Ricardo Azevedo",
+        "professor": "Prof. Beatriz",
+        "dtNascimento": "2011-01-17",
+        "serie": 7,
+        "sala": "7A",
+        "valorMensalidade": 510.00,
+        "diaVencimento": 5,
+        "fkEscola": 1,
+        "fkTransporte": 2,
+        "responsaveis": [
+            {
+                "nome": "Patrícia Azevedo",
+                "cpf": "90555444777",
+                "tel1": "11999887766",
+                "tel2": null,
+                "email": "patricia.azevedo@email.com",
+                "endereco": {
+                    "logradouro": "Rua Mateus Grou",
+                    "numero": "120",
+                    "complemento": null,
+                    "bairro": "Pinheiros",
+                    "cidade": "São Paulo",
+                    "uf": "SP",
+                    "cep": "05415-040",
+                    "latitude": -23.561200,
+                    "longitude": -46.677800,
+                    "tipo": "RESIDENCIAL"
+                }
+            }
+        ]
+    },
+    {
+        "nome": "Mariana Torres",
+        "professor": "Prof. Rodrigo",
+        "dtNascimento": "2010-12-03",
+        "serie": 8,
+        "sala": "8C",
+        "valorMensalidade": 530.00,
+        "diaVencimento": 9,
+        "fkEscola": 1,
+        "fkTransporte": 2,
+        "responsaveis": [
+            {
+                "nome": "Silmara Torres",
+                "cpf": "80122334567",
+                "tel1": "11988771234",
+                "tel2": null,
+                "email": "silmara.torres@email.com",
+                "endereco": {
+                    "logradouro": "Rua Cristiano Viana",
+                    "numero": "788",
+                    "complemento": "Apto 32",
+                    "bairro": "Pinheiros",
+                    "cidade": "São Paulo",
+                    "uf": "SP",
+                    "cep": "05411-000",
+                    "latitude": -23.563800,
+                    "longitude": -46.676000,
+                    "tipo": "RESIDENCIAL"
+                }
+            }
+        ]
+    },
+    {
+        "nome": "Gabriel Souza",
+        "professor": "Prof. Fernanda",
+        "dtNascimento": "2012-07-19",
+        "serie": 6,
+        "sala": "6A",
+        "valorMensalidade": 490.00,
+        "diaVencimento": 4,
+        "fkEscola": 1,
+        "fkTransporte": 1,
+        "responsaveis": [
+            {
+                "nome": "Luciana Souza",
+                "cpf": "89977665543",
+                "tel1": "11990011223",
+                "tel2": null,
+                "email": "luciana.souza@email.com",
+                "endereco": {
+                    "logradouro": "Rua Arthur de Azevedo",
+                    "numero": "210",
+                    "complemento": "Apto 12",
+                    "bairro": "Pinheiros",
+                    "cidade": "São Paulo",
+                    "uf": "SP",
+                    "cep": "05404-010",
+                    "latitude": -23.564900,
+                    "longitude": -46.683700,
+                    "tipo": "RESIDENCIAL"
+                }
+            }
+        ]
+    },
+    {
+        "nome": "Beatriz Ribeiro",
+        "professor": "Prof. Carla",
+        "dtNascimento": "2011-03-09",
+        "serie": 7,
+        "sala": "7B",
+        "valorMensalidade": 515.00,
+        "diaVencimento": 12,
+        "fkEscola": 1,
+        "fkTransporte": 3,
+        "responsaveis": [
+            {
+                "nome": "Eliane Ribeiro",
+                "cpf": "84411222333",
+                "tel1": "11998877661",
+                "tel2": null,
+                "email": "eliane.ribeiro@email.com",
+                "endereco": {
+                    "logradouro": "Rua Teodoro Sampaio",
+                    "numero": "2333",
+                    "complemento": "Apto 72",
+                    "bairro": "Pinheiros",
+                    "cidade": "São Paulo",
+                    "uf": "SP",
+                    "cep": "05405-050",
+                    "latitude": -23.567900,
+                    "longitude": -46.676300,
+                    "tipo": "RESIDENCIAL"
+                }
+            }
+        ]
+    },
+    {
+        "nome": "João Martins",
+        "professor": "Prof. Paulo",
+        "dtNascimento": "2010-04-14",
+        "serie": 8,
+        "sala": "8B",
+        "valorMensalidade": 540.00,
+        "diaVencimento": 7,
+        "fkEscola": 1,
+        "fkTransporte": 2,
+        "responsaveis": [
+            {
+                "nome": "Rosa Martins",
+                "cpf": "81122334455",
+                "tel1": "11993322112",
+                "tel2": null,
+                "email": "rosa.martins@email.com",
+                "endereco": {
+                    "logradouro": "Rua Oscar Freire",
+                    "numero": "999",
+                    "complemento": "Casa",
+                    "bairro": "Jardins",
+                    "cidade": "São Paulo",
+                    "uf": "SP",
+                    "cep": "01426-001",
+                    "latitude": -23.563400,
+                    "longitude": -46.670200,
+                    "tipo": "RESIDENCIAL"
+                }
+            }
+        ]
+    },
+    {
+        "nome": "Luiza Castro",
+        "professor": "Prof. Denise",
+        "dtNascimento": "2012-10-05",
+        "serie": 6,
+        "sala": "6C",
+        "valorMensalidade": 488.00,
+        "diaVencimento": 5,
+        "fkEscola": 1,
+        "fkTransporte": 3,
+        "responsaveis": [
+            {
+                "nome": "Tatiane Castro",
+                "cpf": "82233445566",
+                "tel1": "11990088776",
+                "tel2": null,
+                "email": "tatiane.castro@email.com",
+                "endereco": {
+                    "logradouro": "Rua Cardeal Arcoverde",
+                    "numero": "3012",
+                    "complemento": "Apto 21",
+                    "bairro": "Pinheiros",
+                    "cidade": "São Paulo",
+                    "uf": "SP",
+                    "cep": "05408-003",
+                    "latitude": -23.566200,
+                    "longitude": -46.680100,
+                    "tipo": "RESIDENCIAL"
+                }
+            }
+        ]
+    },
+    {
+        "nome": "Henrique Dias",
+        "professor": "Prof. Juliana",
+        "dtNascimento": "2011-08-02",
+        "serie": 7,
+        "sala": "7A",
+        "valorMensalidade": 500.00,
+        "diaVencimento": 11,
+        "fkEscola": 1,
+        "fkTransporte": 1,
+        "responsaveis": [
+            {
+                "nome": "Simone Dias",
+                "cpf": "87766554433",
+                "tel1": "11992345678",
+                "tel2": null,
+                "email": "simone.dias@email.com",
+                "endereco": {
+                    "logradouro": "Rua Harmonia",
+                    "numero": "330",
+                    "complemento": "Casa 1",
+                    "bairro": "Vila Madalena",
+                    "cidade": "São Paulo",
+                    "uf": "SP",
+                    "cep": "05435-000",
+                    "latitude": -23.557900,
+                    "longitude": -46.684800,
+                    "tipo": "RESIDENCIAL"
+                }
+            }
+        ]
     }
 ]
