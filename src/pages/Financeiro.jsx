@@ -583,7 +583,10 @@ export default function Financeiro() {
       limparFiltros();
     } else {
       const hoje = new Date();
-      const dataHoje = hoje.toISOString().split('T')[0];
+      const ano = hoje.getFullYear();
+      const mes = String(hoje.getMonth() + 1).padStart(2, '0');
+      const dia = String(hoje.getDate()).padStart(2, '0');
+      const dataHoje = `${ano}-${mes}-${dia}`;
       setFiltroDataInicio(dataHoje);
       setFiltroDataFim(dataHoje);
       setAtalhoDataAtivo('hoje');
@@ -1176,7 +1179,7 @@ export default function Financeiro() {
                   dados={mensalidadesFiltradas.map(m => ({
                     idMensalidade: m.idMensalidade,
                     alunoNome: m.aluno?.nome || m.nomeAluno || "-",
-                    dataVencimento: m.dataVencimento,
+                    dataVencimento: m.dataVencimento ? new Date(m.dataVencimento + 'T00:00:00').toLocaleDateString('pt-BR') : '-',
                     valorMensalidadeFormatado: formatCurrency(m.valorMensalidade),
                     status: m.status,
                     _original: m
