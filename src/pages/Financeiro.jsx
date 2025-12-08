@@ -73,14 +73,17 @@ export default function Financeiro() {
       // Se não veio da navegação na montagem inicial, marca como null
       setFiltroNavegacao(null);
     }
-  }, [location.state, filtroNavegacao]);
+    
+    // Cleanup: resetar ao desmontar para próxima navegação
+    return () => {
+      setFiltroNavegacao(undefined);
+    };
+  }, [location.key]);
   
   // Aplicar configurações iniciais após detectar origem
   useEffect(() => {
     if (filtroNavegacao !== null && filtroNavegacao !== undefined) {
       // Veio da navegação - aplicar filtro de status
-      console.log('[Financeiro] Configurando filtro de navegação:', filtroNavegacao)
-      console.log('[Financeiro] Tipo do filtroNavegacao:', typeof filtroNavegacao)
       const hoje = new Date();
       const ano = hoje.getFullYear();
       const mes = String(hoje.getMonth() + 1).padStart(2, '0');
@@ -88,14 +91,12 @@ export default function Financeiro() {
       
       setFiltroDataInicio(`${ano}-${mes}-01`);
       setFiltroDataFim(`${ano}-${mes}-${ultimoDia}`);
-      console.log('[Financeiro] Definindo filtroStatus como array:', [filtroNavegacao])
       setFiltroStatus([filtroNavegacao]);
       setFiltroMesAtualPadrao(false);
       setPaginaAtualMensalidades(0);
       setInicializado(true);
     } else if (filtroNavegacao === null) {
       // Acesso direto - apenas filtro de data
-      console.log('[Financeiro] Configurando filtro inicial (acesso direto)');
       const hoje = new Date();
       const ano = hoje.getFullYear();
       const mes = String(hoje.getMonth() + 1).padStart(2, '0');
