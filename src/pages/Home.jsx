@@ -4,12 +4,9 @@ import Calendar from '../components/Calendar'
 import EventsPanel from '../components/EventsPanel'
 
 // Ícones do Material para transporte escolar
-import AssignmentTurnedInIcon from '@mui/icons-material/AssignmentTurnedIn'
-import RouteIcon from '@mui/icons-material/Route'
 import MapIcon from '@mui/icons-material/Map'
 import SchoolIcon from '@mui/icons-material/School'
 import AttachMoneyIcon from '@mui/icons-material/AttachMoney'
-import HistoryIcon from '@mui/icons-material/History'
 
 const cards = [
   {
