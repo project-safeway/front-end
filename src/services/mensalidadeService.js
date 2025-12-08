@@ -99,6 +99,17 @@ export async function pagarMensalidade(id) {
   }
 }
 
+export async function marcarComoPendente(id) {
+  try {
+    console.log('[marcarComoPendente] ID:', id)
+    const data = await api.patch(`/mensalidades/pendente/${id}`)
+    return data
+  } catch (error) {
+    console.error('[marcarComoPendente] Erro:', error)
+    throw error
+  }
+}
+
 export async function criarMensalidade(payload) {
   try {
     console.log('[criarMensalidade] Payload:', payload)

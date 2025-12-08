@@ -1,9 +1,11 @@
 import React, { useEffect, useState, useCallback } from "react";
+import { useLocation, Link } from "react-router-dom";
 import { Tabela } from "../components/Tabela";
 import { ModalConfirmacao } from "../components/ModalConfirmacao";
 import {
   listarMensalidades,
   pagarMensalidade,
+  marcarComoPendente,
   criarMensalidade,
   gerarMensalidadesMesAtual
 } from "../services/mensalidadeService";
@@ -27,6 +29,8 @@ import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';
 import ArrowDownwardIcon from '@mui/icons-material/ArrowDownward';
 import FilterListIcon from '@mui/icons-material/FilterList';
 import ClearIcon from '@mui/icons-material/Clear';
+import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+import UndoIcon from '@mui/icons-material/Undo';
 
 // Função auxiliar para obter data local no formato YYYY-MM-DD
 function getDataLocal() {
@@ -38,6 +42,7 @@ function getDataLocal() {
 }
 
 export default function Financeiro() {
+  const location = useLocation();
   const [aba, setAba] = useState("mensalidades");
   const [mensalidades, setMensalidades] = useState([]);
   const [pagamentos, setPagamentos] = useState([]);
@@ -48,6 +53,16 @@ export default function Financeiro() {
   const [filtroDataInicio, setFiltroDataInicio] = useState("");
   const [filtroDataFim, setFiltroDataFim] = useState("");
   const [filtroAlunoId, setFiltroAlunoId] = useState("");
+  const [atalhoDataAtivo, setAtalhoDataAtivo] = useState("");
+  
+  // Aplicar filtro inicial vindo da Home
+  useEffect(() => {
+    if (location.state?.filtroStatus) {
+      setFiltroStatus([location.state.filtroStatus]);
+      // Limpar o estado após aplicar para não reaplicar
+      window.history.replaceState({}, document.title);
+    }
+  }, [location.state]);
   
   // Filtros específicos para pagamentos
   const [filtroDescricao, setFiltroDescricao] = useState("");
@@ -302,7 +317,7 @@ export default function Financeiro() {
     setConfirmacao({
       aberto: true,
       titulo: 'Confirmar Pagamento',
-      mensagem: 'Deseja realmente marcar esta mensalidade como paga? Esta ação não poderá ser desfeita.',
+      mensagem: 'Deseja realmente marcar esta mensalidade como paga?',
       tipo: 'success',
       onConfirmar: async () => {
         try {
@@ -315,6 +330,17 @@ export default function Financeiro() {
         }
       }
     });
+  }
+
+  async function handleReverterPagamento(id) {
+    try {
+      // Usa o endpoint /pendente/{id} para reverter de PAGO para PENDENTE
+      await marcarComoPendente(id);
+      await Promise.all([carregarMensalidades(), carregarKPIs()]);
+    } catch (err) {
+      console.error("handleReverterPagamento:", err);
+      alert("Erro ao reverter pagamento");
+    }
   }
 
   async function handleExcluirPagamento(id) {
@@ -460,6 +486,7 @@ export default function Financeiro() {
       setFiltroDataInicio("");
       setFiltroDataFim("");
       setFiltroAlunoId("");
+      setAtalhoDataAtivo("");
       setPaginaAtualMensalidades(0);
     } else {
       setFiltroDescricao("");
@@ -478,6 +505,26 @@ export default function Financeiro() {
     
     setFiltroDataInicio(`${ano}-${mes}-01`);
     setFiltroDataFim(`${ano}-${mes}-${ultimoDia}`);
+    setAtalhoDataAtivo('mes');
+    setPaginaAtualMensalidades(0);
+  }
+
+  function definirHoje() {
+    const hoje = new Date();
+    const dataHoje = hoje.toISOString().split('T')[0];
+    setFiltroDataInicio(dataHoje);
+    setFiltroDataFim(dataHoje);
+    setAtalhoDataAtivo('hoje');
+    setPaginaAtualMensalidades(0);
+  }
+
+  function definirAnoAtual() {
+    const hoje = new Date();
+    const primeiroDia = new Date(hoje.getFullYear(), 0, 1).toISOString().split('T')[0];
+    const ultimoDia = new Date(hoje.getFullYear(), 11, 31).toISOString().split('T')[0];
+    setFiltroDataInicio(primeiroDia);
+    setFiltroDataFim(ultimoDia);
+    setAtalhoDataAtivo('ano');
     setPaginaAtualMensalidades(0);
   }
 
@@ -553,53 +600,99 @@ export default function Financeiro() {
   }
 
   return (
-    <div className="p-6 bg-gray-50 min-h-screen">
-      <div className="max-w-7xl mx-auto">
-        <div className="flex justify-between items-center mb-4">
-          <h1 className="text-2xl font-bold">Gestão Financeira</h1>
-          <div className="text-sm text-gray-600">
-            {
-              (() => {
-                const data = new Date();
-                const mes = data.toLocaleDateString('pt-BR', { month: 'long' });
-                const mesCapitalizado = mes.charAt(0).toUpperCase() + mes.slice(1);
-                const ano = data.getFullYear();
-                return `${mesCapitalizado} de ${ano}`;
-              })()
-            }
+    <>
+      <style>{`
+        /* Estilo customizado para inputs de data */
+        .date-input::-webkit-calendar-picker-indicator {
+          cursor: pointer;
+          filter: invert(35%) sepia(10%) saturate(1000%) hue-rotate(180deg);
+          padding: 4px;
+          border-radius: 4px;
+          transition: all 0.2s;
+        }
+        
+        .date-input::-webkit-calendar-picker-indicator:hover {
+          background-color: #FFF7ED;
+          filter: invert(50%) sepia(80%) saturate(2000%) hue-rotate(10deg);
+        }
+        
+        .date-input:focus::-webkit-calendar-picker-indicator {
+          filter: invert(50%) sepia(80%) saturate(2000%) hue-rotate(10deg);
+        }
+        
+        .date-input {
+          color-scheme: light;
+        }
+      `}</style>
+      
+      <div className="min-h-screen py-8 px-4">
+        <div className="max-w-7xl mx-auto">
+          {/* Breadcrumb */}
+          <Link
+            to="/"
+            className="inline-flex items-center gap-2 text-navy-600 hover:text-primary-400 mb-6 transition-colors"
+          >
+            <ArrowBackIcon fontSize="small" />
+            <span>Voltar ao Início</span>
+          </Link>
+
+        {/* Header minimalista */}
+        <div className="bg-white rounded-2xl shadow-sm border border-offwhite-200 p-8 mb-8">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-6">
+              <div className="p-4 bg-primary-50 rounded-xl">
+                <AttachMoneyIcon className="text-primary-400 text-4xl" />
+              </div>
+              <div>
+                <h1 className="text-3xl font-bold text-navy-900 mb-1">Gestão Financeira</h1>
+                <p className="text-navy-600">Controle de receitas e despesas</p>
+              </div>
+            </div>
+            
+            <div className="text-sm text-navy-600 font-medium">
+              {
+                (() => {
+                  const data = new Date();
+                  const mes = data.toLocaleDateString('pt-BR', { month: 'long' });
+                  const mesCapitalizado = mes.charAt(0).toUpperCase() + mes.slice(1);
+                  const ano = data.getFullYear();
+                  return `${mesCapitalizado} de ${ano}`;
+                })()
+              }
+            </div>
           </div>
         </div>
 
         {/* KPIs */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
-          <div className="p-4 bg-white rounded shadow">
-            <div className="flex items-center gap-2 text-sm text-gray-500 mb-2">
+          <div className="p-6 bg-white border border-offwhite-200 rounded-xl shadow-sm">
+            <div className="flex items-center gap-2 text-sm text-navy-600 mb-2">
               <AttachMoneyIcon fontSize="small" className="text-green-600" />
               <span>Receita do Mês</span>
             </div>
             <span className="text-2xl font-bold block text-green-600">
               {kpisData.carregandoKpis ? "Carregando..." : formatCurrency(kpisData.receitaMes)}
             </span>
-            <span className="text-xs text-gray-400">
+            <span className="text-xs text-navy-500">
               {kpisData.mensalidadesRecebidas} mensalidades recebidas
             </span>
           </div>
 
-          <div className="p-4 bg-white rounded shadow">
-            <div className="flex items-center gap-2 text-sm text-gray-500 mb-2">
+          <div className="p-6 bg-white border border-offwhite-200 rounded-xl shadow-sm">
+            <div className="flex items-center gap-2 text-sm text-navy-600 mb-2">
               <PaymentsIcon fontSize="small" className="text-red-600" />
               <span>Despesas do Mês</span>
             </div>
             <span className="text-2xl font-bold block text-red-600">
               {kpisData.carregandoKpis ? "Carregando..." : formatCurrency(kpisData.despesasMes)}
             </span>
-            <span className="text-xs text-gray-400">
+            <span className="text-xs text-navy-500">
               Todos os pagamentos
             </span>
           </div>
 
-          <div className={`p-4 rounded shadow ${saldoMes >= 0 ? "bg-green-50" : "bg-red-50"}`}>
-            <div className="flex items-center gap-2 text-sm text-gray-500 mb-2">
+          <div className={`p-6 border border-offwhite-200 rounded-xl shadow-sm ${saldoMes >= 0 ? "bg-green-50" : "bg-red-50"}`}>
+            <div className="flex items-center gap-2 text-sm text-navy-600 mb-2">
               {saldoMes >= 0 ? (
                 <TrendingUpIcon fontSize="small" className="text-green-700" />
               ) : (
@@ -610,24 +703,32 @@ export default function Financeiro() {
             <span className={`text-2xl font-bold block ${saldoMes >= 0 ? "text-green-700" : "text-red-700"}`}>
               {kpisData.carregandoKpis ? "Carregando..." : formatCurrency(saldoMes)}
             </span>
-            <span className="text-xs text-gray-400">
+            <span className="text-xs text-navy-600">
               {saldoMes >= 0 ? "Positivo ✅" : "Negativo ⚠️"}
             </span>
           </div>
         </div>
 
         {/* Abas */}
-        <div className="flex gap-2 mb-4">
+        <div className="flex gap-2 mb-6">
           <button
             onClick={() => setAba("mensalidades")}
-            className={`px-4 py-2 rounded flex items-center gap-2 ${aba === "mensalidades" ? "bg-blue-600 text-white" : "bg-white border"}`}
+            className={`px-6 py-3 rounded-lg flex items-center gap-2 font-medium transition-all ${
+              aba === "mensalidades" 
+                ? "bg-primary-400 text-white shadow-sm" 
+                : "bg-white border border-offwhite-200 text-navy-600 hover:border-primary-400"
+            }`}
           >
             <AttachMoneyIcon fontSize="small" />
             Receitas (Mensalidades)
           </button>
           <button
             onClick={() => setAba("pagamentos")}
-            className={`px-4 py-2 rounded flex items-center gap-2 ${aba === "pagamentos" ? "bg-blue-600 text-white" : "bg-white border"}`}
+            className={`px-6 py-3 rounded-lg flex items-center gap-2 font-medium transition-all ${
+              aba === "pagamentos" 
+                ? "bg-primary-400 text-white shadow-sm" 
+                : "bg-white border border-offwhite-200 text-navy-600 hover:border-primary-400"
+            }`}
           >
             <PaymentsIcon fontSize="small" />
             Despesas (Pagamentos)
@@ -635,108 +736,95 @@ export default function Financeiro() {
         </div>
 
         {/* Filtros Otimizados */}
-        <div className="bg-white p-4 rounded shadow mb-4">
-          <div className="flex items-center gap-2 mb-3">
-            <FilterListIcon fontSize="small" />
-            <h3 className="font-medium">Filtros</h3>
+        <div className="bg-white border border-offwhite-200 p-6 rounded-xl shadow-sm mb-6">
+          <div className="flex items-center gap-2 mb-4">
+            <FilterListIcon fontSize="small" className="text-navy-600" />
+            <h3 className="font-semibold text-navy-900">Filtros</h3>
           </div>
           
           {aba === "mensalidades" ? (
             <>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 mb-3">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-3">
                 <div>
-                  <label className="block text-xs text-gray-600 mb-1">Buscar por nome/ID</label>
+                  <label className="block text-xs text-navy-600 font-medium mb-1">Buscar por nome</label>
                   <input
-                    placeholder="Digite nome do aluno ou ID"
+                    placeholder="Digite o nome do aluno"
                     value={filtroTexto}
                     onChange={e => setFiltroTexto(e.target.value)}
-                    className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500"
+                    className="w-full p-2 border border-offwhite-200 rounded-lg focus:ring-2 focus:ring-primary-400 focus:border-primary-400 outline-none"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs text-gray-600 mb-1">Data Início</label>
+                  <label className="block text-xs text-navy-600 font-medium mb-1">Data Início</label>
                   <input
                     type="date"
                     value={filtroDataInicio}
                     onChange={e => {
                       setFiltroDataInicio(e.target.value);
+                      setAtalhoDataAtivo('');
                       setPaginaAtualMensalidades(0);
                     }}
-                    className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500"
+                    className="w-full p-2 border border-offwhite-200 rounded-lg focus:ring-2 focus:ring-primary-400 focus:border-primary-400 outline-none text-navy-700 date-input"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs text-gray-600 mb-1">Data Fim</label>
+                  <label className="block text-xs text-navy-600 font-medium mb-1">Data Fim</label>
                   <input
                     type="date"
                     value={filtroDataFim}
                     onChange={e => {
                       setFiltroDataFim(e.target.value);
+                      setAtalhoDataAtivo('');
                       setPaginaAtualMensalidades(0);
                     }}
-                    className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs text-gray-600 mb-1">ID do Aluno</label>
-                  <input
-                    type="number"
-                    placeholder="Filtrar por ID específico"
-                    value={filtroAlunoId}
-                    onChange={e => {
-                      setFiltroAlunoId(e.target.value);
-                      setPaginaAtualMensalidades(0);
-                    }}
-                    className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500"
+                    className="w-full p-2 border border-offwhite-200 rounded-lg focus:ring-2 focus:ring-primary-400 focus:border-primary-400 outline-none text-navy-700 date-input"
                   />
                 </div>
               </div>
 
               {/* Botões de atalho para período */}
               <div className="flex gap-2 mb-3 flex-wrap">
-                <span className="text-xs text-gray-600 self-center">Atalhos:</span>
+                <span className="text-xs text-navy-600 font-medium self-center">Atalhos:</span>
                 <button
                   type="button"
                   onClick={definirMesAtual}
-                  className="px-3 py-1 bg-blue-100 text-blue-700 rounded text-sm hover:bg-blue-200"
+                  className={`px-3 py-1 bg-gray-100 rounded-lg text-sm font-medium transition-colors hover:bg-gray-200 ${
+                    atalhoDataAtivo === 'mes'
+                      ? 'text-primary-500'
+                      : 'text-gray-700'
+                  }`}
                 >
-                  📅 Mês Atual
+                  Mês Atual
                 </button>
                 <button
                   type="button"
-                  onClick={() => {
-                    const hoje = new Date();
-                    const dataHoje = hoje.toISOString().split('T')[0];
-                    setFiltroDataInicio(dataHoje);
-                    setFiltroDataFim(dataHoje);
-                    setPaginaAtualMensalidades(0);
-                  }}
-                  className="px-3 py-1 bg-purple-100 text-purple-700 rounded text-sm hover:bg-purple-200"
+                  onClick={definirHoje}
+                  className={`px-3 py-1 bg-gray-100 rounded-lg text-sm font-medium transition-colors hover:bg-gray-200 ${
+                    atalhoDataAtivo === 'hoje'
+                      ? 'text-primary-500'
+                      : 'text-gray-700'
+                  }`}
                 >
-                  📆 Hoje
+                  Hoje
                 </button>
                 <button
                   type="button"
-                  onClick={() => {
-                    const hoje = new Date();
-                    const primeiroDia = new Date(hoje.getFullYear(), 0, 1).toISOString().split('T')[0];
-                    const ultimoDia = new Date(hoje.getFullYear(), 11, 31).toISOString().split('T')[0];
-                    setFiltroDataInicio(primeiroDia);
-                    setFiltroDataFim(ultimoDia);
-                    setPaginaAtualMensalidades(0);
-                  }}
-                  className="px-3 py-1 bg-indigo-100 text-indigo-700 rounded text-sm hover:bg-indigo-200"
+                  onClick={definirAnoAtual}
+                  className={`px-3 py-1 bg-gray-100 rounded-lg text-sm font-medium transition-colors hover:bg-gray-200 ${
+                    atalhoDataAtivo === 'ano'
+                      ? 'text-primary-500'
+                      : 'text-gray-700'
+                  }`}
                 >
-                  📊 Ano Atual
+                  Ano Atual
                 </button>
               </div>
 
               {/* Filtro de Status com botões visuais */}
               <div className="mb-3">
-                <label className="block text-xs text-gray-600 mb-2">Status</label>
+                <label className="block text-xs text-navy-600 font-medium mb-2">Status:</label>
                 <div className="flex flex-wrap gap-2">
                   <button
                     type="button"
@@ -747,7 +835,7 @@ export default function Financeiro() {
                         : 'bg-yellow-100 text-yellow-700 hover:bg-yellow-200'
                     }`}
                   >
-                    ⏳ Pendente
+                    Pendente
                     {filtroStatus.includes('PENDENTE') && (
                       <ClearIcon fontSize="small" className="ml-1" />
                     )}
@@ -762,7 +850,7 @@ export default function Financeiro() {
                         : 'bg-green-100 text-green-700 hover:bg-green-200'
                     }`}
                   >
-                    ✅ Pago
+                    Pago
                     {filtroStatus.includes('PAGO') && (
                       <ClearIcon fontSize="small" className="ml-1" />
                     )}
@@ -777,32 +865,19 @@ export default function Financeiro() {
                         : 'bg-red-100 text-red-700 hover:bg-red-200'
                     }`}
                   >
-                    ⚠️ Atrasado
+                    Atrasado
                     {filtroStatus.includes('ATRASADO') && (
                       <ClearIcon fontSize="small" className="ml-1" />
                     )}
                   </button>
-
-                  {filtroStatus.length > 0 && (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setFiltroStatus([]);
-                        setPaginaAtualMensalidades(0);
-                      }}
-                      className="px-4 py-2 rounded-full text-sm font-medium bg-gray-200 text-gray-700 hover:bg-gray-300"
-                    >
-                      Limpar Status
-                    </button>
-                  )}
                 </div>
               </div>
 
               {/* Resumo dos filtros ativos */}
               {(filtroTexto || filtroAlunoId || filtroDataInicio || filtroDataFim || filtroStatus.length > 0) && (
-                <div className="bg-blue-50 p-3 rounded border border-blue-200">
+                <div className="bg-primary-50 p-3 rounded-lg border border-primary-200">
                   <div className="flex items-center justify-between">
-                    <div className="text-sm text-blue-800">
+                    <div className="text-sm text-primary-800">
                       <span className="font-medium">Filtros ativos:</span>
                       {filtroTexto && <span className="ml-2">• Busca: "{filtroTexto}"</span>}
                       {filtroAlunoId && <span className="ml-2">• Aluno ID: {filtroAlunoId}</span>}
@@ -825,42 +900,42 @@ export default function Financeiro() {
               {/* Filtros de Pagamentos */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                 <div>
-                  <label className="block text-xs text-gray-600 mb-1">Descrição</label>
+                  <label className="block text-xs text-navy-600 font-medium mb-1">Descrição</label>
                   <input
                     placeholder="Ex: Funcionario, Gasolina..."
                     value={filtroDescricao}
                     onChange={e => setFiltroDescricao(e.target.value)}
-                    className="w-full p-2 border rounded"
+                    className="w-full p-2 border border-offwhite-200 rounded-lg focus:ring-2 focus:ring-primary-400 focus:border-primary-400 outline-none"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs text-gray-600 mb-1">Data específica</label>
+                  <label className="block text-xs text-navy-600 font-medium mb-1">Data específica</label>
                   <input
                     type="date"
                     value={filtroData}
                     onChange={e => setFiltroData(e.target.value)}
-                    className="w-full p-2 border rounded"
+                    className="w-full p-2 border border-offwhite-200 rounded-lg focus:ring-2 focus:ring-primary-400 focus:border-primary-400 outline-none"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs text-gray-600 mb-1">Valor exato</label>
+                  <label className="block text-xs text-navy-600 font-medium mb-1">Valor exato</label>
                   <input
                     type="number"
                     step="0.01"
                     placeholder="Ex: 150.00"
                     value={filtroValor}
                     onChange={e => setFiltroValor(e.target.value)}
-                    className="w-full p-2 border rounded"
+                    className="w-full p-2 border border-offwhite-200 rounded-lg focus:ring-2 focus:ring-primary-400 focus:border-primary-400 outline-none"
                   />
                 </div>
               </div>
 
               <div className="flex gap-2 items-center mt-3">
-                <span className="text-sm text-gray-600">Ordenar por:</span>
+                <span className="text-sm text-navy-600 font-medium">Ordenar por:</span>
                 <select
                   value={ordenacaoPagamentos.campo}
                   onChange={(e) => alterarOrdenacaoPagamentos(e.target.value)}
-                  className="p-2 border rounded text-sm"
+                  className="p-2 border border-offwhite-200 rounded-lg text-sm focus:ring-2 focus:ring-primary-400 focus:border-primary-400 outline-none"
                 >
                   <option value="idPagamento">ID</option>
                   <option value="dataPagamento">Data</option>
@@ -871,7 +946,7 @@ export default function Financeiro() {
                     ...prev,
                     direcao: prev.direcao === "asc" ? "desc" : "asc"
                   }))}
-                  className="p-2 border rounded text-sm hover:bg-gray-100 flex items-center gap-1"
+                  className="p-2 border border-offwhite-200 rounded-lg text-sm hover:bg-offwhite-50 flex items-center gap-1 transition-colors"
                   title={ordenacaoPagamentos.direcao === "asc" ? "Crescente" : "Decrescente"}
                 >
                   {ordenacaoPagamentos.direcao === "asc" ? (
@@ -890,10 +965,10 @@ export default function Financeiro() {
             </>
           )}
 
-          <div className="flex justify-end mt-3">
+          <div className="flex justify-end mt-4">
             <button 
               onClick={limparFiltros} 
-              className="px-4 py-2 bg-gray-200 rounded flex items-center gap-2 hover:bg-gray-300 transition-colors"
+              className="px-4 py-2 bg-offwhite-100 text-navy-700 rounded-lg flex items-center gap-2 hover:bg-offwhite-200 transition-colors font-medium"
             >
               <ClearIcon fontSize="small" />
               Limpar Filtros
@@ -903,9 +978,9 @@ export default function Financeiro() {
 
         {/* Conteúdo das abas */}
         {aba === "mensalidades" && (
-          <section className="bg-white p-4 rounded shadow">
-            <div className="flex justify-between items-center mb-3 flex-wrap gap-2">
-              <h2 className="text-lg font-medium flex items-center gap-2">
+          <section className="bg-white border border-offwhite-200 p-6 rounded-xl shadow-sm">
+            <div className="flex justify-between items-center mb-4 flex-wrap gap-2">
+              <h2 className="text-xl font-semibold text-navy-900 flex items-center gap-2">
                 <AttachMoneyIcon />
                 Receitas - Mensalidades
               </h2>
@@ -932,18 +1007,18 @@ export default function Financeiro() {
 
             {mensalidadesFiltradas.length === 0 ? (
               <div className="text-center py-12">
-                <AttachMoneyIcon style={{ fontSize: 64 }} className="text-gray-300 mb-4" />
-                <h3 className="text-lg font-medium text-gray-600 mb-2">
+                <AttachMoneyIcon style={{ fontSize: 64 }} className="text-navy-300 mb-4" />
+                <h3 className="text-lg font-semibold text-navy-700 mb-2">
                   Nenhuma mensalidade encontrada
                 </h3>
-                <p className="text-gray-500 mb-4">
+                <p className="text-navy-500 mb-4">
                   {filtroTexto || filtroAlunoId || filtroDataInicio || filtroDataFim
                     ? "Tente ajustar os filtros ou cadastre uma nova mensalidade"
                     : "Comece cadastrando uma nova mensalidade"}
                 </p>
                 <button
                   onClick={() => { setModalAberto(true); setModalContexto("novaMensalidade"); }}
-                  className="px-4 py-2 bg-green-600 text-white rounded inline-flex items-center gap-2 hover:bg-green-700"
+                  className="px-4 py-2 bg-green-600 text-white rounded-lg inline-flex items-center gap-2 hover:bg-green-700 transition-colors shadow-sm"
                 >
                   <AddIcon fontSize="small" />
                   Cadastrar Primeira Mensalidade
@@ -963,46 +1038,59 @@ export default function Financeiro() {
                   }))}
                   fields={["idMensalidade", "alunoNome", "dataVencimento", "valorMensalidadeFormatado", "status"]}
                   renderActions={(row) => (
-                    <div className="flex gap-2 justify-center">
-                      <button
-                        onClick={() => handlePagarMensalidade(row.idMensalidade)}
-                        className={`px-2 py-1 rounded text-sm flex items-center gap-1 ${
-                          row.status === 'PAGO'
-                            ? 'bg-gray-300 text-gray-600 cursor-not-allowed'
-                            : 'bg-green-600 text-white hover:bg-green-700'
-                        }`}
-                        disabled={row.status === 'PAGO'}
-                      >
-                        {row.status === 'PAGO' ? (
-                          <>
+                    <div className="flex gap-2 justify-center items-center">
+                      {row.status === 'PAGO' ? (
+                        <>
+                          <button
+                            className="px-3 py-1.5 rounded-lg text-sm flex items-center gap-1 bg-green-100 text-green-700 border border-green-300"
+                            disabled
+                          >
                             <CheckCircleIcon fontSize="small" />
                             Pago
-                          </>
-                        ) : (
-                          'Marcar Pago'
-                        )}
-                      </button>
+                          </button>
+                          <button
+                            onClick={() => handleReverterPagamento(row.idMensalidade)}
+                            className="p-1.5 rounded-lg bg-yellow-500 text-white hover:bg-yellow-600 transition-colors relative group"
+                            aria-label="Reverter para Pendente"
+                          >
+                            <UndoIcon sx={{ fontSize: 18 }} />
+                            {/* Tooltip */}
+                            <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-1.5 bg-navy-900 text-white text-xs rounded-lg whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10">
+                              Reverter para Pendente
+                              <span className="absolute top-full left-1/2 -translate-x-1/2 -mt-1 border-4 border-transparent border-t-navy-900"></span>
+                            </span>
+                          </button>
+                        </>
+                      ) : (
+                        <button
+                          onClick={() => handlePagarMensalidade(row.idMensalidade)}
+                          className="px-3 py-1.5 rounded-lg text-sm flex items-center gap-1 bg-green-600 text-white hover:bg-green-700 transition-colors"
+                        >
+                          <CheckCircleIcon fontSize="small" />
+                          Marcar Pago
+                        </button>
+                      )}
                     </div>
                   )}
                 />
 
                 {/* Paginação das mensalidades */}
                 {totalPaginasMensalidades > 1 && (
-                  <div className="flex justify-center items-center gap-2 mt-4 flex-wrap">
+                  <div className="flex justify-center items-center gap-2 mt-6 flex-wrap">
                     <button
                       onClick={() => irParaPaginaMensalidades(paginaAtualMensalidades - 1)}
                       disabled={paginaAtualMensalidades === 0}
-                      className="px-3 py-1 border rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-100"
+                      className="px-4 py-2 border border-offwhite-200 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-offwhite-50 transition-colors font-medium text-navy-700"
                     >
                       Anterior
                     </button>
-                    <span className="px-3 py-1 text-sm">
+                    <span className="px-4 py-2 text-sm text-navy-600">
                       Página {paginaAtualMensalidades + 1} de {totalPaginasMensalidades} ({totalElementosMensalidades} itens)
                     </span>
                     <button
                       onClick={() => irParaPaginaMensalidades(paginaAtualMensalidades + 1)}
                       disabled={paginaAtualMensalidades >= totalPaginasMensalidades - 1}
-                      className="px-3 py-1 border rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-100"
+                      className="px-4 py-2 border border-offwhite-200 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-offwhite-50 transition-colors font-medium text-navy-700"
                     >
                       Próxima
                     </button>
@@ -1014,15 +1102,15 @@ export default function Financeiro() {
         )}
 
         {aba === "pagamentos" && (
-          <section className="bg-white p-4 rounded shadow">
-            <div className="flex justify-between items-center mb-3">
-              <h2 className="text-lg font-medium flex items-center gap-2">
+          <section className="bg-white border border-offwhite-200 p-6 rounded-xl shadow-sm">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-semibold text-navy-900 flex items-center gap-2">
                 <PaymentsIcon />
                 Despesas - Pagamentos
               </h2>
               <button
                 onClick={() => abrirModalPagamento()}
-                className="px-3 py-2 bg-red-600 text-white rounded flex items-center gap-2"
+                className="px-4 py-2 bg-red-600 text-white rounded-lg flex items-center gap-2 hover:bg-red-700 transition-colors shadow-sm"
               >
                 <AddIcon fontSize="small" />
                 Novo Pagamento
@@ -1043,14 +1131,14 @@ export default function Financeiro() {
                 <div className="flex gap-2 justify-center">
                   <button
                     onClick={() => abrirModalPagamento(row._original || row, "editarPagamento")}
-                    className="px-2 py-1 bg-blue-500 text-white rounded text-sm flex items-center gap-1"
+                    className="px-3 py-1.5 bg-primary-400 text-white rounded-lg text-sm flex items-center gap-1 hover:bg-primary-500 transition-colors"
                   >
                     <EditIcon fontSize="small" />
                     Editar
                   </button>
                   <button
                     onClick={() => handleExcluirPagamento(row.idPagamento)}
-                    className="px-2 py-1 bg-red-500 text-white rounded text-sm flex items-center gap-1"
+                    className="px-3 py-1.5 bg-red-500 text-white rounded-lg text-sm flex items-center gap-1 hover:bg-red-600 transition-colors"
                   >
                     <DeleteIcon fontSize="small" />
                     Excluir
@@ -1061,21 +1149,21 @@ export default function Financeiro() {
 
             {/* Paginação dos pagamentos */}
             {totalPaginasPagamentos > 1 && (
-              <div className="flex justify-center items-center gap-2 mt-4">
+              <div className="flex justify-center items-center gap-2 mt-6">
                 <button
                   onClick={() => irParaPaginaPagamentos(paginaAtualPagamentos - 1)}
                   disabled={paginaAtualPagamentos === 0}
-                  className="px-3 py-1 border rounded disabled:opacity-50"
+                  className="px-4 py-2 border border-offwhite-200 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-offwhite-50 transition-colors font-medium text-navy-700"
                 >
                   Anterior
                 </button>
-                <span className="px-3 py-1">
+                <span className="px-4 py-2 text-sm text-navy-600">
                   Página {paginaAtualPagamentos + 1} de {totalPaginasPagamentos} ({totalElementosPagamentos} itens)
                 </span>
                 <button
                   onClick={() => irParaPaginaPagamentos(paginaAtualPagamentos + 1)}
                   disabled={paginaAtualPagamentos >= totalPaginasPagamentos - 1}
-                  className="px-3 py-1 border rounded disabled:opacity-50"
+                  className="px-4 py-2 border border-offwhite-200 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-offwhite-50 transition-colors font-medium text-navy-700"
                 >
                   Próxima
                 </button>
@@ -1088,50 +1176,50 @@ export default function Financeiro() {
         {modalAberto && modalContexto !== "novaMensalidade" && (
           <div className="fixed inset-0 z-50 flex items-center justify-center">
             <div className="absolute inset-0 bg-black opacity-50" onClick={fecharModal} />
-            <div className="relative bg-white rounded-lg shadow-lg w-full max-w-md mx-4 p-6 z-10">
-              <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
+            <div className="relative bg-white rounded-2xl shadow-lg w-full max-w-md mx-4 p-6 z-10 border border-offwhite-200">
+              <h2 className="text-xl font-semibold mb-4 flex items-center gap-2 text-navy-900">
                 <PaymentsIcon />
                 {modoEdicao ? "Editar Pagamento" : "Novo Pagamento"}
               </h2>
 
               <form onSubmit={salvarPagamento} className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium mb-1">Descrição *</label>
+                  <label className="block text-sm font-medium mb-1 text-navy-700">Descrição *</label>
                   <input
                     value={formPagamento.descricao}
                     onChange={e => setFormPagamento(prev => ({ ...prev, descricao: e.target.value }))}
-                    className="w-full p-2 border rounded"
+                    className="w-full p-2 border border-offwhite-200 rounded-lg focus:ring-2 focus:ring-primary-400 focus:border-primary-400 outline-none"
                     required
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium mb-1">Valor *</label>
+                  <label className="block text-sm font-medium mb-1 text-navy-700">Valor *</label>
                   <input
                     type="number"
                     step="0.01"
                     placeholder="0,00"
                     value={formPagamento.valorPagamento}
                     onChange={e => setFormPagamento(prev => ({ ...prev, valorPagamento: e.target.value }))}
-                    className="w-full p-2 border rounded"
+                    className="w-full p-2 border border-offwhite-200 rounded-lg focus:ring-2 focus:ring-primary-400 focus:border-primary-400 outline-none"
                     required
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium mb-1">Data *</label>
+                  <label className="block text-sm font-medium mb-1 text-navy-700">Data *</label>
                   <input
                     type="date"
                     value={formPagamento.dataPagamento}
                     onChange={e => setFormPagamento(prev => ({ ...prev, dataPagamento: e.target.value }))}
-                    className="w-full p-2 border rounded"
+                    className="w-full p-2 border border-offwhite-200 rounded-lg focus:ring-2 focus:ring-primary-400 focus:border-primary-400 outline-none"
                     required
                   />
                 </div>
                 <div className="flex justify-end gap-2 pt-4">
-                  <button type="button" onClick={fecharModal} className="px-4 py-2 bg-gray-200 rounded flex items-center gap-2">
+                  <button type="button" onClick={fecharModal} className="px-4 py-2 bg-offwhite-100 text-navy-700 rounded-lg flex items-center gap-2 hover:bg-offwhite-200 transition-colors font-medium">
                     <ClearIcon fontSize="small" />
                     Cancelar
                   </button>
-                  <button type="submit" className="px-4 py-2 bg-red-600 text-white rounded flex items-center gap-2">
+                  <button type="submit" className="px-4 py-2 bg-red-600 text-white rounded-lg flex items-center gap-2 hover:bg-red-700 transition-colors shadow-sm font-medium">
                     <PaymentsIcon fontSize="small" />
                     {modoEdicao ? "Atualizar" : "Registrar"} Pagamento
                   </button>
@@ -1145,18 +1233,18 @@ export default function Financeiro() {
         {modalAberto && modalContexto === "novaMensalidade" && (
           <div className="fixed inset-0 z-50 flex items-center justify-center">
             <div className="absolute inset-0 bg-black opacity-50" onClick={fecharModal} />
-            <div className="relative bg-white rounded-lg shadow-lg w-full max-w-md mx-4 p-6 z-10">
-              <h2 className="text-lg font-semibold mb-3 flex items-center gap-2">
+            <div className="relative bg-white rounded-2xl shadow-lg w-full max-w-md mx-4 p-6 z-10 border border-offwhite-200">
+              <h2 className="text-xl font-semibold mb-4 flex items-center gap-2 text-navy-900">
                 <AttachMoneyIcon />
                 Nova Mensalidade
               </h2>
-              <form onSubmit={salvarNovaMensalidade} className="space-y-3">
+              <form onSubmit={salvarNovaMensalidade} className="space-y-4">
                 <input
                   type="number"
                   placeholder="ID do aluno *"
                   value={formNovaMensalidade.alunoId}
                   onChange={e => setFormNovaMensalidade(prev => ({ ...prev, alunoId: e.target.value }))}
-                  className="w-full p-2 border rounded"
+                  className="w-full p-2 border border-offwhite-200 rounded-lg focus:ring-2 focus:ring-primary-400 focus:border-primary-400 outline-none"
                   required
                 />
                 <input
@@ -1165,23 +1253,23 @@ export default function Financeiro() {
                   placeholder="Valor da mensalidade *"
                   value={formNovaMensalidade.valorMensalidade}
                   onChange={e => setFormNovaMensalidade(prev => ({ ...prev, valorMensalidade: e.target.value }))}
-                  className="w-full p-2 border rounded"
+                  className="w-full p-2 border border-offwhite-200 rounded-lg focus:ring-2 focus:ring-primary-400 focus:border-primary-400 outline-none"
                   required
                 />
                 <input
                   type="date"
                   value={formNovaMensalidade.dataVencimento}
                   onChange={e => setFormNovaMensalidade(prev => ({ ...prev, dataVencimento: e.target.value }))}
-                  className="w-full p-2 border rounded"
+                  className="w-full p-2 border border-offwhite-200 rounded-lg focus:ring-2 focus:ring-primary-400 focus:border-primary-400 outline-none"
                   required
                 />
 
-                <div className="flex justify-end gap-2 pt-3">
-                  <button type="button" onClick={fecharModal} className="px-3 py-2 bg-gray-200 rounded flex items-center gap-2">
+                <div className="flex justify-end gap-2 pt-4">
+                  <button type="button" onClick={fecharModal} className="px-4 py-2 bg-offwhite-100 text-navy-700 rounded-lg flex items-center gap-2 hover:bg-offwhite-200 transition-colors font-medium">
                     <ClearIcon fontSize="small" />
                     Cancelar
                   </button>
-                  <button type="submit" className="px-3 py-2 bg-green-600 text-white rounded flex items-center gap-2">
+                  <button type="submit" className="px-4 py-2 bg-green-600 text-white rounded-lg flex items-center gap-2 hover:bg-green-700 transition-colors shadow-sm font-medium">
                     <AddIcon fontSize="small" />
                     Criar Mensalidade
                   </button>
@@ -1202,5 +1290,6 @@ export default function Financeiro() {
         />
       </div>
     </div>
+    </>
   );
 }
