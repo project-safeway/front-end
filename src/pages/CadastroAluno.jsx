@@ -3,7 +3,6 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { toast } from 'react-toastify'
 import SchoolIcon from '@mui/icons-material/PersonAdd'
 import ArrowBackIcon from '@mui/icons-material/ArrowBack'
-import { IMaskInput } from 'react-imask'
 import escolasService from '../services/escolasService'
 import alunosService from '../services/alunosService'
 import { maskCEP, buscarEnderecoPorCEP, maskCPF, maskPhone } from '../utils/formatters'
@@ -174,6 +173,18 @@ export function CadastroAlunos() {
     }
   }
 
+  function formatDate(value) {
+    const numbers = value.replace(/\D/g, "").slice(0, 8);
+
+    const parts = [];
+    if (numbers.length > 0) parts.push(numbers.slice(0, 2));
+    if (numbers.length > 2) parts.push(numbers.slice(2, 4));
+    if (numbers.length > 4) parts.push(numbers.slice(4, 8));
+
+    return parts.join("/");
+  }
+
+
   const escolaPreSelecionada = searchParams.get('escolaId')
 
   return (
@@ -220,10 +231,9 @@ export function CadastroAlunos() {
 
                 <div>
                   <label className="block text-sm font-medium text-navy-700 mb-2">Data de Nascimento</label>
-                  <IMaskInput
-                    mask="00/00/0000"
+                  <input
                     value={nascimento}
-                    onAccept={setNascimento}
+                    onChange={(e) => setNascimento(formatDate(e.target.value))}
                     className="w-full rounded-lg border border-offwhite-300 bg-white px-4 py-2.5 outline-none focus:ring-2 focus:ring-primary-400 focus:border-transparent transition-all"
                     placeholder="DD/MM/YYYY"
                   />
