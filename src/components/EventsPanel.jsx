@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { useLocation } from 'react-router-dom'
 import { PaymentsPanel } from './PaymentsPanel'
 import EventIcon from '@mui/icons-material/Event'
 import AttachMoneyIcon from '@mui/icons-material/AttachMoney'
@@ -9,6 +10,7 @@ import EventModal from './EventModal'
 import eventService from '../services/eventService'
 
 export default function EventsPanel({ selectedMonth, selectedYear }) {
+  const location = useLocation()
   const [activeTab, setActiveTab] = useState('eventos')
   const [eventos, setEventos] = useState([])
   const [isModalOpen, setIsModalOpen] = useState(false)
@@ -20,6 +22,13 @@ export default function EventsPanel({ selectedMonth, selectedYear }) {
       loadEvents()
     }
   }, [activeTab])
+
+  useEffect(() => {
+    // Verifica se veio com estado da navegação para abrir aba de pagamentos
+    if (location.state?.openTab) {
+      setActiveTab(location.state.openTab)
+    }
+  }, [location.state])
 
   useEffect(() => {
     const handleEventUpdate = () => {

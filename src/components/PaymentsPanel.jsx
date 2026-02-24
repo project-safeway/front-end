@@ -4,7 +4,7 @@ import AttachMoneyIcon from '@mui/icons-material/AttachMoney'
 import WarningIcon from '@mui/icons-material/Warning'
 import CheckCircleIcon from '@mui/icons-material/CheckCircle'
 import PendingIcon from '@mui/icons-material/Pending'
-import mensalidadeService from '../services/mensalidadeService'
+import { listarMensalidades } from '../services/mensalidadeService'
 
 export function PaymentsPanel({ selectedMonth, selectedYear }) {
     const navigate = useNavigate()
@@ -21,23 +21,22 @@ export function PaymentsPanel({ selectedMonth, selectedYear }) {
             setIsLoading(true)
             setError(null)
             
-            // Busca mensalidades pendentes e atrasadas
-            const pendentesData = await mensalidadeService.getMensalidadesPendentes(
-                selectedMonth,
-                selectedYear
-            )
+            // Calcula o primeiro e último dia do mês selecionado
+            const primeiroDia = new Date(selectedYear, selectedMonth - 1, 1)
+            const ultimoDia = new Date(selectedYear, selectedMonth, 0)
             
-            // Busca mensalidades pagas
-            const pagasData = await mensalidadeService.getMensalidadesPagas(
-                selectedMonth,
-                selectedYear
-            )
+            const dataInicio = `${selectedYear}-${String(selectedMonth).padStart(2, '0')}-01`
+            const dataFim = `${selectedYear}-${String(selectedMonth).padStart(2, '0')}-${ultimoDia.getDate()}`
             
-            // Combina os arrays
-            const allMensalidades = [
-                ...(Array.isArray(pendentesData) ? pendentesData : []),
-                ...(Array.isArray(pagasData) ? pagasData : [])
-            ]
+            // Usa o mesmo endpoint que o Financeiro
+            const params = {
+                dataInicio,
+                dataFim,
+                size: 1000
+            }
+            
+            const response = await listarMensalidades(params)
+            const allMensalidades = response?.content || []
             
             setMensalidades(allMensalidades)
         } catch (err) {
@@ -51,12 +50,27 @@ export function PaymentsPanel({ selectedMonth, selectedYear }) {
 
     const handleCardClick = (status) => {
         if (totais[`quantidade${status === 'PENDENTE' ? 'Pendente' : status === 'ATRASADO' ? 'Atrasado' : 'Pago'}`] > 0) {
-            // Navega para a página de financeiro com o filtro do status
-            navigate('/financeiro', { state: { filtroStatus: status } })
+            navigate('/financeiro', { state: { filtroStatus: status } });
         }
     }
 
-    const totais = mensalidadeService.calcularTotais(mensalidades || [])
+    // Calcula totais diretamente das mensalidades
+    const calcularTotais = () => {
+        const pendentes = mensalidades.filter(m => m.status === 'PENDENTE')
+        const atrasados = mensalidades.filter(m => m.status === 'ATRASADO')
+        const pagos = mensalidades.filter(m => m.status === 'PAGO')
+        
+        return {
+            totalPendente: pendentes.reduce((sum, m) => sum + Number(m.valorMensalidade || 0), 0),
+            totalAtrasado: atrasados.reduce((sum, m) => sum + Number(m.valorMensalidade || 0), 0),
+            totalPago: pagos.reduce((sum, m) => sum + Number(m.valorMensalidade || 0), 0),
+            quantidadePendente: pendentes.length,
+            quantidadeAtrasado: atrasados.length,
+            quantidadePago: pagos.length
+        }
+    }
+
+    const totais = calcularTotais()
 
     const cards = [
         {

@@ -32,9 +32,9 @@ function CustomConfirmDialog({
       button: 'bg-yellow-500 hover:bg-yellow-600 focus:ring-yellow-500'
     },
     success: {
-      icon: 'text-green-500',
-      iconBg: 'bg-green-50',
-      button: 'bg-green-500 hover:bg-green-600 focus:ring-green-500'
+      icon: 'text-green-600',
+      iconBg: 'bg-green-100',
+      button: 'bg-green-600 hover:bg-green-700 focus:ring-green-600'
     }
   }
 
