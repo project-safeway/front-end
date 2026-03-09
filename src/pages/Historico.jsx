@@ -10,7 +10,7 @@ import "react-toastify/dist/ReactToastify.css";
 
 export default function Historico() {
   const [searchParams, setSearchParams] = useSearchParams();
-  const itinerarioId = Number(searchParams.get("itinerarioId"));
+  const itinerarioId = searchParams.get("itinerarioId");
 
   const [filtros, setFiltros] = useState({
     dataInicio: "",
