@@ -49,10 +49,10 @@ export default function AdicionarAlunoModal({
     }
   }, [alunoSelecionado]);
 
-  const carregarEnderecosDoAluno = async (alunoId) => {
+  const carregarEnderecosDoAluno = async (id) => {
     setIsLoadingEnderecos(true);
     try {
-      const enderecos = await alunosService.getEnderecosByAluno(alunoId);
+      const enderecos = await alunosService.getEnderecosByAluno(id);
       setEnderecosDisponiveis(enderecos || []);
       
       // Se houver apenas um endereço, seleciona automaticamente

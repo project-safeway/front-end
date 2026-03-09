@@ -87,9 +87,9 @@ const rotasService = {
 
             // Garante que os valores sejam números
             const request = {
-                alunoId: Number(alunoData.alunoId),
-                ordemEmbarque: Number(alunoData.ordemEmbarque) || 1,
-                enderecoId: Number(alunoData.enderecoId)
+                alunoId: alunoData.alunoId,
+                ordemEmbarque: alunoData.ordemEmbarque || 1,
+                enderecoId: alunoData.enderecoId
             }
 
             const response = await api.post(`/itinerarios/${itinerarioId}/alunos`, request)

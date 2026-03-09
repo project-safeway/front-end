@@ -1,15 +1,10 @@
-import api from './api'
+import api from './apiFinanceiro'
 
 const mensalidadeService = {
-  getMensalidadesPendentes: async (mes = null, ano = null) => {
+  getMensalidadesPendentes: async () => {
     try {
-      const params = new URLSearchParams()
-      if (mes !== null) params.append('mes', mes)
-      if (ano !== null) params.append('ano', ano)
-      
-      console.log('[mensalidadeService] getMensalidadesPendentes', { mes, ano })
-      const response = await api.get(`/mensalidades/pendentes?${params.toString()}`)
-      
+      console.log('[mensalidadeService] getMensalidadesPendentes')
+      const response = await api.get('/api/v1/mensalidades/pendentes')
       return response.content || response.data?.content || []
     } catch (error) {
       console.error('Erro ao buscar mensalidades pendentes:', error)
@@ -17,17 +12,10 @@ const mensalidadeService = {
     }
   },
 
-  getMensalidadesPagas: async (mes = null, ano = null) => {
+  getMensalidadesPagas: async () => {
     try {
-      const params = new URLSearchParams()
-      if (mes !== null) params.append('mes', mes)
-      if (ano !== null) params.append('ano', ano)
-      
-      const response = await api.get(`/mensalidades/pagas?${params.toString()}`)
-      
-      // Backend retorna Page<MensalidadeResponse>, então pegamos o conteúdo
+      const response = await api.get('/api/v1/mensalidades', { params: { status: 'PAGO' } })
       const data = response.content || response.data?.content || []
-      
       return data
     } catch (error) {
       console.error('Erro ao buscar mensalidades pagas:', error)
@@ -79,7 +67,7 @@ const mensalidadeService = {
 export async function listarMensalidades(params = {}) {
   try {
     console.log('[listarMensalidades] Chamando API com params:', params)
-    const data = await api.get("/mensalidades", { params })
+    const data = await api.get("/api/v1/mensalidades", { params })
     console.log('[listarMensalidades] Resposta da API:', data)
     return data
   } catch (error) {
@@ -91,7 +79,7 @@ export async function listarMensalidades(params = {}) {
 export async function pagarMensalidade(id) {
   try {
     console.log('[pagarMensalidade] ID:', id)
-    const data = await api.patch(`/mensalidades/pagar/${id}`)
+    const data = await api.patch(`/api/v1/mensalidades/pagar/${id}`)
     return data
   } catch (error) {
     console.error('[pagarMensalidade] Erro:', error)
@@ -99,13 +87,13 @@ export async function pagarMensalidade(id) {
   }
 }
 
-export async function marcarComoPendente(id) {
+export async function cancelarMensalidade(id) {
   try {
-    console.log('[marcarComoPendente] ID:', id)
-    const data = await api.patch(`/mensalidades/pendente/${id}`)
+    console.log('[cancelarMensalidade] ID:', id)
+    const data = await api.patch(`/api/v1/mensalidades/cancelar/${id}`)
     return data
   } catch (error) {
-    console.error('[marcarComoPendente] Erro:', error)
+    console.error('[cancelarMensalidade] Erro:', error)
     throw error
   }
 }
@@ -113,7 +101,7 @@ export async function marcarComoPendente(id) {
 export async function criarMensalidade(payload) {
   try {
     console.log('[criarMensalidade] Payload:', payload)
-    const data = await api.post("/mensalidades", payload)
+    const data = await api.post("/api/v1/mensalidades/criar", payload)
     return data
   } catch (error) {
     console.error('[criarMensalidade] Erro:', error)
@@ -121,18 +109,24 @@ export async function criarMensalidade(payload) {
   }
 }
 
-/**
- * Gera mensalidades para todos os alunos ativos
- */
-export async function gerarMensalidadesMesAtual() {
+export async function buscarMensalidadePorId(id) {
   try {
-    console.log('[gerarMensalidadesMesAtual] Gerando mensalidades...')
-    // CORRIGIDO: endpoint completo com /api
-    const data = await api.post("/api/test/gerar-mensalidades")
-    console.log('[gerarMensalidadesMesAtual] Resposta:', data)
+    console.log('[buscarMensalidadePorId] ID:', id)
+    const data = await api.get(`/api/v1/mensalidades/${id}`)
     return data
   } catch (error) {
-    console.error('[gerarMensalidadesMesAtual] Erro:', error)
+    console.error('[buscarMensalidadePorId] Erro:', error)
+    throw error
+  }
+}
+
+export async function aplicarDesconto(id, valorDesconto) {
+  try {
+    console.log('[aplicarDesconto] ID:', id, 'Desconto:', valorDesconto)
+    const data = await api.patch(`/api/v1/mensalidades/desconto/${id}`, null, { params: { valorDesconto } })
+    return data
+  } catch (error) {
+    console.error('[aplicarDesconto] Erro:', error)
     throw error
   }
 }
