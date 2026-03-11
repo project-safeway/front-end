@@ -181,7 +181,7 @@ export default function Financeiro() {
       if (filtroDataInicio) params.dataInicio = filtroDataInicio;
       if (filtroDataFim) params.dataFim = filtroDataFim;
 
-      if (filtroAlunoId) params.alunoId = parseInt(filtroAlunoId, 10);
+      if (filtroAlunoId) params.alunoId = filtroAlunoId;
       if (filtroStatus.length > 0) params.status = filtroStatus;
 
       const res = await listarMensalidades(params);
