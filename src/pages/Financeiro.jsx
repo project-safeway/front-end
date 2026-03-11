@@ -687,7 +687,7 @@ export default function Financeiro() {
     : mensalidades.filter(m => {
         const s = filtroTexto.toLowerCase();
         const id = String(m.id || "");
-        const nome = (m.aluno?.nome || m.alunoNome || "").toLowerCase();
+        const nome = (m.nomeAluno || "").toLowerCase();
         return id.includes(s) || nome.includes(s);
       });
 
@@ -1163,15 +1163,16 @@ export default function Financeiro() {
               <>
                 <Tabela
                   cabecalho={["ID", "Aluno", "Vencimento", "Valor"]}
-                  dados={mensalidadesFiltradas.map(m => ({
+                  dados={mensalidadesFiltradas.map((m, index) => ({
                     id: m.id,
-                    alunoNome: m.aluno?.nome || m.nomeAluno || "-",
+                    index: mensalidadesFiltradas.length - index,
+                    alunoNome: m.nomeAluno || "-",
                     dataVencimento: m.dataVencimento ? new Date(m.dataVencimento + 'T00:00:00').toLocaleDateString('pt-BR') : '-',
                     valorMensalidadeFormatado: formatCurrency(m.valorMensalidade),
                     status: m.status,
                     _original: m
                   }))}
-                  fields={["id", "alunoNome", "dataVencimento", "valorMensalidadeFormatado"]}
+                  fields={["index", "alunoNome", "dataVencimento", "valorMensalidadeFormatado"]}
                   status={true}
                   statusField="status"
                   renderActions={(row) => (
@@ -1185,18 +1186,18 @@ export default function Financeiro() {
                             <CheckCircleIcon fontSize="small" />
                             Pago
                           </button>
-                          <button
+                          {/* <button
                             onClick={() => handleReverterPagamento(row.id)}
                             className="p-1.5 rounded-lg bg-yellow-500 text-white hover:bg-yellow-600 transition-colors relative group"
                             aria-label="Reverter para Pendente"
-                          >
-                            <UndoIcon sx={{ fontSize: 18 }} />
+                          > */}
+                            {/* <UndoIcon sx={{ fontSize: 18 }} /> */}
                             {/* Tooltip */}
-                            <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-1.5 bg-navy-900 text-white text-xs rounded-lg whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10">
+                            {/* <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-1.5 bg-navy-900 text-white text-xs rounded-lg whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10">
                               Reverter para Pendente
                               <span className="absolute top-full left-1/2 -translate-x-1/2 -mt-1 border-4 border-transparent border-t-navy-900"></span>
                             </span>
-                          </button>
+                          </button> */}
                         </>
                       ) : (
                         <button
