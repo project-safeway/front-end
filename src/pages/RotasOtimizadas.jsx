@@ -177,7 +177,7 @@ function RotasOtimizadas() {
               };
             } else {
               // Processar escola
-              const escolaId = item.escolaId || item.idEscola || item.id;
+              const escolaId = item.escolaId;
 
               if (!escolaId) {
                 return null;

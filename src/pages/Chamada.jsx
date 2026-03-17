@@ -13,7 +13,7 @@ import "react-toastify/dist/ReactToastify.css";
 export default function Chamada() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const itinerarioId = Number(searchParams.get("itinerarioId"));
+  const itinerarioId = searchParams.get("itinerarioId");
 
   const [alunos, setAlunos] = useState([]);
   const [indiceAtual, setIndiceAtual] = useState(0);
@@ -58,7 +58,7 @@ export default function Chamada() {
         .slice()
         .sort((a, b) => (a.ordemEmbarque ?? a.ordemGlobal ?? 0) - (b.ordemEmbarque ?? b.ordemGlobal ?? 0))
         .map((aluno) => ({
-          id: aluno.alunoId || aluno.idAluno || aluno.id,
+          id: aluno.alunoId,
           nomeAluno: aluno.nomeAluno || aluno.nome || "Sem nome",
           responsavel: aluno.nomeResponsavel || aluno.responsavel || "Não informado",
           escola: aluno.nomeEscola || "Não informado",

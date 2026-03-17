@@ -1,4 +1,4 @@
-import api from "./api";
+import api from "./apiFinanceiro";
 
 /**
  * Criar pagamento (POST /pagamentos)
@@ -7,7 +7,7 @@ import api from "./api";
 export async function criarPagamento(body) {
   // body deve conter: dataPagamento, valorPagamento, descricao
   console.log('[pagamentoService] criarPagamento', body);
-  return await api.post("/pagamentos", body);
+  return await api.post("/api/v1/pagamentos/registrar", body);
 }
 
 /**
@@ -17,7 +17,7 @@ export async function criarPagamento(body) {
 export async function atualizarPagamento(id, body) {
   // body deve conter: dataPagamento, valorPagamento, descricao
   console.log('[pagamentoService] atualizarPagamento', { id, body });
-  return await api.put(`/pagamentos/${id}`, body);
+  return await api.patch(`/api/v1/pagamentos/${id}`, body);
 }
 
 /**
@@ -25,7 +25,7 @@ export async function atualizarPagamento(id, body) {
  */
 export async function excluirPagamento(id) {
   console.log('[pagamentoService] excluirPagamento', { id });
-  return await api.delete(`/pagamentos/${id}`);
+  return await api.delete(`/api/v1/pagamentos/${id}`);
 }
 
 /**
@@ -33,5 +33,13 @@ export async function excluirPagamento(id) {
  */
 export async function listarPagamentos(params = {}) {
   console.log('[pagamentoService] listarPagamentos', params);
-  return await api.get("/pagamentos", { params });
+  return await api.get("/api/v1/pagamentos", { params });
+}
+
+/**
+ * Buscar pagamento por ID (GET /api/v1/pagamentos/{id})
+ */
+export async function buscarPagamentoPorId(id) {
+  console.log('[pagamentoService] buscarPagamentoPorId', id);
+  return await api.get(`/api/v1/pagamentos/${id}`);
 }

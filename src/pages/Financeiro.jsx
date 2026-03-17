@@ -5,9 +5,8 @@ import { showSwal } from "../utils/swal";
 import {
   listarMensalidades,
   pagarMensalidade,
-  marcarComoPendente,
-  criarMensalidade,
-  gerarMensalidadesMesAtual
+  cancelarMensalidade,
+  criarMensalidade
 } from "../services/mensalidadeService";
 import {
   listarPagamentos,
@@ -136,7 +135,7 @@ export default function Financeiro() {
 
   // Estado para ordenação de pagamentos
   const [ordenacaoPagamentos, setOrdenacaoPagamentos] = useState({
-    campo: "idPagamento",
+    campo: "id",
     direcao: "desc"
   });
 
@@ -182,7 +181,7 @@ export default function Financeiro() {
       if (filtroDataInicio) params.dataInicio = filtroDataInicio;
       if (filtroDataFim) params.dataFim = filtroDataFim;
 
-      if (filtroAlunoId) params.alunoId = parseInt(filtroAlunoId, 10);
+      if (filtroAlunoId) params.alunoId = filtroAlunoId;
       if (filtroStatus.length > 0) params.status = filtroStatus;
 
       const res = await listarMensalidades(params);
@@ -259,8 +258,6 @@ export default function Financeiro() {
           size: 1000
         }),
         listarMensalidades({
-          dataInicio,
-          dataFim,
           status: ['PAGO'],
           size: 1000
         })
@@ -370,8 +367,7 @@ export default function Financeiro() {
 
   async function handleReverterPagamento(id) {
     try {
-      // Usa o endpoint /pendente/{id} para reverter de PAGO para PENDENTE
-      await marcarComoPendente(id);
+      await cancelarMensalidade(id);
       await Promise.all([carregarMensalidades(), carregarKPIs()]);
     } catch (err) {
       console.error("handleReverterPagamento:", err);
@@ -400,24 +396,13 @@ export default function Financeiro() {
   }
 
   async function handleGerarMensalidades() {
-    const result = await showSwal({
-      title: 'Gerar Mensalidades',
-      html: 'Deseja gerar mensalidades para todos os alunos ativos do mês atual?',
-      icon: 'warning',
-      confirmButtonText: 'Sim, gerar',
-      cancelButtonText: 'Cancelar'
+    await showSwal({
+      title: 'Funcionalidade indisponível',
+      html: 'A geração automática de mensalidades não está disponível no momento.',
+      icon: 'info',
+      showCancelButton: false,
+      confirmButtonText: 'Ok'
     });
-
-    if (result.isConfirmed) {
-      try {
-        const resultado = await gerarMensalidadesMesAtual();
-        alert(`✅ ${resultado || 'Mensalidades geradas com sucesso!'}`);
-        await Promise.all([carregarMensalidades(), carregarKPIs()]);
-      } catch (error) {
-        console.error('Erro ao gerar mensalidades:', error);
-        alert(`❌ Erro: ${error.message || error}`);
-      }
-    }
   }
 
   function fecharConfirmacao() {
@@ -476,7 +461,7 @@ export default function Financeiro() {
 
     try {
       if (modoEdicao && itemEditando) {
-        await atualizarPagamento(itemEditando.idPagamento, body);
+        await atualizarPagamento(itemEditando.id, body);
       } else {
         await criarPagamentoService(body);
       }
@@ -498,12 +483,12 @@ export default function Financeiro() {
   async function salvarNovaMensalidade(e) {
     e.preventDefault();
     const payload = {
-      alunoId: parseInt(formNovaMensalidade.alunoId, 10),
+      alunoId: formNovaMensalidade.alunoId,
       dataVencimento: formNovaMensalidade.dataVencimento,
       valorMensalidade: parseFloat(formNovaMensalidade.valorMensalidade)
     };
 
-    if (!payload.alunoId || isNaN(payload.alunoId)) return alert("ID do aluno é obrigatório");
+    if (!payload.alunoId) return alert("ID do aluno é obrigatório");
     if (isNaN(payload.valorMensalidade) || payload.valorMensalidade <= 0) return alert("Informe um valor válido");
 
     try {
@@ -699,8 +684,8 @@ export default function Financeiro() {
     ? mensalidades
     : mensalidades.filter(m => {
         const s = filtroTexto.toLowerCase();
-        const id = String(m.idMensalidade || m.id || "");
-        const nome = (m.aluno?.nome || m.alunoNome || "").toLowerCase();
+        const id = String(m.id || "");
+        const nome = (m.nomeAluno || "").toLowerCase();
         return id.includes(s) || nome.includes(s);
       });
 
@@ -1085,7 +1070,7 @@ export default function Financeiro() {
                   onChange={(e) => alterarOrdenacaoPagamentos(e.target.value)}
                   className="px-3 py-1 border border-offwhite-200 rounded-lg text-sm focus:ring-2 focus:ring-primary-400 focus:border-primary-400 outline-none"
                 >
-                  <option value="idPagamento">ID</option>
+                  <option value="id">ID</option>
                   <option value="dataPagamento">Data</option>
                   <option value="valorPagamento">Valor</option>
                 </select>
@@ -1176,15 +1161,16 @@ export default function Financeiro() {
               <>
                 <Tabela
                   cabecalho={["ID", "Aluno", "Vencimento", "Valor"]}
-                  dados={mensalidadesFiltradas.map(m => ({
-                    idMensalidade: m.idMensalidade,
-                    alunoNome: m.aluno?.nome || m.nomeAluno || "-",
+                  dados={mensalidadesFiltradas.map((m, index) => ({
+                    id: m.id,
+                    index: mensalidadesFiltradas.length - index,
+                    alunoNome: m.nomeAluno || "-",
                     dataVencimento: m.dataVencimento ? new Date(m.dataVencimento + 'T00:00:00').toLocaleDateString('pt-BR') : '-',
                     valorMensalidadeFormatado: formatCurrency(m.valorMensalidade),
                     status: m.status,
                     _original: m
                   }))}
-                  fields={["idMensalidade", "alunoNome", "dataVencimento", "valorMensalidadeFormatado"]}
+                  fields={["index", "alunoNome", "dataVencimento", "valorMensalidadeFormatado"]}
                   status={true}
                   statusField="status"
                   renderActions={(row) => (
@@ -1198,22 +1184,22 @@ export default function Financeiro() {
                             <CheckCircleIcon fontSize="small" />
                             Pago
                           </button>
-                          <button
-                            onClick={() => handleReverterPagamento(row.idMensalidade)}
+                          {/* <button
+                            onClick={() => handleReverterPagamento(row.id)}
                             className="p-1.5 rounded-lg bg-yellow-500 text-white hover:bg-yellow-600 transition-colors relative group"
                             aria-label="Reverter para Pendente"
-                          >
-                            <UndoIcon sx={{ fontSize: 18 }} />
+                          > */}
+                            {/* <UndoIcon sx={{ fontSize: 18 }} /> */}
                             {/* Tooltip */}
-                            <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-1.5 bg-navy-900 text-white text-xs rounded-lg whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10">
+                            {/* <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-1.5 bg-navy-900 text-white text-xs rounded-lg whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10">
                               Reverter para Pendente
                               <span className="absolute top-full left-1/2 -translate-x-1/2 -mt-1 border-4 border-transparent border-t-navy-900"></span>
                             </span>
-                          </button>
+                          </button> */}
                         </>
                       ) : (
                         <button
-                          onClick={() => handlePagarMensalidade(row.idMensalidade)}
+                          onClick={() => handlePagarMensalidade(row.id)}
                           className="px-3 py-1.5 rounded-lg text-sm flex items-center gap-1 bg-green-600 text-white hover:bg-green-700 transition-colors"
                         >
                           <CheckCircleIcon fontSize="small" />
@@ -1270,13 +1256,13 @@ export default function Financeiro() {
             <Tabela
               cabecalho={["ID", "Data", "Valor", "Descrição"]}
               dados={pagamentosFiltrados.map(p => ({
-                idPagamento: p.idPagamento,
+                id: p.id,
                 dataPagamento: p.dataPagamento,
                 valorPagamentoFormatado: formatCurrency(p.valorPagamento),
                 descricao: p.descricao || "-",
                 _original: p
               }))}
-              fields={["idPagamento", "dataPagamento", "valorPagamentoFormatado", "descricao"]}
+              fields={["id", "dataPagamento", "valorPagamentoFormatado", "descricao"]}
               renderActions={(row) => (
                 <div className="flex gap-2 justify-center">
                   <button
@@ -1287,7 +1273,7 @@ export default function Financeiro() {
                     Editar
                   </button>
                   <button
-                    onClick={() => handleExcluirPagamento(row.idPagamento)}
+                    onClick={() => handleExcluirPagamento(row.id)}
                     className="px-3 py-1.5 bg-red-500 text-white rounded-lg text-sm flex items-center gap-1 hover:bg-red-600 transition-colors"
                   >
                     <DeleteIcon fontSize="small" />
@@ -1390,7 +1376,7 @@ export default function Financeiro() {
               </h2>
               <form onSubmit={salvarNovaMensalidade} className="space-y-4">
                 <input
-                  type="number"
+                  type="text"
                   placeholder="ID do aluno *"
                   value={formNovaMensalidade.alunoId}
                   onChange={e => setFormNovaMensalidade(prev => ({ ...prev, alunoId: e.target.value }))}
