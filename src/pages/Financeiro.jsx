@@ -269,14 +269,12 @@ export default function Financeiro() {
 
       // RECEITA = Mensalidades pagas
       const receitaTotal = mensalidadesPagas.reduce((acc, m) => {
-        const val = typeof m.valorMensalidade === 'object' ? m.valorMensalidade?.parsedValue : m.valorMensalidade;
-        return acc + (Number(val) || 0);
+        return acc + (Number(m.valorMensalidade) || 0);
       }, 0);
 
       // DESPESAS = Todos os pagamentos cadastrados
       const despesasTotal = pagamentosMes.reduce((acc, p) => {
-        const val = typeof p.valorPagamento === 'object' ? p.valorPagamento?.parsedValue : p.valorPagamento;
-        return acc + (Number(val) || 0);
+        return acc + (Number(p.valorPagamento) || 0);
       }, 0);
 
       setKpisData({
