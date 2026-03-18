@@ -1,7 +1,10 @@
 // Configurações da aplicação
 const config = {
-  // URL base da API do backend
+  // URL base da API do backend principal
   API_BASE_URL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080',
+
+  // URL base do microservice financeiro (mensalidades e pagamentos)
+  API_FINANCEIRO_URL: import.meta.env.VITE_API_FINANCEIRO_URL || 'http://localhost:8081',
 
   // Endpoints de autenticação
   AUTH_ENDPOINTS: {

@@ -20,7 +20,7 @@ import { showSwal } from '../utils/swal.jsx';
 export default function EdicaoItinerario() {
     const [searchParams] = useSearchParams();
     const navigate = useNavigate();
-    const itinerarioId = Number(searchParams.get("itinerarioId"));
+    const itinerarioId = searchParams.get("itinerarioId");
     const { user } = useAuth();
 
     const [itinerario, setItinerario] = useState(null);
@@ -74,7 +74,7 @@ export default function EdicaoItinerario() {
             // Carregar alunos do itinerário
             if (itinerarioData.alunos && itinerarioData.alunos.length > 0) {
                 const alunosFormatados = itinerarioData.alunos.map(alunoIt => {
-                    const idAluno = alunoIt.alunoId || alunoIt.idAluno || alunoIt.id;
+                    const idAluno = alunoIt.alunoId;
                     const alunoCompleto = alunosTransporte.find(a => a.id === idAluno);
 
                     const alunoFormatado = {
@@ -82,7 +82,7 @@ export default function EdicaoItinerario() {
                         nomeAluno: alunoIt.nomeAluno || alunoCompleto?.nomeAluno || alunoCompleto?.nome || '-',
                         responsavel: alunoIt.responsavel || alunoIt.nomeResponsavel || alunoCompleto?.responsavel || '-',
                         escola: alunoIt.escola?.nome || alunoIt.escola || alunoCompleto?.escola || '-',
-                        enderecoId: alunoIt.idEndereco || alunoIt.enderecoId || alunoIt.fkEndereco || alunoCompleto?.enderecoId || alunoCompleto?.idEndereco,
+                        enderecoId: alunoIt.enderecoId || alunoCompleto?.enderecoId,
                         ordemEmbarque: alunoIt.ordemEmbarque,
                         ordemGlobal: alunoIt.ordemGlobal || alunoIt.ordemEmbarque // Usar ordemGlobal se existir
                     };
@@ -99,10 +99,10 @@ export default function EdicaoItinerario() {
             if (itinerarioData.escolas && itinerarioData.escolas.length > 0) {
                 const escolasFormatadas = itinerarioData.escolas.map((escolaIt, index) => {
                      const escolaFormatada = {
-                        id: escolaIt.escolaId || escolaIt.idEscola || escolaIt.id || escolaIt.fkEscola,
+                        id: escolaIt.escolaId,
                         nome: escolaIt.nome || escolaIt.nomeEscola || escolaIt.escola?.nome || '-',
                         cidade: escolaIt.cidade || escolaIt.escola?.cidade || '-',
-                        enderecoId: escolaIt.enderecoId || escolaIt.idEndereco || escolaIt.fkEndereco,
+                        enderecoId: escolaIt.enderecoId,
                         ordemVisita: escolaIt.ordemVisita || escolaIt.ordem || (index + 1),
                         ordemGlobal: escolaIt.ordemGlobal || (escolaIt.ordemVisita || (index + 1))  // Usar ordemGlobal se existir
                     };
@@ -286,8 +286,8 @@ export default function EdicaoItinerario() {
         }
     };
 
-    const handleRemoverAluno = async (alunoId) => {
-        if (!alunoId || alunoId === 'undefined') {
+    const handleRemoverAluno = async (id) => {
+        if (!id || id === 'undefined') {
             toast.error('ID do aluno inválido', { theme: "colored" });
             return;
         }
@@ -304,10 +304,10 @@ export default function EdicaoItinerario() {
 
         try {
             // Remover via API
-            await ItinerarioService.removerAluno(itinerarioId, alunoId);
+            await ItinerarioService.removerAluno(itinerarioId, id);
             
             // Atualizar lista local
-            setAlunosItinerario(prev => prev.filter(a => a.id !== alunoId));
+            setAlunosItinerario(prev => prev.filter(a => a.id !== id));
             toast.success("Aluno removido com sucesso!", { theme: "colored" });
         } catch (error) {
             toast.error(`Erro ao remover aluno: ${error.message}`, { theme: "colored" });

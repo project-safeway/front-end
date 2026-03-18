@@ -21,8 +21,8 @@ export function validatePassword(password, options = {}) {
     minLength = 8,
     requireNumbers = true,
     requireSpecialChars = true,
-    requireUppercase = false,
-    requireLowercase = false,
+    requireUppercase = true, 
+    requireLowercase = true,  
   } = options
 
   const result = {
@@ -38,28 +38,27 @@ export function validatePassword(password, options = {}) {
 
   if (password.length < minLength) {
     result.isValid = false
-    result.errors.push(`Senha deve ter pelo menos ${minLength} caracteres`)
-  }
-
-  if (requireNumbers && !/\d/.test(password)) {
-    result.isValid = false
-    result.errors.push('Senha deve conter pelo menos um número')
-  }
-
-  if (requireSpecialChars && !/[!@#$%^&*(),.?":{}|<>]/.test(password)) {
-    result.isValid = false
-    result.errors.push('Senha deve conter pelo menos um caractere especial')
+    result.errors.push(`Mínimo ${minLength} caracteres`)
   }
 
   if (requireUppercase && !/[A-Z]/.test(password)) {
     result.isValid = false
-    result.errors.push('Senha deve conter pelo menos uma letra maiúscula')
+    result.errors.push('Uma letra maiúscula')
   }
 
   if (requireLowercase && !/[a-z]/.test(password)) {
     result.isValid = false
-    result.errors.push('Senha deve conter pelo menos uma letra minúscula')
+    result.errors.push('Uma letra minúscula')
   }
+
+  if (requireSpecialChars && !/[#@$%&*!?^]/.test(password)) {  // ← regex atualizada
+    result.isValid = false
+    result.errors.push('Pelo menos um caractere especial (#@$%&*!?^)')
+  }
+
+  result.message = result.isValid
+    ? 'Senha válida'
+    : `Faltando: ${result.errors.join(', ')}`
 
   return result
 }

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { showSwal } from '../utils/swal.jsx';
+import { toast } from 'react-toastify'
 import { useNavigate, Link } from 'react-router-dom'
 import PersonIcon from '@mui/icons-material/Person'
 import EmailIcon from '@mui/icons-material/Email'
@@ -10,8 +10,8 @@ import PeopleIcon from '@mui/icons-material/People'
 import CheckCircleIcon from '@mui/icons-material/CheckCircle'
 import ErrorIcon from '@mui/icons-material/Error'
 import { useAuth } from '../contexts/AuthContext'
-import { validatePlaca } from '../utils/validators'
-import { maskPlaca } from '../utils/formatters'
+import { validatePlaca, validatePassword, isValidPhone } from '../utils/validators'
+import { maskPlaca, maskPhone } from '../utils/formatters'
 
 function Register() {
   const [nome, setNome] = useState('')
@@ -23,6 +23,8 @@ function Register() {
   const [capacidade, setCapacidade] = useState('')
   const [error, setError] = useState('')
   const [placaValidation, setPlacaValidation] = useState(null)
+  const [senhaValidation, setSenhaValidation] = useState(null)
+  const [telefoneValidation, setTelefoneValidation] = useState(null)
   const [loading, setLoading] = useState(false)
   const navigate = useNavigate()
   const { register } = useAuth()
@@ -41,6 +43,32 @@ function Register() {
     }
   }
 
+  const handleSenhaChange = (e) => {
+    const value = e.target.value
+    setSenha(value)
+    if (value.length > 0) {
+      setSenhaValidation(validatePassword(value))
+    } else {
+      setSenhaValidation(null)
+    }
+  }
+
+  const handleTelefoneChange = (e) => {
+    const formatted = maskPhone(e.target.value)
+    setTelefone(formatted)
+
+    const clean = formatted.replace(/\D/g, '')
+    if (clean.length > 0) {
+      const valid = isValidPhone(formatted)
+      setTelefoneValidation({
+        isValid: valid,
+        message: valid ? 'Telefone válido' : 'Telefone inválido. Informe DDD + número (10 ou 11 dígitos)'
+      })
+    } else {
+      setTelefoneValidation(null)
+    }
+  }
+
   const handleSubmit = async (e) => {
     e.preventDefault()
     setError('')
@@ -50,6 +78,22 @@ function Register() {
     if (!placaValidationResult.isValid) {
       setError(placaValidationResult.message)
       setPlacaValidation(placaValidationResult)
+      return
+    }
+
+    // Valida a senha antes de submeter
+    const senhaValidationResult = validatePassword(senha)
+    if (!senhaValidationResult.isValid) {
+      setError(senhaValidationResult.message)
+      setSenhaValidation(senhaValidationResult)
+      return
+    }
+
+    // Valida o telefone antes de submeter
+    if (!isValidPhone(telefone)) {
+      const result = { isValid: false, message: 'Telefone inválido. Informe DDD + número (10 ou 11 dígitos)' }
+      setError(result.message)
+      setTelefoneValidation(result)
       return
     }
 
@@ -73,14 +117,10 @@ function Register() {
       }
 
       await register(userData)
-      await showSwal({
-        title: 'Sucesso!',
-        text: 'Usuário registrado com sucesso!',
-        icon: 'success',
-        confirmButtonText: 'OK'
-      });
+      toast.success('Usuário registrado com sucesso!')
       navigate('/login')
     } catch (error) {
+      toast.error(error.message || 'Erro ao registrar usuário')
       setError(error.message || 'Erro ao registrar usuário')
     } finally {
       setLoading(false)
@@ -157,12 +197,31 @@ function Register() {
                 type="password"
                 placeholder="Digite sua senha"
                 value={senha}
-                onChange={e => setSenha(e.target.value)}
+                onChange={handleSenhaChange}
                 required
                 disabled={loading}
-                className="w-full pl-10 pr-4 py-2 border border-offwhite-300 rounded-lg focus:ring-2 focus:ring-primary-400 focus:border-transparent outline-none bg-white text-navy-900 disabled:opacity-50 disabled:cursor-not-allowed"
+                className={`w-full pl-10 pr-10 py-2 border rounded-lg focus:ring-2 focus:border-transparent outline-none bg-white text-navy-900 disabled:opacity-50 disabled:cursor-not-allowed ${
+                  senhaValidation
+                    ? senhaValidation.isValid
+                      ? 'border-green-500 focus:ring-green-400'
+                      : 'border-red-500 focus:ring-red-400'
+                    : 'border-offwhite-300 focus:ring-primary-400'
+                }`}
               />
+              {senhaValidation && (
+                <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                  {senhaValidation.isValid
+                    ? <CheckCircleIcon className="text-green-500" fontSize="small" />
+                    : <ErrorIcon className="text-red-500" fontSize="small" />
+                  }
+                </div>
+              )}
             </div>
+            {senhaValidation && (
+              <p className={`text-xs mt-1 ${senhaValidation.isValid ? 'text-green-600' : 'text-red-600'}`}>
+                {senhaValidation.message}
+              </p>
+            )}
           </div>
 
           <div>
@@ -177,12 +236,31 @@ function Register() {
                 type="tel"
                 placeholder="(11) 98888-9999"
                 value={telefone}
-                onChange={e => setTelefone(e.target.value)}
+                onChange={handleTelefoneChange}
                 required
                 disabled={loading}
-                className="w-full pl-10 pr-4 py-2 border border-offwhite-300 rounded-lg focus:ring-2 focus:ring-primary-400 focus:border-transparent outline-none bg-white text-navy-900 disabled:opacity-50 disabled:cursor-not-allowed"
+                className={`w-full pl-10 pr-10 py-2 border rounded-lg focus:ring-2 focus:border-transparent outline-none bg-white text-navy-900 disabled:opacity-50 disabled:cursor-not-allowed ${
+                  telefoneValidation
+                    ? telefoneValidation.isValid
+                      ? 'border-green-500 focus:ring-green-400'
+                      : 'border-red-500 focus:ring-red-400'
+                    : 'border-offwhite-300 focus:ring-primary-400'
+                }`}
               />
+              {telefoneValidation && (
+                <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                  {telefoneValidation.isValid
+                    ? <CheckCircleIcon className="text-green-500" fontSize="small" />
+                    : <ErrorIcon className="text-red-500" fontSize="small" />
+                  }
+                </div>
+              )}
             </div>
+            {telefoneValidation && (
+              <p className={`text-xs mt-1 ${telefoneValidation.isValid ? 'text-green-600' : 'text-red-600'}`}>
+                {telefoneValidation.message}
+              </p>
+            )}
           </div>
 
           <div className="border-t border-offwhite-300 pt-3 mt-3">
@@ -205,12 +283,13 @@ function Register() {
                     maxLength={8}
                     required
                     disabled={loading}
-                    className={`w-full pl-10 pr-10 py-2 border rounded-lg focus:ring-2 focus:border-transparent outline-none bg-white text-navy-900 disabled:opacity-50 disabled:cursor-not-allowed ${placaValidation
+                    className={`w-full pl-10 pr-10 py-2 border rounded-lg focus:ring-2 focus:border-transparent outline-none bg-white text-navy-900 disabled:opacity-50 disabled:cursor-not-allowed ${
+                      placaValidation
                         ? placaValidation.isValid
                           ? 'border-green-500 focus:ring-green-400'
                           : 'border-red-500 focus:ring-red-400'
                         : 'border-offwhite-300 focus:ring-primary-400'
-                      }`}
+                    }`}
                   />
                   {placaValidation && (
                     <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">

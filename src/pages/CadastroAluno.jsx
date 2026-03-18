@@ -140,7 +140,7 @@ export function CadastroAlunos() {
       sala: f.sala.value || '',
       valorMensalidade: parseFloat(f.mensalidade.value) || 0,
       diaVencimento: parseInt(f.vencimentoDia.value) || 1,
-      fkEscola: parseInt(escolaId),
+      fkEscola: escolaId,
       fkTransporte: user?.transportId || user?.idTransporte || 1,
       responsaveis: responsaveis.map(r => ({
         nome: r.nome,

@@ -361,8 +361,8 @@ export function EdicaoAlunos() {
         sala: aluno.sala?.trim() || null,
         valorMensalidade: parseFloat(aluno.valorMensalidade) || 0,
         diaVencimento: parseInt(aluno.diaVencimento) || 1,
-        fkEscola: parseInt(aluno.fkEscola),
-        fkTransporte: transporteId || parseInt(aluno.fkTransporte), // Sempre usar o transporteId do usuário logado
+        fkEscola: aluno.fkEscola, // UUID - enviar como string
+        fkTransporte: transporteId || aluno.fkTransporte, // Sempre usar o transporteId do usuário logado
         responsaveis: responsaveisPayload,
       }
 

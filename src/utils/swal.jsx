@@ -16,7 +16,8 @@ function CustomConfirmDialog({
   message = 'Tem certeza que deseja continuar?',
   confirmText = 'Confirmar',
   cancelText = 'Cancelar',
-  type = 'danger' // 'danger' ou 'warning' ou 'success'
+  type = 'danger', // 'danger' ou 'warning' ou 'success'
+  showCancel = true, // MOSTRA O BOTÃO DE CANCELAR POR PADRÃO, MAS PODE SER CONTROLADO VIA PROPS
 }) {
   if (!isOpen) return null
 
@@ -82,7 +83,7 @@ function CustomConfirmDialog({
 
         {/* Actions */}
         <div className="px-6 py-4 bg-offwhite-50 border-t border-offwhite-200 flex items-center justify-end gap-3">
-          {cancelText && (
+          {showCancel && ( // ← só renderiza se showCancel for true
             <button
               onClick={onClose}
               className="px-5 py-2.5 rounded-lg border-2 border-offwhite-300 hover:border-navy-400 text-navy-700 font-medium transition-all"
@@ -170,6 +171,7 @@ export async function showSwal(options = {}) {
         confirmText={options.confirmButtonText || 'Confirmar'}
         cancelText={options.cancelButtonText || 'Cancelar'}
         type={type}
+        showCancel={options.showCancel || true}
       />
     )
   })
