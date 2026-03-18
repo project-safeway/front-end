@@ -348,7 +348,11 @@ export default function Financeiro() {
   async function handlePagarMensalidade(id) {
     const result = await showSwal({
       title: 'Confirmar Pagamento',
-      html: 'Deseja realmente marcar esta mensalidade como <strong>paga</strong>?',
+      message: (
+        <>
+          Deseja realmente marcar esta mensalidade como <strong>paga</strong>?
+        </>
+      ),
       icon: 'success',
       confirmButtonText: 'Sim, marcar como paga',
       cancelButtonText: 'Cancelar'
@@ -378,7 +382,13 @@ export default function Financeiro() {
   async function handleExcluirPagamento(id) {
     const result = await showSwal({
       title: 'Confirmar Exclusão',
-      html: 'Tem certeza que deseja <strong>excluir</strong> este pagamento?<br/>Esta ação não poderá ser desfeita.',
+      message: (
+        <>
+          Tem certeza que deseja <strong>excluir</strong> este pagamento?
+          <br />
+          Esta ação não poderá ser desfeita.
+        </>
+      ),
       icon: 'warning',
       confirmButtonText: 'Sim, excluir',
       cancelButtonText: 'Cancelar'
@@ -398,7 +408,7 @@ export default function Financeiro() {
   async function handleGerarMensalidades() {
     await showSwal({
       title: 'Funcionalidade indisponível',
-      html: 'A geração automática de mensalidades não está disponível no momento.',
+      text: 'A geração automática de mensalidades não está disponível no momento.',
       icon: 'info',
       showCancelButton: false,
       confirmButtonText: 'Ok'
