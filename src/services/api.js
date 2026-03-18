@@ -30,15 +30,9 @@ api.interceptors.request.use(
       config.headers.Authorization = `Bearer ${token}`
     }
 
-    // Log de debug (remover em produção)
-    console.log(`[API] ${config.method.toUpperCase()} ${config.url}`)
-
     return config
   },
-  (error) => {
-    console.error('[API] Erro ao configurar requisição:', error)
-    return Promise.reject(error)
-  },
+  (error) => Promise.reject(error),
 )
 
 /**
@@ -54,21 +48,14 @@ api.interceptors.request.use(
  * 4. Tratar outros erros de forma consistente
  */
 api.interceptors.response.use(
-  (response) => {
-    // Resposta bem-sucedida (2xx)
-    console.log(`[API] ${response.config.method.toUpperCase()} ${response.config.url} - ${response.status}`)
-    return response
-  },
+  (response) => response,
   (error) => {
     // Erro na resposta
     if (error.response) {
       const { status, config: requestConfig } = error.response
 
-      console.error(`[API] ${requestConfig.method.toUpperCase()} ${requestConfig.url} - ${status}`)
-
       // ERRO 401: Token inválido ou expirado
       if (status === 401) {
-        console.warn('[API] Token inválido ou expirado. Fazendo logout...')
         authService.logout()
 
         // Evita loop infinito se já estiver na página de login
@@ -77,23 +64,8 @@ api.interceptors.response.use(
         }
       }
 
-      if (status === 403) {
-        console.error('[API] Acesso negado. Usuário sem permissão.')
-      }
-
-      if (status === 404) {
-        console.error('[API] Recurso não encontrado.')
-      }
-
-      if (status >= 500) {
-        console.error('[API] Erro no servidor.')
-      }
-    } else if (error.request) {
-      // Requisição foi feita mas não houve resposta
-      console.error('[API] Sem resposta do servidor. Verifique sua conexão.')
-    } else {
-      // Erro ao configurar a requisição
-      console.error('[API] Erro ao configurar requisição:', error.message)
+      // Mantém referência para evitar variável não utilizada quando minificado
+      void requestConfig
     }
 
     return Promise.reject(error)

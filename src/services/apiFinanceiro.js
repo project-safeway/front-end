@@ -21,29 +21,18 @@ apiFinanceiro.interceptors.request.use(
       reqConfig.headers.Authorization = `Bearer ${token}`
     }
 
-    console.log(`[API Financeiro] ${reqConfig.method.toUpperCase()} ${reqConfig.url}`)
-
     return reqConfig
   },
-  (error) => {
-    console.error('[API Financeiro] Erro ao configurar requisição:', error)
-    return Promise.reject(error)
-  },
+  (error) => Promise.reject(error),
 )
 
 apiFinanceiro.interceptors.response.use(
-  (response) => {
-    console.log(`[API Financeiro] ${response.config.method.toUpperCase()} ${response.config.url} - ${response.status}`)
-    return response
-  },
+  (response) => response,
   (error) => {
     if (error.response) {
       const { status, config: requestConfig } = error.response
 
-      console.error(`[API Financeiro] ${requestConfig.method.toUpperCase()} ${requestConfig.url} - ${status}`)
-
       if (status === 401) {
-        console.warn('[API Financeiro] Token inválido ou expirado. Fazendo logout...')
         authService.logout()
 
         if (window.location.pathname !== '/login') {
@@ -51,21 +40,7 @@ apiFinanceiro.interceptors.response.use(
         }
       }
 
-      if (status === 403) {
-        console.error('[API Financeiro] Acesso negado.')
-      }
-
-      if (status === 404) {
-        console.error('[API Financeiro] Recurso não encontrado.')
-      }
-
-      if (status >= 500) {
-        console.error('[API Financeiro] Erro no servidor.')
-      }
-    } else if (error.request) {
-      console.error('[API Financeiro] Sem resposta do servidor. Verifique sua conexão.')
-    } else {
-      console.error('[API Financeiro] Erro ao configurar requisição:', error.message)
+      void requestConfig
     }
 
     return Promise.reject(error)

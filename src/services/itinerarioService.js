@@ -22,13 +22,6 @@ itinerarioAxios.interceptors.request.use((request) => {
 itinerarioAxios.interceptors.response.use(
   (response) => response,
   (error) => {
-    console.error('[Itinerario API Error]', {
-      url: error.config?.url,
-      method: error.config?.method,
-      status: error.response?.status,
-      data: error.response?.data,
-    })
-
     if (error.response?.status === 401) {
       localStorage.removeItem('token')
       window.location.href = '/login'
@@ -51,7 +44,6 @@ class ItinerarioService {
           throw error;
         }
 
-        console.log(`[ItinerarioService] Tentativa ${i + 1} falhou. Tentando novamente em ${delay}ms...`);
         await new Promise(resolve => setTimeout(resolve, delay));
       }
     }
@@ -102,18 +94,9 @@ class ItinerarioService {
 
   async atualizar(id, itinerarioData) {
     const dataFormatada = this._prepararDados(itinerarioData);
-    
-    console.log('========================================');
-    console.log('[ItinerarioService] ATUALIZANDO ITINERÁRIO');
-    console.log('ID:', id);
-    console.log('Dados enviados:', JSON.stringify(dataFormatada, null, 2));
-    console.log('Quantidade de alunos:', dataFormatada.alunos?.length || 0);
-    console.log('Quantidade de escolas:', dataFormatada.escolas?.length || 0);
-    console.log('========================================');
-    
+
     return this._executarComRetry(async () => {
       const response = await itinerarioAxios.put(`/itinerarios/${id}`, dataFormatada)
-      console.log('[ItinerarioService] Resposta do backend:', response.data);
       return response.data
     })
   }
@@ -138,16 +121,8 @@ class ItinerarioService {
   }
 
   async reordenarAlunos(itinerarioId, novaOrdemIds) {
-    console.log('========================================');
-    console.log('[ItinerarioService] REORDENANDO ALUNOS');
-    console.log('Itinerário ID:', itinerarioId);
-    console.log('Nova ordem de IDs:', novaOrdemIds);
-    console.log('URL:', `/itinerarios/${itinerarioId}/alunos/ordem`);
-    console.log('========================================');
-    
     return this._executarComRetry(async () => {
       const response = await itinerarioAxios.patch(`/itinerarios/${itinerarioId}/alunos/ordem`, novaOrdemIds)
-      console.log('[ItinerarioService] Resposta reordenação alunos:', response.data);
       return response.data;
     })
   }
@@ -190,23 +165,13 @@ class ItinerarioService {
    * @param {Array<number>} novaOrdemIds - Array com IDs das escolas na nova ordem
    */
   async reordenarEscolas(itinerarioId, novaOrdemIds) {
-    console.log('========================================');
-    console.log('[ItinerarioService] REORDENANDO ESCOLAS');
-    console.log('Itinerário ID:', itinerarioId);
-    console.log('Nova ordem de IDs:', novaOrdemIds);
-    console.log('URL:', `/itinerarios/${itinerarioId}/escolas/ordem`);
-    console.log('========================================');
-    
     return this._executarComRetry(async () => {
       const response = await itinerarioAxios.patch(`/itinerarios/${itinerarioId}/escolas/ordem`, novaOrdemIds)
-      console.log('[ItinerarioService] Resposta reordenação escolas:', response.data);
       return response.data;
     })
   }
 
   _tratarErro(error, mensagemPadrao) {
-    console.error('[ItinerarioService] Erro:', error);
-
     let mensagemUsuario = mensagemPadrao;
 
     if (error.response) {
