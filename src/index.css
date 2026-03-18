@@ -1,6 +1,33 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
+
+@theme {
+  --color-primary-50: #FFF7ED;
+  --color-primary-100: #FFEDD5;
+  --color-primary-200: #FED7AA;
+  --color-primary-300: #FDBA74;
+  --color-primary-400: #FB923C;
+  --color-primary-500: #F97316;
+  --color-primary-600: #EA580C;
+  --color-primary-700: #C2410C;
+  --color-primary-800: #9A3412;
+  --color-primary-900: #7C2D12;
+
+  --color-navy-50: #F0F4F8;
+  --color-navy-100: #D9E2EC;
+  --color-navy-200: #BCCCDC;
+  --color-navy-300: #9FB3C8;
+  --color-navy-400: #829AB1;
+  --color-navy-500: #627D98;
+  --color-navy-600: #486581;
+  --color-navy-700: #334E68;
+  --color-navy-800: #243B53;
+  --color-navy-900: #102A43;
+
+  --color-offwhite-50: #FAFAFA;
+  --color-offwhite-100: #F5F5F5;
+  --color-offwhite-200: #EEEEEE;
+  --color-offwhite-300: #E0E0E0;
+}
 
 :root {
   --branco-base: #F4F5F6;
