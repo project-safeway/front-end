@@ -152,7 +152,7 @@ export default function ListaAlunos() {
 
         {/* Header minimalista */}
         <div className="bg-white rounded-2xl shadow-sm border border-offwhite-200 p-8 mb-8">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between header-mobile-stack">
             <div className="flex items-center gap-6">
               <div className="p-4 bg-primary-50 rounded-xl">
                 <SchoolIcon className="text-primary-400 text-4xl" />
@@ -162,16 +162,15 @@ export default function ListaAlunos() {
                 <p className="text-navy-600">Listagem de alunos agrupados por escola</p>
               </div>
             </div>
-
             <div className="flex items-center gap-3">
-              <div className="relative">
+              <div className="relative input-mobile-full">
                 <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 text-navy-400" fontSize="small" />
                 <input
                   type="text"
                   placeholder="Buscar aluno por nome..."
                   value={busca}
                   onChange={(e) => setBusca(e.target.value)}
-                  className="pl-10 pr-4 py-2.5 rounded-lg border-2 border-offwhite-300 focus:border-primary-400 focus:ring-2 focus:ring-primary-100 outline-none transition-all w-64"
+                  className="pl-10 pr-4 py-2.5 rounded-lg border-2 border-offwhite-300 focus:border-primary-400 focus:ring-2 focus:ring-primary-100 outline-none transition-all"
                 />
               </div>
               <Link
@@ -188,6 +187,33 @@ export default function ListaAlunos() {
               </Link>
             </div>
           </div>
+          <style>
+            {`
+              @media (max-width: 640px) {
+
+                .header-mobile-stack {
+                  flex-direction: column !important;
+                  align-items: stretch !important;
+                  gap: 1.5rem !important;
+                }
+                .header-mobile-stack > div:last-child {
+                  flex-direction: column !important;
+                  gap: 0.75rem !important;
+                }
+                .header-mobile-stack input,
+                .header-mobile-stack a,
+                .header-mobile-stack button {
+                  width: 100% !important;
+                  text-align: center;
+                }
+
+                .input-mobile-full {
+                  width: 100%;
+                }
+
+              }
+            `}
+          </style>
         </div>
 
         <div className="space-y-6">

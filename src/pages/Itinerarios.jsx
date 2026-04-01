@@ -111,7 +111,7 @@ export default function Itinerarios() {
 
         {/* Header minimalista */}
         <div className="bg-white rounded-2xl shadow-sm border border-offwhite-200 p-8 mb-8">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div className="flex items-center gap-6">
               <div className="p-4 bg-primary-50 rounded-xl">
                 <MapIcon className="text-primary-400 text-4xl" />
@@ -121,13 +121,12 @@ export default function Itinerarios() {
                 <p className="text-navy-600">Gerencie suas rotas de transporte</p>
               </div>
             </div>
-            
             <button
               onClick={() => {
                 setItinerarioSelecionado(null);
                 setIsModalOpen(true);
               }}
-              className="px-5 py-2.5 rounded-lg bg-primary-400 hover:bg-primary-500 text-white font-semibold transition-all shadow-sm hover:shadow-md"
+              className="px-5 py-2.5 rounded-lg bg-primary-400 hover:bg-primary-500 text-white font-semibold transition-all shadow-sm hover:shadow-md self-center sm:self-auto"
             >
               + Cadastrar Itinerário
             </button>
