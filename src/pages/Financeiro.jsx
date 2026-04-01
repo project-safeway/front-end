@@ -739,8 +739,8 @@ export default function Financeiro() {
           </Link>
 
         {/* Header minimalista */}
-        <div className="bg-white rounded-2xl shadow-sm border border-offwhite-200 p-8 mb-8">
-          <div className="flex items-center justify-between">
+        <div className="bg-white rounded-2xl shadow-sm border border-offwhite-200 p-8 mb-8 ">
+          <div className="flex items-center justify-between mobile-header">
             <div className="flex items-center gap-6">
               <div className="p-4 bg-primary-50 rounded-xl">
                 <AttachMoneyIcon className="text-primary-400 text-4xl" />
@@ -751,7 +751,7 @@ export default function Financeiro() {
               </div>
             </div>
             
-            <div className="text-sm text-navy-600 font-medium">
+            <div className="text-sm text-navy-600 font-medium month-year">
               {
                 (() => {
                   const data = new Date();
@@ -812,7 +812,7 @@ export default function Financeiro() {
         </div>
 
         {/* Abas */}
-        <div className="flex gap-2 mb-6">
+        <div className="flex gap-2 mb-6 abas-mobile">
           <button
             onClick={() => setAba("mensalidades")}
             className={`px-6 py-3 rounded-lg flex items-center gap-2 font-medium transition-all ${
@@ -1426,6 +1426,41 @@ export default function Financeiro() {
         )}
       </div>
     </div>
+
+    <style>
+      {`
+        @media (max-width: 640px) {
+          .mobile-header {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 12px;
+          }
+
+          .month-year {
+            text-align: center;
+            width: 100%;
+            font-size: 16px;
+          }
+
+          .abas-mobile{
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+            gap: 8px;
+          }
+
+          .abas-mobile button {
+            width: 100%;
+            justify-content: center;
+            padding-top: 16px;
+            padding-bottom: 16px;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+          }
+           
+        }
+      `}
+      </style>
+
     </>
   );
 }

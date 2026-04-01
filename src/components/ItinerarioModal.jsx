@@ -29,7 +29,6 @@ export default function ItinerarioModal({
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Horários sugeridos comuns
   const horariosComuns = [
     "06:00", "06:30", "07:00", "07:30", "08:00",
     "12:00", "12:30", "13:00", "13:30", "14:00",
@@ -95,7 +94,6 @@ export default function ItinerarioModal({
       newErrors.horarioFim = "Horário de fim é obrigatório";
     }
     
-    // Validar se horário de fim é maior que início
     if (formData.horarioInicio && formData.horarioFim) {
       if (formData.horarioFim <= formData.horarioInicio) {
         newErrors.horarioFim = "Horário de fim deve ser maior que o início";
@@ -112,7 +110,6 @@ export default function ItinerarioModal({
 
     setIsSubmitting(true);
     try {
-      // Sempre garantir transporteId correto
       await onSave({ ...formData, transporteId });
       handleClose();
     } catch (error) {
@@ -125,7 +122,6 @@ export default function ItinerarioModal({
 
   const handleDelete = async () => {
     if (!itinerario?.id) return;
-    
       const result = await showSwal({
         title: 'Excluir itinerário',
         text: `Tem certeza que deseja excluir o itinerário "${itinerario.nome}"?\n\nEsta ação não pode ser desfeita.`,
@@ -230,7 +226,7 @@ export default function ItinerarioModal({
               <label htmlFor="tipoViagem" className="block text-sm font-medium text-navy-700 mb-2">
                 Tipo de Viagem *
               </label>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 tipo-viagem-mobile">
                 <button
                   type="button"
                   onClick={() => setFormData(prev => ({ ...prev, tipoViagem: "SO_IDA" }))}
@@ -365,7 +361,7 @@ export default function ItinerarioModal({
           )}
 
           {/* Botões */}
-          <div className="flex gap-3 pt-4 border-t border-offwhite-200">
+          <div className="flex gap-3 pt-4 border-t border-offwhite-200 botoes-modal-mobile">
             {itinerario && (
               <button
                 type="button"
@@ -378,14 +374,7 @@ export default function ItinerarioModal({
               </button>
             )}
             <div className="flex-1" />
-            <button
-              type="button"
-              onClick={handleClose}
-              disabled={isSubmitting}
-              className="px-6 py-2.5 border-2 border-offwhite-300 text-navy-700 rounded-lg hover:bg-offwhite-50 transition-all disabled:opacity-50 disabled:cursor-not-allowed font-medium"
-            >
-              Cancelar
-            </button>
+            {/* SALVAR PRIMEIRO */}
             <button
               type="submit"
               disabled={isSubmitting}
@@ -401,9 +390,47 @@ export default function ItinerarioModal({
                 'Salvar'
               )}
             </button>
+            {/* CANCELAR DEPOIS */}
+            <button
+              type="button"
+              onClick={handleClose}
+              disabled={isSubmitting}
+              className="px-6 py-2.5 border-2 border-offwhite-300 text-navy-700 rounded-lg hover:bg-offwhite-50 transition-all disabled:opacity-50 disabled:cursor-not-allowed font-medium"
+            >
+              Cancelar
+            </button>
           </div>
         </form>
       </div>
+      <style>
+      {`
+        @media (max-width: 640px) {
+          .tipo-viagem-mobile {
+            grid-template-columns: 1fr !important;
+          }
+          .tipo-viagem-mobile > button {
+            width: 100% !important;
+            max-width: 350px;
+            margin-left: auto;
+            margin-right: auto;
+          }
+          .botoes-modal-mobile {
+            flex-direction: column !important;
+            align-items: center !important;
+            gap: 0.75rem !important;
+          }
+          .botoes-modal-mobile button {
+            width: 100% !important;
+            max-width: 350px;
+            text-align: center;
+            justify-content: center;
+          }
+          .botoes-modal-mobile .flex-1 {
+            display: none !important;
+          }
+        }
+      `}
+      </style>
     </div>
   );
 }

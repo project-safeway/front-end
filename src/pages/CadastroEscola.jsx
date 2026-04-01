@@ -235,7 +235,7 @@ export function CadastroEscola() {
               </div>
             </div>
 
-            <div className="flex items-center justify-end gap-3 pt-6 border-t border-offwhite-200">
+            <div className="flex items-center justify-end gap-3 pt-6 border-t border-offwhite-200 botoes-mobile-stack">
               <Link
                 to="/alunos"
                 className="px-5 py-2.5 rounded-lg border-2 border-offwhite-300 hover:border-navy-400 text-navy-700 font-medium transition-all"
@@ -253,6 +253,24 @@ export function CadastroEscola() {
           </form>
         </div>
       </div>
+
+          <style>
+          {`
+            @media (max-width: 640px) {
+              .botoes-mobile-stack {
+                flex-direction: column-reverse !important;
+                align-items: stretch !important;
+                gap: 0.75rem !important;
+              }
+              .botoes-mobile-stack a,
+              .botoes-mobile-stack button {
+                width: 100% !important;
+                text-align: center;
+              }
+            }
+          `}
+          </style>
+      
     </div>
   )
 }
