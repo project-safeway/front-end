@@ -1,4 +1,7 @@
 import { useState, useEffect } from 'react';
+import config from '../../config/config';
+
+const API_BASE_URL = config.API_BASE_URL;
 
 /**
  * Hook para buscar todas as escolas
@@ -14,7 +17,7 @@ export function useEscolas() {
     setError(null);
     
     try {
-      const response = await fetch('http://localhost:8080/escolas');
+      const response = await fetch(`${API_BASE_URL}/escolas`);
       
       if (!response.ok) {
         throw new Error('Erro ao buscar escolas');
@@ -58,7 +61,7 @@ export function useEscola(escolaId) {
       setError(null);
       
       try {
-        const response = await fetch(`http://localhost:8080/escolas/${escolaId}`);
+        const response = await fetch(`${API_BASE_URL}/escolas/${escolaId}`);
         
         if (!response.ok) {
           throw new Error('Escola não encontrada');

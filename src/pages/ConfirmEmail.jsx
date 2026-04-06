@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { showSwal } from '../utils/swal.jsx';
 import { useLocation } from 'react-router-dom'
+import config from '../config/config'
 
 function ConfirmEmail() {
   const location = useLocation()
@@ -9,7 +10,7 @@ function ConfirmEmail() {
   const [code, setCode] = useState('')
 
   const handleConfirm = async () => {
-    const response = await fetch('http://localhost:8080/auth/confirm', {
+    const response = await fetch(`${config.API_BASE_URL}/auth/confirm`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, confirmationCode: code }),
