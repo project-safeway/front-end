@@ -21,9 +21,11 @@ export default function AlunoDetalhe() {
   const [carregando, setCarregando] = useState(true)
   const [escolas, setEscolas] = useState([])
   const [responsavelSelecionado, setResponsavelSelecionado] = useState(0)
+  const googleMapsApiKey = (import.meta.env.VITE_GOOGLE_MAPS_API_KEY || '').trim()
+  const mapaSemConfiguracao = !googleMapsApiKey
 
   const { isLoaded } = useJsApiLoader({
-    googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY || "",
+    googleMapsApiKey,
     libraries: ['places', 'geometry']
   })
 
@@ -231,7 +233,11 @@ export default function AlunoDetalhe() {
                 </div>
 
                 {/* Mapa */}
-                {isLoaded && coordenadasResponsavel ? (
+                {mapaSemConfiguracao ? (
+                  <div className="h-64 bg-offwhite-100 rounded-xl flex items-center justify-center text-navy-500 px-4 text-center">
+                    Defina <code>VITE_GOOGLE_MAPS_API_KEY</code> no <code>.env</code> para carregar o mapa.
+                  </div>
+                ) : isLoaded && coordenadasResponsavel ? (
                   <div className="rounded-xl overflow-hidden border-2 border-offwhite-200 h-64">
                     <GoogleMap
                       mapContainerStyle={{ width: '100%', height: '100%' }}

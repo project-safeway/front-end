@@ -471,7 +471,7 @@ export function CadastroAlunos() {
                 </div>
               ))}
 
-              <div className="flex justify-end mt-4">
+              <div className="flex justify-end mt-4 adicionar-resp-mobile">
                 <button
                   type="button"
                   onClick={adicionarResponsavel}
@@ -483,7 +483,7 @@ export function CadastroAlunos() {
             </div>
 
             {/* Botões de Ação */}
-            <div className="flex items-center justify-end gap-3 pt-6 border-t border-offwhite-200">
+            <div className="flex items-center justify-end gap-3 pt-6 border-t border-offwhite-200 botoes-mobile-stack">
               <Link
                 to="/alunos"
                 className="px-5 py-2.5 rounded-lg border-2 border-offwhite-300 hover:border-navy-400 text-navy-700 font-medium transition-all"
@@ -498,6 +498,32 @@ export function CadastroAlunos() {
                 {loading ? 'Cadastrando...' : 'Cadastrar Aluno'}
               </button>
             </div>
+
+            <style>
+{`
+  @media (max-width: 640px) {
+    .botoes-mobile-stack {
+      flex-direction: column-reverse !important;
+      align-items: center !important;
+      gap: 0.75rem !important;
+    }
+    .botoes-mobile-stack a,
+    .botoes-mobile-stack button {
+      width: 100% !important;
+      text-align: center;
+      max-width: 350px;
+    }
+    .adicionar-resp-mobile {
+      justify-content: center !important;
+    }
+    .adicionar-resp-mobile button {
+      width: 100% !important;
+      max-width: 350px;
+      text-align: center;
+    }
+  }
+`}
+</style>
           </form>
         </div>
       </div>

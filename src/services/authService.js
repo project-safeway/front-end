@@ -21,23 +21,17 @@ class AuthService {
    */
   async login(email, senha) {
     try {
-      console.log('[AuthService] Tentando fazer login...')
-
       const response = await authAxios.post('/login', { email, senha })
       const data = response.data
-      console.log('Dados recebidos no login:', data)
 
       // Salva o token e a data de expiração no localStorage
       if (data.accessToken) {
         localStorage.setItem('token', data.accessToken)
         localStorage.setItem('tokenExpiration', Date.now() + data.expiresIn * 1000)
-        console.log('[AuthService] Login bem-sucedido, token salvo')
       }
 
       return data
     } catch (error) {
-      console.error('[AuthService] Erro no login:', error.message)
-
       // Trata erro do axios
       if (error.response) {
         // Servidor respondeu com erro (4xx, 5xx)
@@ -60,17 +54,11 @@ class AuthService {
    */
   async register(userData) {
     try {
-      console.log('[AuthService] Tentando registrar usuário...')
-
       const response = await authAxios.post('/register', userData)
-
-      console.log('[AuthService] Usuário registrado com sucesso')
 
       // Backend pode retornar texto ou JSON
       return typeof response.data === 'string' ? response.data : response.data.message || 'Usuário registrado com sucesso'
     } catch (error) {
-      console.error('[AuthService] Erro no registro:', error.message)
-
       // Trata erro do axios
       if (error.response) {
         const message = error.response.data?.message || error.response.data || 'Erro ao registrar usuário'
@@ -136,8 +124,7 @@ class AuthService {
       )
 
       return JSON.parse(jsonPayload)
-    } catch (error) {
-      console.error('Erro ao decodificar token:', error)
+    } catch {
       return null
     }
   }

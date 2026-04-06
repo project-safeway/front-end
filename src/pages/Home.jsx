@@ -47,7 +47,7 @@ export default function Home() {
   return (
     <div className="home py-6">
       {/* Header */}
-      <div className="mb-6">
+      <div className="mb-6 text-mobile-header">
         <h1 className="text-3xl font-bold text-navy-900 mb-2">
           Sistema de Transporte Escolar
         </h1>
@@ -99,6 +99,30 @@ export default function Home() {
           <EventsPanel selectedMonth={selectedMonth} selectedYear={selectedYear} />
         </div>
       </div>
+        <style>
+      {`
+        @media (max-width: 640px) {
+          .home h1 {
+            font-size: 1.5rem;
+          }
+          .home .grid {
+            gap: 0.5rem;
+          }
+          .home .p-6 {
+            padding: 1rem;
+          }
+
+          .text-mobile-header {
+            text-align: center;
+          }
+
+          .text-mobile-header h1{
+            font-size: 1.6rem;
+          }
+          
+        }
+      `}
+    </style>
     </div>
   )
 }

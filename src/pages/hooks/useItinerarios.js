@@ -1,4 +1,7 @@
 import { useState, useEffect } from 'react';
+import config from '../../config/config';
+
+const API_BASE_URL = config.API_BASE_URL;
 
 /**
  * Hook para buscar todos os itinerários
@@ -14,7 +17,7 @@ export function useItinerarios() {
     setError(null);
     
     try {
-      const response = await fetch('http://localhost:8080/itinerarios');
+      const response = await fetch(`${API_BASE_URL}/itinerarios`);
       
       if (!response.ok) {
         throw new Error('Erro ao buscar itinerários');
@@ -58,7 +61,7 @@ export function useItinerario(itinerarioId) {
       setError(null);
       
       try {
-        const response = await fetch(`http://localhost:8080/itinerarios/${itinerarioId}`);
+        const response = await fetch(`${API_BASE_URL}/itinerarios/${itinerarioId}`);
         
         if (!response.ok) {
           throw new Error('Itinerário não encontrado');
@@ -100,7 +103,7 @@ export function useAlunosItinerario(itinerarioId) {
     setError(null);
     
     try {
-      const response = await fetch(`http://localhost:8080/itinerarios/${itinerarioId}/alunos`);
+      const response = await fetch(`${API_BASE_URL}/itinerarios/${itinerarioId}/alunos`);
       
       if (!response.ok) {
         throw new Error('Erro ao buscar alunos do itinerário');
