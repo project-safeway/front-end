@@ -1321,7 +1321,7 @@ export default function Financeiro() {
         {/* Modal de Pagamento/Despesa */}
         {modalAberto && modalContexto !== "novaMensalidade" && (
           <div className="fixed inset-0 z-50 flex items-center justify-center">
-            <div className="absolute inset-0 bg-black opacity-50" onClick={fecharModal} />
+            <div className="absolute inset-0 bg-black/50" onClick={fecharModal} />
             <div className="relative bg-white rounded-2xl shadow-lg w-full max-w-md mx-4 p-6 z-10 border border-offwhite-200">
               <h2 className="text-xl font-semibold mb-4 flex items-center gap-2 text-navy-900">
                 <PaymentsIcon />
@@ -1378,7 +1378,7 @@ export default function Financeiro() {
         {/* Modal Nova Mensalidade */}
         {modalAberto && modalContexto === "novaMensalidade" && (
           <div className="fixed inset-0 z-50 flex items-center justify-center">
-            <div className="absolute inset-0 bg-black opacity-50" onClick={fecharModal} />
+            <div className="absolute inset-0 bg-black/50" onClick={fecharModal} />
             <div className="relative bg-white rounded-2xl shadow-lg w-full max-w-md mx-4 p-6 z-10 border border-offwhite-200">
               <h2 className="text-xl font-semibold mb-4 flex items-center gap-2 text-navy-900">
                 <AttachMoneyIcon />

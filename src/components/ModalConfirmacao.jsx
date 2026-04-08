@@ -27,7 +27,7 @@ export function ModalConfirmacao({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
-      <div className="absolute inset-0 bg-black opacity-50" onClick={onFechar} />
+      <div className="absolute inset-0 bg-black/50" onClick={onFechar} />
       <div className="relative bg-white rounded-lg shadow-xl w-full max-w-md mx-4 p-6 z-10 animate-fadeIn">
         <div className="flex items-start gap-4 mb-4">
           <div className={`p-3 rounded-full ${cores[tipo]} border-2`}>
