@@ -182,7 +182,7 @@ export default function Financeiro() {
       if (filtroDataFim) params.dataFim = filtroDataFim;
 
       if (filtroAlunoId) params.alunoId = filtroAlunoId;
-      if (filtroStatus.length > 0) params.status = filtroStatus;
+      if (filtroStatus.length > 0) params.status = filtroStatus.join(',');
 
       const res = await listarMensalidades(params);
 
@@ -258,7 +258,9 @@ export default function Financeiro() {
           size: 1000
         }),
         listarMensalidades({
-          status: ['PAGO'],
+          dataInicio,
+          dataFim,
+          status: 'PAGO',
           size: 1000
         })
       ]);

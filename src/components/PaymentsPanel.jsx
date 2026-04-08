@@ -36,7 +36,7 @@ export function PaymentsPanel({ selectedMonth, selectedYear }) {
             }
             
             const response = await listarMensalidades(params)
-            const allMensalidades = response?.content || []
+            const allMensalidades = response?.content || (Array.isArray(response) ? response : [])
             
             setMensalidades(allMensalidades)
         } catch (err) {
