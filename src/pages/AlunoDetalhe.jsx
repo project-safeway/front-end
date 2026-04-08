@@ -138,20 +138,20 @@ export default function AlunoDetalhe() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br py-8 px-4">
+    <div className="min-h-screen bg-gradient-to-br py-8 px-4 aluno-detalhe-container">
       <div className="max-w-7xl mx-auto">
         {/* Breadcrumb */}
         <Link
           to="/alunos"
-          className="inline-flex items-center gap-2 text-navy-600 hover:text-primary-400 mb-6 transition-colors"
+          className="inline-flex items-center gap-2 text-navy-600 hover:text-primary-400 mb-6 transition-colors voltar-mobile"
         >
           <ArrowBackIcon fontSize="small" />
           <span>Voltar para Alunos</span>
         </Link>
 
         {/* Header minimalista */}
-        <div className="bg-white rounded-2xl shadow-sm border border-offwhite-200 p-8 mb-8">
-          <div className="flex items-center justify-between">
+        <div className="bg-white rounded-2xl shadow-sm border border-offwhite-200 p-8 mb-8 aluno-detalhe-header">
+          <div className="flex items-center justify-between aluno-detalhe-header">
             <div className="flex items-center gap-6">
               <div className="p-4 bg-primary-50 rounded-xl">
                 <SchoolIcon className="text-primary-400 text-4xl" />
@@ -173,9 +173,9 @@ export default function AlunoDetalhe() {
         </div>
 
         {/* Content Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 aluno-detalhe-grid">
           {/* Coluna Esquerda - Dados, Financeiro e Mapa */}
-          <div className="lg:col-span-1 space-y-6">
+          <div className="lg:col-span-1 space-y-6 aluno-detalhe-card">
             {/* Card Dados do Aluno */}
             <div className="bg-white rounded-xl shadow-sm border border-offwhite-200 p-6">
               <h2 className="text-lg font-semibold text-navy-900 mb-4 pb-3 border-b border-offwhite-200">Dados do Aluno</h2>
@@ -267,7 +267,7 @@ export default function AlunoDetalhe() {
           </div>
 
           {/* Coluna Direita - Informações Escolares, Responsáveis e Logística */}
-          <div className="lg:col-span-2 space-y-6">
+          <div className="lg:col-span-2 space-y-6 aluno-detalhe-card">
             {/* Card Informações Escolares */}
             <div className="bg-white rounded-xl shadow-sm border border-offwhite-200 p-6">
               <h2 className="text-lg font-semibold text-navy-900 mb-4 pb-3 border-b border-offwhite-200">Informações Escolares</h2>
@@ -351,6 +351,37 @@ export default function AlunoDetalhe() {
           </div>
         </div>
       </div>
+      <style>
+      {`
+        @media (max-width: 640px) {
+          .aluno-detalhe-container {
+            padding: 0.5rem !important;
+          }
+          .aluno-detalhe-header {
+            width: 92% !important;
+            margin-left: 4% !important;
+            padding: 0.8rem !important;
+            flex-direction: column !important;
+            gap: 1rem !important;
+            align-items: flex-start !important;
+          }
+          .aluno-detalhe-header button {
+            width: 100%;
+            margin-top: 1rem;
+          }
+          .aluno-detalhe-grid {
+            display: block !important;
+          }
+          .aluno-detalhe-card {
+            margin-bottom: 1.5rem;
+            padding: 1rem !important;
+          }
+            .voltar-mobile {
+              margin-top: 0.9rem;
+            }
+        }
+      `}
+      </style>
     </div>
   )
 }

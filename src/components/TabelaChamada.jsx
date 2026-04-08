@@ -30,7 +30,7 @@ export function TabelaChamada({ alunos, onRowClick, alunoAtualId }) {
   };
 
   return (
-    <div className="w-full mx-auto overflow-x-auto rounded-2xl shadow-lg bg-white">
+    <div className="tabela-chamada w-full mx-auto overflow-x-auto rounded-2xl shadow-lg bg-white">
       <table className="min-w-full divide-y divide-gray-200">
         <thead className="bg-gray-50">
           <tr>
@@ -64,7 +64,7 @@ export function TabelaChamada({ alunos, onRowClick, alunoAtualId }) {
                     : "hover:bg-primary-50"
                 }`}
               >
-                <td className="px-4 py-3 text-sm text-center">
+                <td data-label="Ordem" className="px-4 py-3 text-sm text-center">
                   <span
                     className={`inline-flex items-center justify-center w-8 h-8 rounded-full font-semibold text-sm ${
                       isAlunoAtual
@@ -75,7 +75,7 @@ export function TabelaChamada({ alunos, onRowClick, alunoAtualId }) {
                     {aluno.ordemEmbarque}
                   </span>
                 </td>
-                <td className="px-4 py-3 text-sm text-gray-900 font-medium">
+                <td data-label="Aluno" className="px-4 py-3 text-sm text-gray-900 font-medium">
                   {aluno.nomeAluno}
                   {isAlunoAtual && (
                     <span className="ml-2 text-xs text-primary-600 font-semibold">
@@ -83,13 +83,13 @@ export function TabelaChamada({ alunos, onRowClick, alunoAtualId }) {
                     </span>
                   )}
                 </td>
-                <td className="px-4 py-3 text-sm text-gray-700">
+                <td data-label="Escola" className="px-4 py-3 text-sm text-gray-700">
                   {aluno.escola || "-"}
                 </td>
-                <td className="px-4 py-3 text-sm text-gray-700">
+                <td data-label="Responsável" className="px-4 py-3 text-sm text-gray-700">
                   {aluno.responsavel || "-"}
                 </td>
-                <td className="px-4 py-3 text-center">
+                <td data-label="Status" className="px-4 py-3 text-center">
                   {getStatusBadge(aluno.presente)}
                 </td>
               </tr>

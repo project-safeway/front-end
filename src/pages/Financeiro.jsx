@@ -1122,8 +1122,8 @@ export default function Financeiro() {
         {/* Conteúdo das abas */}
         {aba === "mensalidades" && (
           <section className="bg-white border border-offwhite-200 p-6 rounded-xl shadow-sm">
-            <div className="flex justify-between items-center mb-4 flex-wrap gap-2">
-              <h2 className="text-xl font-semibold text-navy-900 flex items-center gap-2">
+            <div className="flex justify-between items-center mb-4 flex-wrap gap-2 secao-header-mobile">
+              <h2 className="text-xl font-semibold text-navy-900 flex items-center gap-2 titulo-secao-mobile">
                 <AttachMoneyIcon />
                 Receitas - Mensalidades
               </h2>
@@ -1159,13 +1159,13 @@ export default function Financeiro() {
                     ? "Tente ajustar os filtros ou cadastre uma nova mensalidade"
                     : "Comece cadastrando uma nova mensalidade"}
                 </p>
-                <button
+                {/* <button
                   onClick={() => { setModalAberto(true); setModalContexto("novaMensalidade"); }}
                   className="px-4 py-2 bg-green-600 text-white rounded-lg inline-flex items-center gap-2 hover:bg-green-700 transition-colors shadow-sm"
                 >
                   <AddIcon fontSize="small" />
                   Cadastrar Primeira Mensalidade
-                </button>
+                </button> */}
               </div>
             ) : (
               <>
@@ -1249,8 +1249,8 @@ export default function Financeiro() {
 
         {aba === "pagamentos" && (
           <section className="bg-white border border-offwhite-200 p-6 rounded-xl shadow-sm">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-semibold text-navy-900 flex items-center gap-2">
+            <div className="flex justify-between items-center mb-4 secao-header-mobile">
+              <h2 className="text-xl font-semibold text-navy-900 flex items-center gap-2 titulo-secao-mobile">
                 <PaymentsIcon />
                 Despesas - Pagamentos
               </h2>
@@ -1455,6 +1455,57 @@ export default function Financeiro() {
             padding-top: 16px;
             padding-bottom: 16px;
             box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+          }
+
+          .titulo-secao-mobile {
+            font-size: 1.125rem;
+            flex-wrap: wrap;
+          }
+
+          .secao-header-mobile {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 1rem;
+          }
+            
+          .secao-header-mobile button {
+            width: 100%;
+            justify-content: center;
+          }
+
+          .tabela-responsiva-container table {
+            width: 100%;
+          }
+
+          .tabela-responsiva-container thead {
+            display: none;
+          }
+
+          .tabela-responsiva-container tr {
+            display: block;
+            border-bottom: 2px solid #eee;
+            margin-bottom: 1rem;
+          }
+
+          .tabela-responsiva-container td {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            text-align: right !important;
+            padding: 0.75rem 1rem !important;
+            border-bottom: 1px solid #f0f0f0;
+          }
+
+          .tabela-responsiva-container td::before {
+            content: attr(data-label);
+            font-weight: 600;
+            text-align: left;
+            margin-right: 1rem;
+            color: #374151;
+          }
+
+          .tabela-responsiva-container td:last-child {
+            border-bottom: 0;
           }
            
         }

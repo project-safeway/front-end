@@ -1,179 +1,157 @@
 import PropTypes from "prop-types";
-import { useState } from "react";
+import { useSortable } from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 import DeleteIcon from "@mui/icons-material/Delete";
 import DragIndicatorIcon from "@mui/icons-material/DragIndicator";
 
-export function TabelaPlanejamentoRotas({ 
-  dados = [], 
-  onMover = null,
-  onRemover = null,
-  onReordenar = null // Nova prop para reordenação por drag and drop
-}) {
-  const [draggedIndex, setDraggedIndex] = useState(null);
-  const [dragOverIndex, setDragOverIndex] = useState(null);
+// Componente para cada item/linha da lista
+function SortableItem({ item, index, onRemover }) {
+  const isEscola = item.tipo === 'escola';
+  
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: item.id });
 
-  const handleDragStart = (e, index) => {
-    setDraggedIndex(index);
-    e.dataTransfer.effectAllowed = 'move';
-    e.dataTransfer.setData('text/html', e.target);
-  };
-
-  const handleDragOver = (e, index) => {
-    e.preventDefault();
-    e.dataTransfer.dropEffect = 'move';
-    
-    if (draggedIndex !== null && draggedIndex !== index) {
-      setDragOverIndex(index);
-    }
-  };
-
-  const handleDragLeave = () => {
-    setDragOverIndex(null);
-  };
-
-  const handleDrop = (e, dropIndex) => {
-    e.preventDefault();
-    
-    if (draggedIndex !== null && draggedIndex !== dropIndex) {
-      // Chamar callback de reordenação se fornecido
-      if (onReordenar) {
-        onReordenar(draggedIndex, dropIndex);
-      }
-    }
-    
-    setDraggedIndex(null);
-    setDragOverIndex(null);
-  };
-
-  const handleDragEnd = () => {
-    setDraggedIndex(null);
-    setDragOverIndex(null);
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    zIndex: isDragging ? 10 : 'auto',
+    opacity: isDragging ? 0.7 : 1,
   };
 
   return (
-    <div className="w-full mx-auto overflow-x-auto rounded-2xl shadow-lg bg-white">
-      <table className="min-w-full divide-y divide-gray-200">
-        <thead className="bg-gray-50">
-          <tr>
-            <th className="py-3 px-4 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-              Arrastar
-            </th>
-            <th className="py-3 px-4 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-              Ordem
-            </th>
-            <th className="py-3 px-4 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-              Nome
-            </th>
-            <th className="py-3 px-4 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-              Informações
-            </th>
-            {onRemover && (
-              <th className="py-3 px-4 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Ações
-              </th>
-            )}
-          </tr>
-        </thead>
+    <tr
+      ref={setNodeRef}
+      style={style}
+      className={`hover:${isEscola ? 'bg-green-50' : 'bg-primary-50'}`}
+    >
+      {/* Coluna de Arrastar (agora com os listeners do dnd-kit) */}
+      <td className="px-4 py-3" data-label="Arrastar">
+        <button 
+          {...attributes} 
+          {...listeners}
+          className="cursor-grab touch-none flex items-center justify-center w-full"
+        >
+          <DragIndicatorIcon className="text-gray-400" fontSize="small" />
+        </button>
+      </td>
 
-        <tbody className="bg-white divide-y divide-gray-200">
-          {dados.map((item, index) => {
-            const isEscola = item.tipo === 'escola';
-            const isDragging = draggedIndex === index;
-            const isDragOver = dragOverIndex === index;
-            
-            return (
-              <tr
-                key={`${item.tipo}-${item.id}`}
-                draggable={true}
-                onDragStart={(e) => handleDragStart(e, index)}
-                onDragOver={(e) => handleDragOver(e, index)}
-                onDragLeave={handleDragLeave}
-                onDrop={(e) => handleDrop(e, index)}
-                onDragEnd={handleDragEnd}
-                className={`
-                  ${isDragging ? 'opacity-70 bg-blue-50' : 'opacity-100'}
-                  ${isDragOver ? 'border-t-4 border-primary-500 bg-primary-50' : ''}
-                  hover:${isEscola ? 'bg-green-50' : 'bg-primary-50'} 
-                  transition-all
-                `}
-              >
-                {/* Coluna de Arrastar */}
-                <td className="px-4 py-3 text-center">
-                  <div className="flex items-center justify-center">
-                    <DragIndicatorIcon className="text-gray-400" fontSize="small" />
-                  </div>
-                </td>
+      {/* Coluna de Ordem */}
+      <td className="px-4 py-3" data-label="Ordem">
+        <span className={`inline-flex items-center justify-center w-10 h-10 ${
+          isEscola ? 'bg-green-100 text-green-700' : 'bg-primary-100 text-primary-700'
+        } rounded-full font-semibold text-base`}>
+          {index + 1}º
+        </span>
+      </td>
 
-                {/* Coluna de Ordem */}
-                <td className="px-4 py-3 text-center">
-                  <span className={`inline-flex items-center justify-center w-10 h-10 ${
-                    isEscola ? 'bg-green-100 text-green-700' : 'bg-primary-100 text-primary-700'
-                  } rounded-full font-semibold text-base`}>
-                    {index + 1}º
-                  </span>
-                </td>
+      {/* Coluna de Nome */}
+      <td className="px-4 py-3 text-sm text-left" data-label="Nome">
+        <span className="text-gray-700 font-medium">{isEscola ? item.nome : item.nomeAluno}</span>
+      </td>
 
-                {/* Coluna de Nome */}
-                <td className="px-4 py-3 text-sm text-center">
-                  <div className="flex items-center justify-center gap-2">
-                    {isEscola ? (
-                      <span className="text-gray-700 font-medium">{item.nome}</span>
-                    ) : (
-                      <span className="text-gray-700 font-medium">{item.nomeAluno}</span>
-                    )}
-                  </div>
-                </td>
+      {/* Coluna de Informações */}
+      <td className="px-4 py-3 text-sm text-left text-gray-600" data-label="Informações">
+        {isEscola ? (
+          <span>{item.cidade || '-'}</span>
+        ) : (
+          <div className="flex flex-col gap-1 text-right sm:text-left">
+            <span className="text-xs"><strong>Escola:</strong> {item.escola || '-'}</span>
+            <span className="text-xs"><strong>Resp.:</strong> {item.responsavel || '-'}</span>
+          </div>
+        )}
+      </td>
 
-                {/* Coluna de Informações */}
-                <td className="px-4 py-3 text-sm text-center text-gray-600">
-                  {isEscola ? (
-                    <span>{item.cidade || '-'}</span>
-                  ) : (
-                    <div className="flex flex-col gap-1">
-                      <span className="text-xs">
-                        <strong>Escola:</strong> {item.escola || '-'}
-                      </span>
-                      <span className="text-xs">
-                        <strong>Resp.:</strong> {item.responsavel || '-'}
-                      </span>
-                    </div>
-                  )}
-                </td>
+      {/* Coluna de ações (remover) */}
+      {onRemover && (
+        <td className="px-4 py-3" data-label="Ações">
+          <button
+            onClick={() => onRemover(item.tipo, item.id)}
+            className="p-1.5 rounded-lg text-red-500 hover:bg-red-50 transition-colors"
+            title={`Remover ${isEscola ? 'escola' : 'aluno'} do itinerário`}
+          >
+            <DeleteIcon />
+          </button>
+        </td>
+      )}
+    </tr>
+  );
+}
 
-                {/* Coluna de ações (remover) */}
-                {onRemover && (
-                  <td className="px-4 py-3 text-center">
-                    <button
-                      onClick={() => onRemover(item.tipo, item.id)}
-                      className="p-1.5 rounded-lg text-red-500 hover:bg-red-50 transition-colors"
-                      title={`Remover ${isEscola ? 'escola' : 'aluno'} do itinerário`}
-                    >
-                      <DeleteIcon fontSize="small" />
-                    </button>
-                  </td>
-                )}
-              </tr>
-            );
-          })}
+SortableItem.propTypes = {
+  item: PropTypes.object.isRequired,
+  index: PropTypes.number.isRequired,
+  onRemover: PropTypes.func,
+};
 
-          {dados.length === 0 && (
+
+// Componente principal da Tabela
+export function TabelaPlanejamentoRotas({ dados = [], onRemover }) {
+  return (
+    <>
+      <style>
+        {`
+          @media (max-width: 640px) {
+            .responsive-table thead { display: none; }
+            .responsive-table tr {
+              display: block;
+              margin-bottom: 1rem;
+              border: 1px solid #e5e7eb;
+              border-radius: 0.75rem;
+              padding: 0.5rem;
+              box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+            }
+            .responsive-table td {
+              display: flex;
+              justify-content: space-between;
+              align-items: center;
+              padding: 0.75rem 0.5rem;
+              border-bottom: 1px solid #f3f4f6;
+            }
+            .responsive-table td:last-child { border-bottom: none; }
+            .responsive-table td::before {
+              content: attr(data-label);
+              font-weight: 600;
+              margin-right: 1rem;
+              color: #374151;
+            }
+            .responsive-table td[data-label="Arrastar"] {
+              justify-content: center;
+              background-color: #f9fafb;
+              border-radius: 0.5rem;
+              margin-bottom: 0.5rem;
+            }
+          }
+        `}
+      </style>
+      <div className="w-full mx-auto overflow-x-auto rounded-2xl bg-white sm:shadow-lg">
+        <table className="min-w-full divide-y divide-gray-200 responsive-table">
+          <thead className="bg-gray-50">
             <tr>
-              <td
-                colSpan={onRemover ? 5 : 4}
-                className="px-4 py-6 text-center text-sm text-gray-500"
-              >
-                Nenhum aluno ou escola adicionado ao trajeto
-              </td>
+              <th className="py-3 px-4 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-16">Arrastar</th>
+              <th className="py-3 px-4 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Ordem</th>
+              <th className="py-3 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nome</th>
+              <th className="py-3 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Informações</th>
+              {onRemover && <th className="py-3 px-4 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Ações</th>}
             </tr>
-          )}
-        </tbody>
-      </table>
-    </div>
+          </thead>
+          <tbody className="bg-white divide-y divide-gray-200">
+            {dados.map((item, index) => (
+              <SortableItem key={item.id} item={item} index={index} onRemover={onRemover} />
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </>
   );
 }
 
 TabelaPlanejamentoRotas.propTypes = {
-  dados: PropTypes.arrayOf(PropTypes.object).isRequired,
+  dados: PropTypes.array.isRequired,
   onRemover: PropTypes.func,
-  onReordenar: PropTypes.func,
 };
