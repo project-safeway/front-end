@@ -47,6 +47,7 @@ export default function Financeiro() {
   const [pagamentos, setPagamentos] = useState([]);
   const [inicializado, setInicializado] = useState(false);
   const [filtroNavegacao, setFiltroNavegacao] = useState(undefined);
+  const [periodoNavegacao, setPeriodoNavegacao] = useState(null);
 
   // Filtros para mensalidades - otimizados
   const [filtroTexto, setFiltroTexto] = useState("");
@@ -62,9 +63,20 @@ export default function Financeiro() {
     // Só processa na montagem inicial ou quando há um state válido
     if (location.state?.filtroStatus && filtroNavegacao === undefined) {
       const status = location.state.filtroStatus;
+      const mesNavegacao = Number(location.state?.selectedMonth);
+      const anoNavegacao = Number(location.state?.selectedYear);
       
       // Marca que veio da navegação
       setFiltroNavegacao(status);
+      if (
+        Number.isInteger(mesNavegacao) &&
+        mesNavegacao >= 1 &&
+        mesNavegacao <= 12 &&
+        Number.isInteger(anoNavegacao) &&
+        anoNavegacao > 1900
+      ) {
+        setPeriodoNavegacao({ mes: mesNavegacao, ano: anoNavegacao });
+      }
       
       // Limpar o estado após aplicar para não reaplicar
       window.history.replaceState({}, document.title);
@@ -84,12 +96,13 @@ export default function Financeiro() {
     if (filtroNavegacao !== null && filtroNavegacao !== undefined) {
       // Veio da navegação - aplicar filtro de status
       const hoje = new Date();
-      const ano = hoje.getFullYear();
-      const mes = String(hoje.getMonth() + 1).padStart(2, '0');
-      const ultimoDia = new Date(ano, hoje.getMonth() + 1, 0).getDate();
+      const ano = periodoNavegacao?.ano ?? hoje.getFullYear();
+      const mesNumero = periodoNavegacao?.mes ?? (hoje.getMonth() + 1);
+      const mes = String(mesNumero).padStart(2, '0');
+      const ultimoDia = new Date(ano, mesNumero, 0).getDate();
       
       setFiltroDataInicio(`${ano}-${mes}-01`);
-      setFiltroDataFim(`${ano}-${mes}-${ultimoDia}`);
+      setFiltroDataFim(`${ano}-${mes}-${String(ultimoDia).padStart(2, '0')}`);
       setFiltroStatus([filtroNavegacao]);
       setFiltroMesAtualPadrao(false);
       setPaginaAtualMensalidades(0);
@@ -102,10 +115,10 @@ export default function Financeiro() {
       const ultimoDia = new Date(ano, hoje.getMonth() + 1, 0).getDate();
       
       setFiltroDataInicio(`${ano}-${mes}-01`);
-      setFiltroDataFim(`${ano}-${mes}-${ultimoDia}`);
+      setFiltroDataFim(`${ano}-${mes}-${String(ultimoDia).padStart(2, '0')}`);
       setInicializado(true);
     }
-  }, [filtroNavegacao]);
+  }, [filtroNavegacao, periodoNavegacao]);
   
   // Filtros específicos para pagamentos
   const [filtroDescricao, setFiltroDescricao] = useState("");
@@ -121,7 +134,7 @@ export default function Financeiro() {
     const ultimoDia = new Date(ano, hoje.getMonth() + 1, 0).getDate();
     
     setFiltroDataInicioPag(`${ano}-${mes}-01`);
-    setFiltroDataFimPag(`${ano}-${mes}-${ultimoDia}`);
+    setFiltroDataFimPag(`${ano}-${mes}-${String(ultimoDia).padStart(2, '0')}`);
   }, []);
 
   // Paginação
@@ -246,9 +259,9 @@ export default function Financeiro() {
       const anoAtual = hoje.getFullYear();
       const mesAtual = hoje.getMonth() + 1;
 
-      const dataInicio = `${anoAtual}-${String(mesAtual).padStart(2, '0')}-01`;
+      const dataInicio = filtroDataInicio || `${anoAtual}-${String(mesAtual).padStart(2, '0')}-01`;
       const ultimoDia = new Date(anoAtual, mesAtual, 0).getDate();
-      const dataFim = `${anoAtual}-${String(mesAtual).padStart(2, '0')}-${ultimoDia}`;
+      const dataFim = filtroDataFim || `${anoAtual}-${String(mesAtual).padStart(2, '0')}-${String(ultimoDia).padStart(2, '0')}`;
 
       // Buscar todos os dados do mês
       const [resPagamentos, resMensalidades] = await Promise.all([
@@ -265,9 +278,12 @@ export default function Financeiro() {
         })
       ]);
 
-      // Ambos já retornam o objeto direto (wrapper api.js)
-      const pagamentosMes = resPagamentos?.content || [];
-      const mensalidadesPagas = resMensalidades?.content || [];
+      const pagamentosMes = Array.isArray(resPagamentos)
+        ? resPagamentos
+        : (resPagamentos?.content || []);
+      const mensalidadesPagas = Array.isArray(resMensalidades)
+        ? resMensalidades
+        : (resMensalidades?.content || []);
 
       // RECEITA = Mensalidades pagas
       const receitaTotal = mensalidadesPagas.reduce((acc, m) => {
@@ -295,7 +311,7 @@ export default function Financeiro() {
         carregandoKpis: false
       });
     }
-  }, []);
+  }, [filtroDataInicio, filtroDataFim]);
 
   // Effects
   useEffect(() => {
