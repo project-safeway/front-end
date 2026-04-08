@@ -7,6 +7,38 @@ import CloseIcon from '@mui/icons-material/Close'
 let modalRoot = null
 let modalContainer = null
 
+function decodeHtmlEntities(text) {
+  if (typeof text !== 'string') return ''
+  const textarea = document.createElement('textarea')
+  textarea.innerHTML = text
+  return textarea.value
+}
+
+function normalizeModalMessage(input) {
+  if (input == null) return ''
+
+  const raw = String(input)
+  const withoutTags = raw
+    .replace(/<br\s*\/?>/gi, '\n')
+    .replace(/<\/(p|div|li|h[1-6])>/gi, '\n')
+    .replace(/<li[^>]*>/gi, '- ')
+    .replace(/<[^>]*>/g, '')
+
+  return decodeHtmlEntities(withoutTags).trim()
+}
+
+function resolveMessageContent(options) {
+  if (options.message !== undefined && options.message !== null) {
+    return options.message
+  }
+
+  if (options.html !== undefined && options.html !== null) {
+    return normalizeModalMessage(options.html)
+  }
+
+  return normalizeModalMessage(options.text)
+}
+
 // Componente inline para o modal
 function CustomConfirmDialog({
   isOpen,
@@ -75,10 +107,9 @@ function CustomConfirmDialog({
 
         {/* Content */}
         <div className="px-6 py-6">
-          <p 
-            className="text-navy-700 leading-relaxed"
-            dangerouslySetInnerHTML={{ __html: message }}
-          />
+          <div className="text-navy-700 leading-relaxed whitespace-pre-line">
+            {message}
+          </div>
         </div>
 
         {/* Actions */}
@@ -161,17 +192,22 @@ export async function showSwal(options = {}) {
     // Mapeia as opções para o componente - para exclusões (warning), usar danger
     const type = options.icon === 'warning' ? 'danger' : options.icon === 'success' ? 'success' : 'danger'
 
+    const message = resolveMessageContent(options)
+
+    const shouldShowCancel =
+      options.showCancelButton ?? options.showCancel ?? true
+
     modalRoot.render(
       <CustomConfirmDialog
         isOpen={true}
         onClose={handleClose}
         onConfirm={handleConfirm}
         title={options.title || 'Confirmar ação'}
-        message={options.html || options.text || 'Tem certeza que deseja continuar?'}
+        message={message || 'Tem certeza que deseja continuar?'}
         confirmText={options.confirmButtonText || 'Confirmar'}
         cancelText={options.cancelButtonText || 'Cancelar'}
         type={type}
-        showCancel={options.showCancel || true}
+        showCancel={shouldShowCancel}
       />
     )
   })

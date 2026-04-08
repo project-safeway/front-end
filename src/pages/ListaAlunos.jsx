@@ -65,7 +65,7 @@ export default function ListaAlunos() {
     if (alunos && alunos.length > 0) {
       await showSwal({
         title: 'Não é possível excluir',
-        html: `Não é possível excluir a escola "<b>${escolaNome}</b>", pois existem <b>${alunos.length}</b> aluno(s) vinculado(s) a ela.<br>Remova os alunos antes de excluir a escola.`,
+        text: `Não é possível excluir a escola "${escolaNome}", pois existem ${alunos.length} aluno(s) vinculado(s) a ela.\nRemova os alunos antes de excluir a escola.`,
         icon: 'warning',
         confirmButtonText: 'Ok',
         showCancelButton: false,
@@ -75,7 +75,11 @@ export default function ListaAlunos() {
 
     const swalResult = await showSwal({
       title: 'Excluir Escola',
-      html: `Tem certeza que deseja excluir a escola "<b>${escolaNome}</b>"? Esta ação não poderá ser desfeita.`,
+      message: (
+        <>
+          Tem certeza que deseja excluir a escola <strong>"{escolaNome}"</strong>? Esta ação não poderá ser desfeita.
+        </>
+      ),
       icon: 'warning',
       confirmButtonText: 'Excluir',
       cancelButtonText: 'Cancelar',
@@ -100,7 +104,11 @@ export default function ListaAlunos() {
     e.stopPropagation();
     const swalResult = await showSwal({
       title: 'Excluir Aluno',
-      html: `Tem certeza que deseja excluir o aluno "<b>${alunoNome}</b>"? Esta ação não poderá ser desfeita.`,
+      message: (
+        <>
+          Tem certeza que deseja excluir o aluno <strong>"{alunoNome}"</strong>? Esta ação não poderá ser desfeita.
+        </>
+      ),
       icon: 'warning',
       confirmButtonText: 'Excluir',
       cancelButtonText: 'Cancelar',

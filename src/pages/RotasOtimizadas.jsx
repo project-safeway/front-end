@@ -30,9 +30,11 @@ function RotasOtimizadas() {
   const [map, setMap] = useState(null);
   const [modoNavegacao, setModoNavegacao] = useState(false);
   const [usandoRotaOtimizada, setUsandoRotaOtimizada] = useState(false); // Controlar se está usando rota otimizada
+  const googleMapsApiKey = (import.meta.env.VITE_GOOGLE_MAPS_API_KEY || '').trim();
+  const mapaSemConfiguracao = !googleMapsApiKey;
 
   const { isLoaded } = useJsApiLoader({
-    googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY || "SUA_API_KEY_AQUI",
+    googleMapsApiKey,
     libraries: ['places', 'geometry']
   });
 
@@ -450,6 +452,19 @@ function RotasOtimizadas() {
       setLoading(false);
     }
   };
+
+  if (mapaSemConfiguracao) {
+    return (
+      <div className="flex justify-center items-center h-screen">
+        <div className="text-center px-6">
+          <div className="text-[#F04848] text-xl font-semibold mb-2">Google Maps não configurado</div>
+          <div className="text-[#34435F]">
+            Defina <code>VITE_GOOGLE_MAPS_API_KEY</code> no arquivo <code>.env</code> para visualizar o mapa.
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (!isLoaded) {
     return (

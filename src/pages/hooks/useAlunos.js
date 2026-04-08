@@ -1,4 +1,7 @@
 import { useState, useEffect } from 'react';
+import config from '../../config/config';
+
+const API_BASE_URL = config.API_BASE_URL;
 
 /**
  * Hook para buscar todos os alunos
@@ -15,7 +18,7 @@ export function useAlunos() {
       setError(null);
       
       try {
-        const response = await fetch('http://localhost:8080/alunos');
+        const response = await fetch(`${API_BASE_URL}/alunos`);
         
         if (!response.ok) {
           throw new Error('Erro ao buscar alunos');
@@ -58,7 +61,7 @@ export function useAlunosPorEscola(escolaId) {
       setError(null);
       
       try {
-        const response = await fetch(`http://localhost:8080/alunos?escolaId=${escolaId}`);
+        const response = await fetch(`${API_BASE_URL}/alunos?escolaId=${escolaId}`);
         
         if (!response.ok) {
           throw new Error('Erro ao buscar alunos da escola');
@@ -101,7 +104,7 @@ export function useAluno(alunoId) {
       setError(null);
       
       try {
-        const response = await fetch(`http://localhost:8080/alunos/${alunoId}`);
+        const response = await fetch(`${API_BASE_URL}/alunos/${alunoId}`);
         
         if (!response.ok) {
           throw new Error('Aluno não encontrado');

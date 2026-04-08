@@ -1,4 +1,7 @@
 import { useState, useEffect } from 'react';
+import config from '../../config/config';
+
+const API_BASE_URL = config.API_BASE_URL;
 
 export function useEnderecos(alunoId) {
   const [enderecos, setEnderecos] = useState([]);
@@ -17,7 +20,7 @@ export function useEnderecos(alunoId) {
       setError(null);
       
       try {
-        const response = await fetch(`http://localhost:8080/alunos/${alunoId}/enderecos`);
+        const response = await fetch(`${API_BASE_URL}/alunos/${alunoId}/enderecos`);
         
         if (!response.ok) {
           throw new Error('Erro ao buscar endereços');
