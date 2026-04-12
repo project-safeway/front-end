@@ -47,6 +47,7 @@ export default function Financeiro() {
   const [pagamentos, setPagamentos] = useState([]);
   const [inicializado, setInicializado] = useState(false);
   const [filtroNavegacao, setFiltroNavegacao] = useState(undefined);
+  const [periodoNavegacao, setPeriodoNavegacao] = useState(null);
 
   // Filtros para mensalidades - otimizados
   const [filtroTexto, setFiltroTexto] = useState("");
@@ -62,9 +63,20 @@ export default function Financeiro() {
     // Só processa na montagem inicial ou quando há um state válido
     if (location.state?.filtroStatus && filtroNavegacao === undefined) {
       const status = location.state.filtroStatus;
+      const mesNavegacao = Number(location.state?.selectedMonth);
+      const anoNavegacao = Number(location.state?.selectedYear);
       
       // Marca que veio da navegação
       setFiltroNavegacao(status);
+      if (
+        Number.isInteger(mesNavegacao) &&
+        mesNavegacao >= 1 &&
+        mesNavegacao <= 12 &&
+        Number.isInteger(anoNavegacao) &&
+        anoNavegacao > 1900
+      ) {
+        setPeriodoNavegacao({ mes: mesNavegacao, ano: anoNavegacao });
+      }
       
       // Limpar o estado após aplicar para não reaplicar
       window.history.replaceState({}, document.title);
@@ -84,12 +96,13 @@ export default function Financeiro() {
     if (filtroNavegacao !== null && filtroNavegacao !== undefined) {
       // Veio da navegação - aplicar filtro de status
       const hoje = new Date();
-      const ano = hoje.getFullYear();
-      const mes = String(hoje.getMonth() + 1).padStart(2, '0');
-      const ultimoDia = new Date(ano, hoje.getMonth() + 1, 0).getDate();
+      const ano = periodoNavegacao?.ano ?? hoje.getFullYear();
+      const mesNumero = periodoNavegacao?.mes ?? (hoje.getMonth() + 1);
+      const mes = String(mesNumero).padStart(2, '0');
+      const ultimoDia = new Date(ano, mesNumero, 0).getDate();
       
       setFiltroDataInicio(`${ano}-${mes}-01`);
-      setFiltroDataFim(`${ano}-${mes}-${ultimoDia}`);
+      setFiltroDataFim(`${ano}-${mes}-${String(ultimoDia).padStart(2, '0')}`);
       setFiltroStatus([filtroNavegacao]);
       setFiltroMesAtualPadrao(false);
       setPaginaAtualMensalidades(0);
@@ -102,10 +115,10 @@ export default function Financeiro() {
       const ultimoDia = new Date(ano, hoje.getMonth() + 1, 0).getDate();
       
       setFiltroDataInicio(`${ano}-${mes}-01`);
-      setFiltroDataFim(`${ano}-${mes}-${ultimoDia}`);
+      setFiltroDataFim(`${ano}-${mes}-${String(ultimoDia).padStart(2, '0')}`);
       setInicializado(true);
     }
-  }, [filtroNavegacao]);
+  }, [filtroNavegacao, periodoNavegacao]);
   
   // Filtros específicos para pagamentos
   const [filtroDescricao, setFiltroDescricao] = useState("");
@@ -121,7 +134,7 @@ export default function Financeiro() {
     const ultimoDia = new Date(ano, hoje.getMonth() + 1, 0).getDate();
     
     setFiltroDataInicioPag(`${ano}-${mes}-01`);
-    setFiltroDataFimPag(`${ano}-${mes}-${ultimoDia}`);
+    setFiltroDataFimPag(`${ano}-${mes}-${String(ultimoDia).padStart(2, '0')}`);
   }, []);
 
   // Paginação
@@ -182,7 +195,7 @@ export default function Financeiro() {
       if (filtroDataFim) params.dataFim = filtroDataFim;
 
       if (filtroAlunoId) params.alunoId = filtroAlunoId;
-      if (filtroStatus.length > 0) params.status = filtroStatus;
+      if (filtroStatus.length > 0) params.status = filtroStatus.join(',');
 
       const res = await listarMensalidades(params);
 
@@ -246,9 +259,9 @@ export default function Financeiro() {
       const anoAtual = hoje.getFullYear();
       const mesAtual = hoje.getMonth() + 1;
 
-      const dataInicio = `${anoAtual}-${String(mesAtual).padStart(2, '0')}-01`;
+      const dataInicio = filtroDataInicio || `${anoAtual}-${String(mesAtual).padStart(2, '0')}-01`;
       const ultimoDia = new Date(anoAtual, mesAtual, 0).getDate();
-      const dataFim = `${anoAtual}-${String(mesAtual).padStart(2, '0')}-${ultimoDia}`;
+      const dataFim = filtroDataFim || `${anoAtual}-${String(mesAtual).padStart(2, '0')}-${String(ultimoDia).padStart(2, '0')}`;
 
       // Buscar todos os dados do mês
       const [resPagamentos, resMensalidades] = await Promise.all([
@@ -258,14 +271,19 @@ export default function Financeiro() {
           size: 1000
         }),
         listarMensalidades({
-          status: ['PAGO'],
+          dataInicio,
+          dataFim,
+          status: 'PAGO',
           size: 1000
         })
       ]);
 
-      // Ambos já retornam o objeto direto (wrapper api.js)
-      const pagamentosMes = resPagamentos?.content || [];
-      const mensalidadesPagas = resMensalidades?.content || [];
+      const pagamentosMes = Array.isArray(resPagamentos)
+        ? resPagamentos
+        : (resPagamentos?.content || []);
+      const mensalidadesPagas = Array.isArray(resMensalidades)
+        ? resMensalidades
+        : (resMensalidades?.content || []);
 
       // RECEITA = Mensalidades pagas
       const receitaTotal = mensalidadesPagas.reduce((acc, m) => {
@@ -293,7 +311,7 @@ export default function Financeiro() {
         carregandoKpis: false
       });
     }
-  }, []);
+  }, [filtroDataInicio, filtroDataFim]);
 
   // Effects
   useEffect(() => {
@@ -1122,8 +1140,8 @@ export default function Financeiro() {
         {/* Conteúdo das abas */}
         {aba === "mensalidades" && (
           <section className="bg-white border border-offwhite-200 p-6 rounded-xl shadow-sm">
-            <div className="flex justify-between items-center mb-4 flex-wrap gap-2">
-              <h2 className="text-xl font-semibold text-navy-900 flex items-center gap-2">
+            <div className="flex justify-between items-center mb-4 flex-wrap gap-2 secao-header-mobile">
+              <h2 className="text-xl font-semibold text-navy-900 flex items-center gap-2 titulo-secao-mobile">
                 <AttachMoneyIcon />
                 Receitas - Mensalidades
               </h2>
@@ -1159,13 +1177,13 @@ export default function Financeiro() {
                     ? "Tente ajustar os filtros ou cadastre uma nova mensalidade"
                     : "Comece cadastrando uma nova mensalidade"}
                 </p>
-                <button
+                {/* <button
                   onClick={() => { setModalAberto(true); setModalContexto("novaMensalidade"); }}
                   className="px-4 py-2 bg-green-600 text-white rounded-lg inline-flex items-center gap-2 hover:bg-green-700 transition-colors shadow-sm"
                 >
                   <AddIcon fontSize="small" />
                   Cadastrar Primeira Mensalidade
-                </button>
+                </button> */}
               </div>
             ) : (
               <>
@@ -1249,8 +1267,8 @@ export default function Financeiro() {
 
         {aba === "pagamentos" && (
           <section className="bg-white border border-offwhite-200 p-6 rounded-xl shadow-sm">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-semibold text-navy-900 flex items-center gap-2">
+            <div className="flex justify-between items-center mb-4 secao-header-mobile">
+              <h2 className="text-xl font-semibold text-navy-900 flex items-center gap-2 titulo-secao-mobile">
                 <PaymentsIcon />
                 Despesas - Pagamentos
               </h2>
@@ -1321,7 +1339,7 @@ export default function Financeiro() {
         {/* Modal de Pagamento/Despesa */}
         {modalAberto && modalContexto !== "novaMensalidade" && (
           <div className="fixed inset-0 z-50 flex items-center justify-center">
-            <div className="absolute inset-0 bg-black opacity-50" onClick={fecharModal} />
+            <div className="absolute inset-0 bg-black/50" onClick={fecharModal} />
             <div className="relative bg-white rounded-2xl shadow-lg w-full max-w-md mx-4 p-6 z-10 border border-offwhite-200">
               <h2 className="text-xl font-semibold mb-4 flex items-center gap-2 text-navy-900">
                 <PaymentsIcon />
@@ -1378,7 +1396,7 @@ export default function Financeiro() {
         {/* Modal Nova Mensalidade */}
         {modalAberto && modalContexto === "novaMensalidade" && (
           <div className="fixed inset-0 z-50 flex items-center justify-center">
-            <div className="absolute inset-0 bg-black opacity-50" onClick={fecharModal} />
+            <div className="absolute inset-0 bg-black/50" onClick={fecharModal} />
             <div className="relative bg-white rounded-2xl shadow-lg w-full max-w-md mx-4 p-6 z-10 border border-offwhite-200">
               <h2 className="text-xl font-semibold mb-4 flex items-center gap-2 text-navy-900">
                 <AttachMoneyIcon />
@@ -1455,6 +1473,57 @@ export default function Financeiro() {
             padding-top: 16px;
             padding-bottom: 16px;
             box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+          }
+
+          .titulo-secao-mobile {
+            font-size: 1.125rem;
+            flex-wrap: wrap;
+          }
+
+          .secao-header-mobile {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 1rem;
+          }
+            
+          .secao-header-mobile button {
+            width: 100%;
+            justify-content: center;
+          }
+
+          .tabela-responsiva-container table {
+            width: 100%;
+          }
+
+          .tabela-responsiva-container thead {
+            display: none;
+          }
+
+          .tabela-responsiva-container tr {
+            display: block;
+            border-bottom: 2px solid #eee;
+            margin-bottom: 1rem;
+          }
+
+          .tabela-responsiva-container td {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            text-align: right !important;
+            padding: 0.75rem 1rem !important;
+            border-bottom: 1px solid #f0f0f0;
+          }
+
+          .tabela-responsiva-container td::before {
+            content: attr(data-label);
+            font-weight: 600;
+            text-align: left;
+            margin-right: 1rem;
+            color: #374151;
+          }
+
+          .tabela-responsiva-container td:last-child {
+            border-bottom: 0;
           }
            
         }

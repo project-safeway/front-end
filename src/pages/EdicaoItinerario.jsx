@@ -16,6 +16,20 @@ import EscolasService from '../services/escolasService';
 import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { showSwal } from '../utils/swal.jsx';
+import {
+    DndContext,
+    closestCenter,
+    KeyboardSensor,
+    PointerSensor,
+    useSensor,
+    useSensors,
+} from '@dnd-kit/core';
+import {
+    arrayMove,
+    SortableContext,
+    sortableKeyboardCoordinates,
+    verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
 
 export default function EdicaoItinerario() {
     const [searchParams] = useSearchParams();
@@ -33,6 +47,12 @@ export default function EdicaoItinerario() {
     const [isSaving, setIsSaving] = useState(false);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isModalEscolaOpen, setIsModalEscolaOpen] = useState(false);
+    const sensors = useSensors(
+        useSensor(PointerSensor),
+        useSensor(KeyboardSensor, {
+            coordinateGetter: sortableKeyboardCoordinates,
+        })
+    );
 
     useEffect(() => {
         carregarDados();
@@ -485,19 +505,19 @@ export default function EdicaoItinerario() {
     }
 
     return (
-        <div className="min-h-screen py-8 px-4">
+        <div className="min-h-screen py-8 px-4 edicao-itinerario-container">
             <div className="max-w-7xl mx-auto">
                 {/* Breadcrumb */}
                 <Link
                     to="/itinerarios"
-                    className="inline-flex items-center gap-2 text-navy-600 hover:text-primary-400 mb-6 transition-colors"
+                    className="inline-flex items-center gap-2 text-navy-600 hover:text-primary-400 mb-6 transition-colors voltar-mobile"
                 >
                     <ArrowBackIcon fontSize="small" />
                     <span>Voltar para Itinerários</span>
                 </Link>
 
                 {/* Header minimalista */}
-                <div className="bg-white rounded-2xl shadow-sm border border-offwhite-200 p-8 mb-8">
+                <div className="bg-white rounded-2xl shadow-sm border border-offwhite-200 p-8 mb-8 edicao-itinerario-header">
                     <div className="flex items-center gap-6">
                         <div className="p-4 bg-primary-50 rounded-xl">
                             <EditIcon className="text-primary-400 text-4xl" />
@@ -512,7 +532,7 @@ export default function EdicaoItinerario() {
                 </div>
 
                 {/* Formulário */}
-                <div className="bg-white rounded-xl shadow-sm border border-offwhite-200 p-8 mb-8">
+                <div className="bg-white rounded-xl shadow-sm border border-offwhite-200 p-8 mb-8 edicao-itinerario-form">
                     <h3 className="text-lg font-semibold text-navy-900 mb-4 pb-3 border-b border-offwhite-200">Informações do Itinerário</h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                         <div>
@@ -573,8 +593,9 @@ export default function EdicaoItinerario() {
                 </div>
 
                 {/* Seção de Planejamento de Rotas (Alunos e Escolas) */}
-                <div className="bg-white rounded-xl shadow-sm border border-offwhite-200 p-8 mb-8">
-                    <div className="flex items-center justify-between mb-6">
+                <div className="bg-white rounded-xl shadow-sm border border-offwhite-200 p-4 sm:p-8 mb-8">
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6 gap-4">
+                        {/* Bloco de informações (não muda) */}
                         <div className="flex items-center gap-3">
                             <div className="p-3 bg-gradient-to-r from-primary-50 to-green-50 rounded-xl">
                                 <RouteIcon className="text-primary-500 text-2xl" />
@@ -588,17 +609,19 @@ export default function EdicaoItinerario() {
                                 </p>
                             </div>
                         </div>
-                        <div className="flex gap-2">
+
+                        {/* Altere o container dos botões */}
+                        <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
                             <button
                                 onClick={() => setIsModalOpen(true)}
-                                className="flex items-center gap-2 px-4 py-2.5 bg-primary-400 hover:bg-primary-500 text-white rounded-lg font-semibold transition-all shadow-sm hover:shadow-md"
+                                className="flex items-center justify-center gap-2 px-4 py-2.5 bg-primary-400 hover:bg-primary-500 text-white rounded-lg font-semibold transition-all shadow-sm hover:shadow-md"
                             >
                                 <PersonAddIcon fontSize="small" />
                                 Adicionar Aluno
                             </button>
                             <button
                                 onClick={() => setIsModalEscolaOpen(true)}
-                                className="flex items-center gap-2 px-4 py-2.5 bg-green-500 hover:bg-green-600 text-white rounded-lg font-semibold transition-all shadow-sm hover:shadow-md"
+                                className="flex items-center justify-center gap-2 px-4 py-2.5 bg-green-500 hover:bg-green-600 text-white rounded-lg font-semibold transition-all shadow-sm hover:shadow-md"
                             >
                                 <SchoolIcon fontSize="small" />
                                 Adicionar Escola
@@ -615,16 +638,20 @@ export default function EdicaoItinerario() {
                             </p>
                         </div>
                     ) : (
-                        <TabelaPlanejamentoRotas
-                            dados={itensTrajeto}
-                            onRemover={handleRemoverItem}
-                            onReordenar={handleReordenarPorDrag}
-                        />
+                        <DndContext onDragEnd={handleDragEnd}>
+                            <SortableContext items={itensTrajeto}>
+                                <TabelaPlanejamentoRotas
+                                    dados={itensTrajeto}
+                                    onRemover={handleRemoverItem}
+                                    onReordenar={handleReordenarPorDrag}
+                                />
+                            </SortableContext>
+                        </DndContext>
                     )}
                 </div>
 
                 {/* Botões de Ação */}
-                <div className="flex gap-3 justify-end">
+                <div className="flex gap-3 justify-end edicao-itinerario-actions">
                     <button
                         onClick={() => navigate("/itinerarios")}
                         className="px-6 py-2.5 border-2 border-offwhite-300 hover:border-navy-400 text-navy-700 rounded-lg font-medium transition-all"
@@ -659,6 +686,64 @@ export default function EdicaoItinerario() {
                     escolasJaAdicionadas={escolasItinerario}
                 />
             </div>
+            <style>
+                {`
+                @media (max-width: 640px) {
+                .edicao-itinerario-container {
+                    padding: 0.5rem !important;
+                }
+                .edicao-itinerario-header {
+                    flex-direction: column !important;
+                    gap: 1rem !important;
+                    align-items: flex-start !important;
+                    padding: 1.5rem !important;
+                }
+                .edicao-itinerario-form {
+                    padding: 1rem !important;
+                }
+                .edicao-itinerario-actions {
+                    flex-direction: column !important;
+                    gap: 0.5rem !important;
+                }
+                .edicao-itinerario-actions button {
+                    width: 100% !important;
+                }
+                .edicao-itinerario-actions-top {
+                    flex-direction: column !important;
+                    width: 100% !important;
+                    margin-top: 1rem;
+                }
+                .edicao-itinerario-actions-top button {
+                    width: 100% !important;
+                }
+                .voltar-mobile {
+                    margin-top: 0.9rem;
+                }
+                }
+                `}
+            </style>
         </div>
     );
+}
+
+function handleDragEnd(event) {
+    const { active, over } = event;
+    if (!active || !over) return;
+
+    const activeId = active.id;
+    const overId = over.id;
+
+    if (activeId === overId) return;
+
+    // Determinar o tipo de item
+    const activeItem = active.data.current;
+    const overItem = over.data.current;
+
+    if (activeItem.tipo === 'aluno' && overItem.tipo === 'aluno') {
+        // Mover aluno
+        handleMoverAluno(active.index, over.index);
+    } else if (activeItem.tipo === 'escola' && overItem.tipo === 'escola') {
+        // Mover escola
+        handleMoverItem(active.index, over.index);
+    }
 }

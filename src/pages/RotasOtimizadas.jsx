@@ -153,7 +153,7 @@ function RotasOtimizadas() {
 
       console.log('===== ORDEM APÓS SORT =====');
       itensUnificados.forEach((item, idx) => {
-        const nome = item.tipo === 'aluno' ? item.nomeAluno : item.nome;
+        const nome = item.tipo === 'aluno' ? item.nomeAluno : (item.nome || item.nomeEscola);
         console.log(`${idx + 1}. ${item.tipo.toUpperCase()}: ${nome} - ordem: ${item.ordem}`);
       });
       console.log('===========================');
@@ -475,256 +475,245 @@ function RotasOtimizadas() {
   }
 
   return (
-    <div className="flex h-screen w-full overflow-hidden">
-      {/* Sidebar */}
-      <div className="w-[350px] p-5 bg-[#F4F5F6] border-r border-gray-300 flex flex-col">
-        {/* Breadcrumb */}
-        <Link
-          to="/itinerarios"
-          className="inline-flex items-center gap-2 text-[#FB923C] no-underline mb-4 text-sm hover:text-[#172848] transition-colors flex-shrink-0"
-        >
-          <ArrowBackIcon fontSize="small" />
-          <span>Voltar aos Itinerários</span>
-        </Link>
+    <>
+      <style>{responsiveStyles}</style>
+      <div className="responsive-rotas-container flex flex-col md:flex-row h-screen w-full">
+        {/* Sidebar */}
+        <div className="responsive-sidebar w-full md:w-[350px] md:p-5 bg-[#F4F5F6] border-b md:border-b-0 md:border-r border-gray-300 flex flex-col">
+          {/* Breadcrumb e Título com padding manual no mobile */}
+          <div className="px-5 pt-5 md:p-0">
+            <Link
+              to="/itinerarios"
+              className="inline-flex items-center gap-2 text-[#FB923C] no-underline mb-4 text-sm hover:text-[#172848] transition-colors flex-shrink-0 voltar-mobile"
+            >
+              <ArrowBackIcon fontSize="small" />
+              <span>Voltar aos Itinerários</span>
+            </Link>
 
-        <h2 className="text-[#172848] text-2xl font-bold mb-4 flex-shrink-0">Rota Otimizada</h2>
-
-        {/* Loading/Error States */}
-        {loading && (
-          <div className="mb-4 p-4 bg-blue-50 text-blue-700 rounded-lg text-center flex-shrink-0">
-            <p>Otimizando rota...</p>
+            <h2 className="text-[#172848] text-2xl font-bold mb-4 flex-shrink-0">Rota Otimizada</h2>
           </div>
-        )}
 
-        {erro && (
-          <div className="mb-4 p-4 bg-red-50 text-[#F04848] rounded-lg text-center flex-shrink-0">
-            <p>{erro}</p>
-          </div>
-        )}
-
-        {/* Resumo da Rota - Único card */}
-        {rota && (
-          <div className="bg-white rounded-lg shadow flex-1 flex flex-col overflow-hidden">
-            <div className="p-4 border-b border-gray-200 flex-shrink-0 flex items-center justify-between">
-              <h3 className="text-[#172848] font-semibold text-lg">Resumo da Rota</h3>
-
-              {/* Botão de sugestão ou voltar */}
-              {!usandoRotaOtimizada ? (
-                <button
-                  onClick={sugerirMelhorRota}
-                  disabled={loading}
-                  className="p-2 rounded-full hover:bg-blue-50 transition-colors group relative disabled:opacity-50 disabled:cursor-not-allowed"
-                  title="Sugerir melhor rota"
-                >
-                  <HelpOutlineIcon className="text-blue-500" fontSize="small" />
-                  <span className="absolute right-full mr-2 top-1/2 -translate-y-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
-                    Sugerir melhor rota
-                  </span>
-                </button>
-              ) : (
-                <button
-                  onClick={voltarRotaOriginal}
-                  disabled={loading}
-                  className="p-2 rounded-full hover:bg-orange-50 transition-colors group relative disabled:opacity-50 disabled:cursor-not-allowed"
-                  title="Retornar"
-                >
-                  <RestoreIcon className="text-[#FB923C]" fontSize="small" />
-                  <span className="absolute right-full mr-2 top-1/2 -translate-y-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
-                    Retornar para ordem cadastrada
-                  </span>
-                </button>
-              )}
+          {/* Loading/Error States com padding manual no mobile */}
+          {loading && (
+            <div className="mx-5 md:mx-0 mb-4 p-4 bg-blue-50 text-blue-700 rounded-lg text-center flex-shrink-0">
+              <p>Otimizando rota...</p>
             </div>
+          )}
 
-            <div className="p-4 flex-shrink-0">
-              <div className="flex items-center gap-2 mb-2">
-                <DirectionsCarIcon className="text-[#FB923C]" fontSize="small" />
-                <p className="text-[#34435F] text-sm">
-                  <strong>Distância:</strong> {rota.distanciaKm ? rota.distanciaKm.toFixed(2) : (rota.distanciaTotal / 1000).toFixed(2)} km
-                </p>
-              </div>
-
-              <div className="flex items-center gap-2 mb-2">
-                <AccessTimeIcon className="text-[#FB923C]" fontSize="small" />
-                <p className="text-[#34435F] text-sm">
-                  <strong>Tempo:</strong> {rota.duracaoMinutos || Math.floor(rota.tempoTotal / 60)} min
-                </p>
-              </div>
-
-              <div className="flex items-center gap-2">
-                <PlaceIcon className="text-[#FB923C]" fontSize="small" />
-                <p className="text-[#34435F] text-sm">
-                  <strong>Paradas:</strong> {rota.paradas.length}
-                </p>
-              </div>
+          {erro && (
+            <div className="mx-5 md:mx-0 mb-4 p-4 bg-red-50 text-[#F04848] rounded-lg text-center flex-shrink-0">
+              <p>{erro}</p>
             </div>
+          )}
 
-            <div className="px-4 pb-2 flex-shrink-0">
-              <h4 className="text-[#34435F] font-semibold text-sm mb-2">Ordem de Paradas:</h4>
-            </div>
-
-            {/* Lista com scroll */}
-            <div className="flex-1 overflow-y-auto px-4">
-              <ol className="pl-5 space-y-1 pb-2">
-                {rota.paradas.map((parada, idx) => {
-                  const isEscola = parada.tipo === 'escola'
-                  return (
-                    <li key={idx} className="text-[#34435F] flex items-center gap-2">
-                      {isEscola ? (
-                        <span className="w-3 h-3 bg-green-500 rounded-full"></span>
-                      ) : (
-                        <span className="w-3 h-3 bg-[#FB923C] rounded-full"></span>
-                      )}
-                      <span className={isEscola ? 'font-small' : ''}>
-                        {parada.idParada}
-                      </span>
-                    </li>
-                  );
-                })}
-              </ol>
-            </div>
-
-            {/* Legenda e botões - fixos no final */}
-            <div className="p-4 border-t border-gray-200 flex-shrink-0">
-              <div className="mb-3">
-                <p className="text-xs text-[#34435F] font-semibold mb-2">Legenda:</p>
-                <div className="flex gap-4 text-xs">
-                  <div className="flex items-center gap-2">
-                    <span className="w-3 h-3 bg-[#FB923C] rounded-full"></span>
-                    <span className="text-[#34435F]">Aluno</span>
+          {/* Resumo da Rota - O card agora ocupa o espaço até o final */}
+          {rota && (
+            <div className="bg-white rounded-lg shadow flex-1 flex flex-col overflow-hidden mx-5 md:mx-0 mb-5 md:mb-0">
+              
+              {/* 1. CABEÇALHO E INFORMAÇÕES (NÃO ROLA) */}
+              <div className="p-4 border-b border-gray-200 flex-shrink-0">
+                <h3 className="text-[#172848] font-bold text-lg mb-3">Resumo da Rota</h3>
+                <div className="flex justify-around text-center text-sm">
+                  <div>
+                    <DirectionsCarIcon className="text-[#34435F] mb-1" />
+                    <p className="font-semibold">{rota.distanciaKm.toFixed(2)} km</p>
+                    <p className="text-xs text-gray-500">Distância</p>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <span className="w-3 h-3 bg-green-500 rounded-full"></span>
-                    <span className="text-[#34435F]">Escola</span>
+                  <div>
+                    <AccessTimeIcon className="text-[#34435F] mb-1" />
+                    <p className="font-semibold">{rota.duracaoMinutos} min</p>
+                    <p className="text-xs text-gray-500">Duração</p>
+                  </div>
+                  <div>
+                    <PlaceIcon className="text-[#34435F] mb-1" />
+                    <p className="font-semibold">{rota.paradas.length}</p>
+                    <p className="text-xs text-gray-500">Paradas</p>
                   </div>
                 </div>
               </div>
 
-              <button
-                onClick={() => window.open(gerarLinkGoogleMaps(rota), '_blank')}
-                className="w-full mb-2 px-4 py-2.5 bg-[#4CCE5B] hover:bg-[#3cb54a] text-white font-medium rounded-lg transition-colors text-sm"
-              >
-                Abrir no Google Maps
-              </button>
+              {/* 2. LISTA DE PARADAS (ROLA) */}
+              <div className="flex-1 overflow-y-auto px-4 pt-3">
+                <h4 className="text-[#34435F] font-semibold text-sm mb-2">Ordem de Paradas:</h4>
+                <ol className="space-y-2 pb-2">
+                  {rota.paradas.map((parada, idx) => {
+                    const isEscola = parada.tipo === 'escola';
+                    return (
+                      <li key={idx} className="text-[#34435F] flex items-center gap-3 text-sm">
+                        {isEscola ? (
+                          <SchoolIcon style={{ color: '#22C55E' }} fontSize="small" />
+                        ) : (
+                          <div className="w-2.5 h-2.5 bg-[#FB923C] rounded-full flex-shrink-0"></div>
+                        )}
+                        <span className={isEscola ? 'font-semibold' : ''}>
+                          {parada.idParada.replace('Escola: ', '')}
+                        </span>
+                      </li>
+                    );
+                  })}
+                </ol>
+              </div>
 
-              {!modoNavegacao ? (
-                <button
-                  onClick={iniciarNavegacao}
-                  disabled={!userLocation}
-                  className="w-full px-4 py-2.5 bg-[#172848] hover:bg-[#34435F] text-white font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm"
-                >
-                  {userLocation ? 'Iniciar Navegação' : 'Aguardando localização...'}
-                </button>
-              ) : (
-                <button
-                  onClick={pararNavegacao}
-                  className="w-full px-4 py-2.5 bg-[#F04848] hover:bg-[#d93636] text-white font-medium rounded-lg transition-colors text-sm"
-                >
-                  Parar Navegação
-                </button>
-              )}
+              {/* 3. RODAPÉ COM LEGENDA E BOTÕES (NÃO ROLA) */}
+              <div className="p-4 border-t border-gray-200 flex-shrink-0">
+                
+                {/* LEGENDA */}
+                <div className="mb-4">
+                  <p className="text-xs text-[#34435F] font-semibold mb-2">Legenda:</p>
+                  <div className="flex gap-4 text-xs">
+                    <div className="flex items-center gap-2">
+                      <div className="w-2.5 h-2.5 bg-[#FB923C] rounded-full"></div>
+                      <span className="text-[#34435F]">Aluno</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <SchoolIcon style={{ color: '#22C55E' }} className="w-3 h-3" />
+                      <span className="text-[#34435F]">Escola</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* BOTÕES DE AÇÃO */}
+                <div className="space-y-2">
+                  {!usandoRotaOtimizada ? (
+                    <button
+                      onClick={sugerirMelhorRota}
+                      disabled={loading}
+                      className="w-full px-4 py-2.5 bg-[#FB923C] hover:bg-[#f97316] text-white font-medium rounded-lg transition-colors text-sm flex items-center justify-center gap-2"
+                    >
+                      <HelpOutlineIcon fontSize="small" />
+                      Sugerir Melhor Rota
+                    </button>
+                  ) : (
+                    <button
+                      onClick={voltarRotaOriginal}
+                      disabled={loading}
+                      className="w-full px-4 py-2.5 bg-[#FB923C] hover:bg-[#f97316] text-white font-medium rounded-lg transition-colors text-sm flex items-center justify-center gap-2"
+                    >
+                      <RestoreIcon fontSize="small" />
+                      Voltar à Ordem Original
+                    </button>
+                  )}
+
+                  {!modoNavegacao ? (
+                    <button
+                      onClick={iniciarNavegacao}
+                      disabled={!userLocation || loading}
+                      className="w-full px-4 py-2.5 bg-[#172848] hover:bg-[#34435F] text-white font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+                    >
+                      {userLocation ? 'Iniciar Navegação' : 'Aguardando localização...'}
+                    </button>
+                  ) : (
+                    <button
+                      onClick={pararNavegacao}
+                      className="w-full px-4 py-2.5 bg-[#F04848] hover:bg-[#d93636] text-white font-medium rounded-lg transition-colors text-sm"
+                    >
+                      Parar Navegação
+                    </button>
+                  )}
+                </div>
+              </div>
             </div>
-          </div>
-        )}
-      </div>
-
-      {/* Mapa */}
-      <div className="flex-1">
-        <GoogleMap
-          mapContainerStyle={{ width: '100%', height: '100%' }}
-          center={center}
-          zoom={13}
-          onLoad={(mapInstance) => setMap(mapInstance)}
-          options={{
-            mapTypeControl: true,
-            streetViewControl: true,
-            fullscreenControl: true,
-            rotateControl: modoNavegacao,
-            tilt: modoNavegacao ? 45 : 0
-          }}
-        >
-          {/* Marcador do usuário/veículo */}
-          {userLocation && (
-            <Marker
-              position={userLocation}
-              icon={{
-                path: window.google.maps.SymbolPath.FORWARD_CLOSED_ARROW,
-                scale: 6,
-                fillColor: '#172848',
-                fillOpacity: 1,
-                strokeColor: 'white',
-                strokeWeight: 2,
-                rotation: userLocation.heading || 0
-              }}
-              title="Sua localização"
-              zIndex={1000}
-            />
           )}
+        </div>
 
-          {rota?.paradas.map((parada, idx) => {
-            const isFirst = idx === 0;
-            const isLast = idx === rota.paradas.length - 1;
-            const isEscola = parada.idParada?.includes('Escola:');
-
-            // Cores diferentes para alunos e escolas
-            let corMarcador = '#FB923C'; // Laranja padrão para alunos
-            if (isEscola) {
-              corMarcador = '#22C55E'; // Verde para escolas
-            } else if (isFirst) {
-              corMarcador = '#4CCE5B'; // Verde claro para primeiro
-            } else if (isLast) {
-              corMarcador = '#F04848'; // Vermelho para último
-            }
-
-            return (
+        {/* Mapa */}
+        <div className="responsive-map-container flex-1">
+          <GoogleMap
+            mapContainerStyle={{ width: '100%', height: '100%' }}
+            center={center}
+            zoom={13}
+            onLoad={(mapInstance) => setMap(mapInstance)}
+            options={{
+              mapTypeControl: true,
+              streetViewControl: true,
+              fullscreenControl: true,
+              rotateControl: modoNavegacao,
+              tilt: modoNavegacao ? 45 : 0
+            }}
+          >
+            {/* Marcador do usuário/veículo */}
+            {userLocation && (
               <Marker
-                key={idx}
-                position={parada.localizacao}
-                label={{
-                  text: `${idx + 1}`,
-                  color: 'white',
-                  fontWeight: 'bold'
-                }}
-                title={parada.idParada}
+                position={userLocation}
                 icon={{
-                  path: isEscola ? window.google.maps.SymbolPath.CIRCLE : window.google.maps.SymbolPath.CIRCLE,
-                  scale: isEscola ? 15 : 12,
-                  fillColor: corMarcador,
+                  path: window.google.maps.SymbolPath.FORWARD_CLOSED_ARROW,
+                  scale: 6,
+                  fillColor: '#172848',
                   fillOpacity: 1,
                   strokeColor: 'white',
-                  strokeWeight: 2
+                  strokeWeight: 2,
+                  rotation: userLocation.heading || 0
+                }}
+                title="Sua localização"
+                zIndex={1000}
+              />
+            )}
+
+            {rota?.paradas.map((parada, idx) => {
+              const isFirst = idx === 0;
+              const isLast = idx === rota.paradas.length - 1;
+              const isEscola = parada.idParada?.includes('Escola:');
+
+              // Cores diferentes para alunos e escolas
+              let corMarcador = '#FB923C'; // Laranja padrão para alunos
+              if (isEscola) {
+                corMarcador = '#22C55E'; // Verde para escolas
+              } else if (isFirst) {
+                corMarcador = '#4CCE5B'; // Verde claro para primeiro
+              } else if (isLast) {
+                corMarcador = '#F04848'; // Vermelho para último
+              }
+
+              return (
+                <Marker
+                  key={idx}
+                  position={parada.localizacao}
+                  label={{
+                    text: `${idx + 1}`,
+                    color: 'white',
+                    fontWeight: 'bold'
+                  }}
+                  title={parada.idParada}
+                  icon={{
+                    path: isEscola ? window.google.maps.SymbolPath.CIRCLE : window.google.maps.SymbolPath.CIRCLE,
+                    scale: isEscola ? 15 : 12,
+                    fillColor: corMarcador,
+                    fillOpacity: 1,
+                    strokeColor: 'white',
+                    strokeWeight: 2
+                  }}
+                />
+              );
+            })}
+
+            {/* DirectionsRenderer para mostrar caminho nas ruas */}
+            {directionsResponse && (
+              <DirectionsRenderer
+                directions={directionsResponse}
+                options={{
+                  suppressMarkers: true, // Não mostrar marcadores padrão (usamos os personalizados)
+                  polylineOptions: {
+                    strokeColor: '#FB923C',
+                    strokeWeight: 5,
+                    strokeOpacity: 0.8,
+                    geodesic: true,
+                    icons: [{
+                      icon: {
+                        path: 'M 0,-1 0,1',
+                        strokeOpacity: 1,
+                        scale: 3
+                      },
+                      offset: '0',
+                      repeat: '15px'
+                    }]
+                  }
                 }}
               />
-            );
-          })}
-
-          {/* DirectionsRenderer para mostrar caminho nas ruas */}
-          {directionsResponse && (
-            <DirectionsRenderer
-              directions={directionsResponse}
-              options={{
-                suppressMarkers: true, // Não mostrar marcadores padrão (usamos os personalizados)
-                polylineOptions: {
-                  strokeColor: '#FB923C',
-                  strokeWeight: 5,
-                  strokeOpacity: 0.8,
-                  geodesic: true,
-                  icons: [{
-                    icon: {
-                      path: 'M 0,-1 0,1',
-                      strokeOpacity: 1,
-                      scale: 3
-                    },
-                    offset: '0',
-                    repeat: '15px'
-                  }]
-                }
-              }}
-            />
-          )}
-        </GoogleMap>
+            )}
+          </GoogleMap>
+        </div>
       </div>
-    </div>
+    </>
   );
 }
 
@@ -734,5 +723,31 @@ function gerarLinkGoogleMaps(rota) {
     .join('/');
   return `https://www.google.com/maps/dir/${waypoints}`;
 }
+
+const responsiveStyles = `
+  @media (max-width: 767px) {
+    .responsive-rotas-container {
+      overflow: hidden;
+      height: 1000px;
+    }
+    .responsive-sidebar {
+      height: 80vh; /* Aumentei para 80% da altura da tela */
+      padding-bottom: 0 !important; 
+    }
+    .responsive-map-container {
+       height: 80vh; /* O mapa ocupará os 20% restantes */
+    }
+    .voltar-mobile span {
+      font-size: 1rem;
+      font-weight: 600;
+    }
+  }
+`;
+
+// Injetar estilos no head do documento
+const styleSheet = document.createElement("style");
+styleSheet.type = "text/css";
+styleSheet.innerText = responsiveStyles;
+document.head.appendChild(styleSheet);
 
 export default RotasOtimizadas;

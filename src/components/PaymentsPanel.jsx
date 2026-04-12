@@ -26,7 +26,7 @@ export function PaymentsPanel({ selectedMonth, selectedYear }) {
             const ultimoDia = new Date(selectedYear, selectedMonth, 0)
             
             const dataInicio = `${selectedYear}-${String(selectedMonth).padStart(2, '0')}-01`
-            const dataFim = `${selectedYear}-${String(selectedMonth).padStart(2, '0')}-${ultimoDia.getDate()}`
+            const dataFim = `${selectedYear}-${String(selectedMonth).padStart(2, '0')}-${String(ultimoDia.getDate()).padStart(2, '0')}`
             
             // Usa o mesmo endpoint que o Financeiro
             const params = {
@@ -36,7 +36,7 @@ export function PaymentsPanel({ selectedMonth, selectedYear }) {
             }
             
             const response = await listarMensalidades(params)
-            const allMensalidades = response?.content || []
+            const allMensalidades = response?.content || (Array.isArray(response) ? response : [])
             
             setMensalidades(allMensalidades)
         } catch (err) {
@@ -50,7 +50,13 @@ export function PaymentsPanel({ selectedMonth, selectedYear }) {
 
     const handleCardClick = (status) => {
         if (totais[`quantidade${status === 'PENDENTE' ? 'Pendente' : status === 'ATRASADO' ? 'Atrasado' : 'Pago'}`] > 0) {
-            navigate('/financeiro', { state: { filtroStatus: status } });
+            navigate('/financeiro', {
+                state: {
+                    filtroStatus: status,
+                    selectedMonth,
+                    selectedYear,
+                }
+            });
         }
     }
 

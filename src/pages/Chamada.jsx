@@ -131,7 +131,6 @@ export default function Chamada() {
       });
 
       await ChamadaService.registrarPresenca(chamadaId, presencas);
-
       await ChamadaService.alterarStatusChamada(itinerarioId, "FINALIZADA");
 
       setChamadaFinalizada(true);
@@ -171,6 +170,70 @@ export default function Chamada() {
     }
   };
 
+  const responsiveStyles = `
+    @media (max-width: 768px) {
+      .container-chamada {
+        padding-left: 1rem;
+        padding-right: 1rem;
+      }
+      header-chamada {
+        flex-direction: column;
+        align-items: center;   
+        text-align: center;    
+        gap: 0.5rem;           
+      }
+      .header-chamada h1 {
+        font-size: 1.875rem; /* text-3xl */
+      }
+      .botoes-chamada {
+        flex-direction: column;
+        gap: 0.75rem;
+        margin-top: 1.5rem;
+      }
+      .botoes-chamada button {
+        width: 100%;
+      }
+      .tabela-chamada table {
+        border: 0;
+      }
+      .tabela-chamada thead {
+        display: none;
+      }
+      .tabela-chamada tr {
+        display: block;
+        margin-bottom: 1rem;
+        border: 1px solid #e5e7eb;
+        border-radius: 0.5rem;
+        box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1);
+        background-color: white;
+        padding: 0.5rem 0;
+      }
+      .tabela-chamada td {
+        display: block;
+        text-align: right;
+        padding-left: 50%;
+        position: relative;
+        border-bottom: 1px solid #f3f4f6;
+        padding-top: 0.75rem;
+        padding-bottom: 0.75rem;
+        padding-right: 0.75rem;
+      }
+      .tabela-chamada td:last-child {
+        border-bottom: 0;
+      }
+      .tabela-chamada td::before {
+        content: attr(data-label);
+        position: absolute;
+        left: 0.75rem;
+        width: 45%;
+        padding-right: 0.75rem;
+        text-align: left;
+        font-weight: 600;
+        color: #111827; 
+      }
+    }
+  `;
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -188,94 +251,97 @@ export default function Chamada() {
   const totalRegistrados = totalPresentes + totalAusentes;
 
   return (
-    <div className="py-6">
-      {/* Breadcrumb */}
-      <Link
-        to="/itinerarios"
-        className="inline-flex items-center gap-2 text-navy-600 hover:text-primary-400 mb-6 transition-colors"
-      >
-        <ArrowBackIcon fontSize="small" />
-        <span>Voltar</span>
-      </Link>
+    <>
+      <style>{responsiveStyles}</style>
+      <div className="py-6 container-chamada">
+        {/* Breadcrumb */}
+        <Link
+          to="/itinerarios"
+          className="inline-flex items-center gap-2 text-navy-600 hover:text-primary-400 mb-6 transition-colors"
+        >
+          <ArrowBackIcon fontSize="small" />
+          <span>Voltar</span>
+        </Link>
 
-      {/* Header */}
-      <div className="flex items-center gap-4 mb-6">
-        <div className="p-4 bg-primary-50 rounded-xl">
-          <AssignmentTurnedInIcon className="text-primary-400 text-4xl" />
-        </div>
-        <div className="flex-1">
-          <h1 className="text-3xl font-bold text-navy-900">Chamada</h1>
-          <p className="text-navy-600">
-            {itinerario?.nome || "Registre a presença dos alunos"}
-          </p>
-        </div>
-      </div>
-
-      {/* Card do Aluno Atual ou Finalização */}
-      {!chamadaFinalizada && alunoAtual ? (
-        <div className="mb-6">
-          <CardChamada
-            aluno={alunoAtual}
-            indiceAtual={indiceAtual}
-            totalAlunos={alunos.length}
-            onPresente={() => marcarPresenca(true)}
-            onAusente={() => marcarPresenca(false)}
-            onProximo={proximoAluno}
-            isUltimoAluno={indiceAtual === alunos.length - 1}
-          />
-
-          {/* Botões de Ação */}
-          <div className="flex gap-3 justify-end mt-6">
-            <button
-              onClick={cancelarChamada}
-              className="px-6 py-2.5 border-2 border-red-300 text-red-700 rounded-lg hover:bg-red-50 transition-colors font-medium"
-              disabled={isFinalizando}
-            >
-              Cancelar Chamada
-            </button>
-            <button
-              onClick={finalizarChamada}
-              className="px-6 py-2.5 bg-primary-400 hover:bg-primary-500 text-white rounded-lg transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
-              disabled={isFinalizando || totalRegistrados === 0}
-            >
-              {isFinalizando ? "Finalizando..." : "Finalizar Chamada"}
-            </button>
+        {/* Header */}
+        <div className="flex items-center gap-4 mb-6 header-chamada">
+          <div className="p-4 bg-primary-50 rounded-xl">
+            <AssignmentTurnedInIcon className="text-primary-400 text-4xl" />
+          </div>
+          <div className="flex-1">
+            <h1 className="text-3xl font-bold text-navy-900">Chamada</h1>
+            <p className="text-navy-600">
+              {itinerario?.nome || "Registre a presença dos alunos"}
+            </p>
           </div>
         </div>
-      ) : chamadaFinalizada ? (
-        <div className="text-center py-12 bg-white rounded-xl shadow-sm border border-offwhite-200 mb-6">
-          <AssignmentTurnedInIcon className="text-green-500 text-6xl mb-4" />
-          <h2 className="text-2xl font-semibold text-navy-800 mb-2">
-            Chamada Finalizada!
-          </h2>
-          <p className="text-navy-600 mb-2">
-            Todos os registros foram salvos com sucesso.
-          </p>
-          <p className="text-sm text-navy-500">
-            Presentes: {totalPresentes} | Ausentes: {totalAusentes}
-          </p>
-        </div>
-      ) : null}
 
-      {/* Tabela */}
-      <div className="mt-10">
-        <h3 className="text-lg font-semibold text-navy-900 mb-4">
-          Resumo da Chamada
-        </h3>
-        <TabelaChamada
-          alunos={alunos}
-          onRowClick={(aluno, index) => {
-            if (!chamadaFinalizada) {
-              setIndiceAtual(index);
-              toast.info(`Navegando para ${aluno.nomeAluno}`, {
-                theme: "colored",
-                autoClose: 1500,
-              });
-            }
-          }}
-          alunoAtualId={alunoAtual?.id}
-        />
+        {/* Card do Aluno Atual ou Finalização */}
+        {!chamadaFinalizada && alunoAtual ? (
+          <div className="mb-6">
+            <CardChamada
+              aluno={alunoAtual}
+              indiceAtual={indiceAtual}
+              totalAlunos={alunos.length}
+              onPresente={() => marcarPresenca(true)}
+              onAusente={() => marcarPresenca(false)}
+              onProximo={proximoAluno}
+              isUltimoAluno={indiceAtual === alunos.length - 1}
+            />
+
+            {/* Botões de Ação */}
+            <div className="flex gap-3 justify-end mt-6 botoes-chamada">
+              <button
+                onClick={cancelarChamada}
+                className="px-6 py-2.5 border-2 border-red-300 text-red-700 rounded-lg hover:bg-red-50 transition-colors font-medium"
+                disabled={isFinalizando}
+              >
+                Cancelar Chamada
+              </button>
+              <button
+                onClick={finalizarChamada}
+                className="px-6 py-2.5 bg-primary-400 hover:bg-primary-500 text-white rounded-lg transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                disabled={isFinalizando || totalRegistrados === 0}
+              >
+                {isFinalizando ? "Finalizando..." : "Finalizar Chamada"}
+              </button>
+            </div>
+          </div>
+        ) : chamadaFinalizada ? (
+          <div className="text-center py-12 bg-white rounded-xl shadow-sm border border-offwhite-200 mb-6">
+            <AssignmentTurnedInIcon className="text-green-500 text-6xl mb-4" />
+            <h2 className="text-2xl font-semibold text-navy-800 mb-2">
+              Chamada Finalizada!
+            </h2>
+            <p className="text-navy-600 mb-2">
+              Todos os registros foram salvos com sucesso.
+            </p>
+            <p className="text-sm text-navy-500">
+              Presentes: {totalPresentes} | Ausentes: {totalAusentes}
+            </p>
+          </div>
+        ) : null}
+
+        {/* Tabela */}
+        <div className="mt-10">
+          <h3 className="text-lg font-semibold text-navy-900 mb-4">
+            Resumo da Chamada
+          </h3>
+          <TabelaChamada
+            alunos={alunos}
+            onRowClick={(aluno, index) => {
+              if (!chamadaFinalizada) {
+                setIndiceAtual(index);
+                toast.info(`Navegando para ${aluno.nomeAluno}`, {
+                  theme: "colored",
+                  autoClose: 1500,
+                });
+              }
+            }}
+            alunoAtualId={alunoAtual?.id}
+          />
+        </div>
       </div>
-    </div>
+    </>
   );
 }
