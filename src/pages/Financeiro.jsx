@@ -1283,14 +1283,15 @@ export default function Financeiro() {
 
             <Tabela
               cabecalho={["ID", "Data", "Valor", "Descrição"]}
-              dados={pagamentosFiltrados.map(p => ({
+              dados={pagamentosFiltrados.map((p, index) => ({
                 id: p.id,
+                index: pagamentosFiltrados.length - index,
                 dataPagamento: p.dataPagamento,
                 valorPagamentoFormatado: formatCurrency(p.valorPagamento),
                 descricao: p.descricao || "-",
                 _original: p
               }))}
-              fields={["id", "dataPagamento", "valorPagamentoFormatado", "descricao"]}
+              fields={["index", "dataPagamento", "valorPagamentoFormatado", "descricao"]}
               renderActions={(row) => (
                 <div className="flex gap-2 justify-center">
                   <button
