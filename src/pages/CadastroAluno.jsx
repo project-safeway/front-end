@@ -61,7 +61,7 @@ export function CadastroAlunos() {
 
   const handleCEPBlur = async (i) => {
     const cepLimpo = responsaveis[i].endereco.cep.replace(/\D/g, '')
-    
+
     if (cepLimpo.length !== 8) return
 
     if (buscandoCEPs[i]) return // Evita múltiplas chamadas simultâneas
@@ -84,14 +84,14 @@ export function CadastroAlunos() {
 
     try {
       const dados = await buscarEnderecoPorCEP(cepLimpo)
-      
+
       const novosResponsaveis = [...responsaveis]
       novosResponsaveis[i].endereco = {
         ...novosResponsaveis[i].endereco,
         logradouro: dados.logradouro || novosResponsaveis[i].endereco.logradouro,
         bairro: dados.bairro || novosResponsaveis[i].endereco.bairro,
         cidade: dados.cidade || novosResponsaveis[i].endereco.cidade,
-        uf: dados.uf || novosResponsaveis[i].endereco.uf
+        uf: dados.uf || novosResponsaveis[i].endereco.uf,
       }
       setResponsaveis(novosResponsaveis)
 
@@ -140,7 +140,7 @@ export function CadastroAlunos() {
       sala: f.sala.value || '',
       valorMensalidade: parseFloat(f.mensalidade.value) || 0,
       diaVencimento: parseInt(f.vencimentoDia.value) || 1,
-      fkEscola: escolaId,
+      escolaId: escolaId,
       fkTransporte: user?.transportId || user?.idTransporte || 1,
       responsaveis: responsaveis.map(r => ({
         nome: r.nome,
@@ -156,9 +156,9 @@ export function CadastroAlunos() {
           cidade: r.endereco.cidade,
           uf: r.endereco.uf,
           cep: r.endereco.cep.replace(/\D/g, ''),
-          tipo: r.endereco.tipo || 'RESIDENCIAL'
-        }
-      }))
+          tipo: r.endereco.tipo || 'RESIDENCIAL',
+        },
+      })),
     }
 
     try {
@@ -174,14 +174,14 @@ export function CadastroAlunos() {
   }
 
   function formatDate(value) {
-    const numbers = value.replace(/\D/g, "").slice(0, 8);
+    const numbers = value.replace(/\D/g, '').slice(0, 8)
 
-    const parts = [];
-    if (numbers.length > 0) parts.push(numbers.slice(0, 2));
-    if (numbers.length > 2) parts.push(numbers.slice(2, 4));
-    if (numbers.length > 4) parts.push(numbers.slice(4, 8));
+    const parts = []
+    if (numbers.length > 0) parts.push(numbers.slice(0, 2))
+    if (numbers.length > 2) parts.push(numbers.slice(2, 4))
+    if (numbers.length > 4) parts.push(numbers.slice(4, 8))
 
-    return parts.join("/");
+    return parts.join('/')
   }
 
 
@@ -220,11 +220,11 @@ export function CadastroAlunos() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="md:col-span-2">
                   <label className="block text-sm font-medium text-navy-700 mb-2">Nome do Aluno *</label>
-                  <input 
-                    name="nomeAluno" 
-                    required 
-                    maxLength={45} 
-                    className="w-full rounded-lg border border-offwhite-300 bg-white px-4 py-2.5 outline-none focus:ring-2 focus:ring-primary-400 focus:border-transparent transition-all" 
+                  <input
+                    name="nomeAluno"
+                    required
+                    maxLength={45}
+                    className="w-full rounded-lg border border-offwhite-300 bg-white px-4 py-2.5 outline-none focus:ring-2 focus:ring-primary-400 focus:border-transparent transition-all"
                     placeholder="Digite o nome completo"
                   />
                 </div>
@@ -240,20 +240,20 @@ export function CadastroAlunos() {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-navy-700 mb-2">Professor</label>
-                  <input 
-                    name="professor" 
-                    maxLength={45} 
-                    className="w-full rounded-lg border border-offwhite-300 bg-white px-4 py-2.5 outline-none focus:ring-2 focus:ring-primary-400 focus:border-transparent transition-all" 
+                  <input
+                    name="professor"
+                    maxLength={45}
+                    className="w-full rounded-lg border border-offwhite-300 bg-white px-4 py-2.5 outline-none focus:ring-2 focus:ring-primary-400 focus:border-transparent transition-all"
                     placeholder="Nome do professor"
                   />
                 </div>
 
                 <div>
                   <label className="block text-sm font-medium text-navy-700 mb-2">Escola *</label>
-                  <select 
-                    name="escola" 
-                    required 
-                    defaultValue={escolaPreSelecionada || ''} 
+                  <select
+                    name="escola"
+                    required
+                    defaultValue={escolaPreSelecionada || ''}
                     className="w-full rounded-lg border border-offwhite-300 bg-white px-4 py-2.5 outline-none focus:ring-2 focus:ring-primary-400 focus:border-transparent transition-all"
                   >
                     <option value="">Selecione</option>
@@ -266,47 +266,47 @@ export function CadastroAlunos() {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-navy-700 mb-2">Série</label>
-                  <input 
-                    name="serie" 
-                    type="number" 
-                    min="1" 
-                    className="w-full rounded-lg border border-offwhite-300 bg-white px-4 py-2.5 outline-none focus:ring-2 focus:ring-primary-400 focus:border-transparent transition-all" 
+                  <input
+                    name="serie"
+                    type="number"
+                    min="1"
+                    className="w-full rounded-lg border border-offwhite-300 bg-white px-4 py-2.5 outline-none focus:ring-2 focus:ring-primary-400 focus:border-transparent transition-all"
                     placeholder="Ex: 1"
                   />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-navy-700 mb-2">Sala</label>
-                  <input 
-                    name="sala" 
-                    maxLength={5} 
-                    className="w-full rounded-lg border border-offwhite-300 bg-white px-4 py-2.5 outline-none focus:ring-2 focus:ring-primary-400 focus:border-transparent transition-all" 
+                  <input
+                    name="sala"
+                    maxLength={5}
+                    className="w-full rounded-lg border border-offwhite-300 bg-white px-4 py-2.5 outline-none focus:ring-2 focus:ring-primary-400 focus:border-transparent transition-all"
                     placeholder="Ex: A"
                   />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-navy-700 mb-2">Mensalidade (R$) *</label>
-                  <input 
-                    name="mensalidade" 
-                    type="number" 
-                    step="0.01" 
-                    min="0" 
-                    required 
-                    defaultValue="0" 
-                    className="w-full rounded-lg border border-offwhite-300 bg-white px-4 py-2.5 outline-none focus:ring-2 focus:ring-primary-400 focus:border-transparent transition-all" 
+                  <input
+                    name="mensalidade"
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    required
+                    defaultValue="0"
+                    className="w-full rounded-lg border border-offwhite-300 bg-white px-4 py-2.5 outline-none focus:ring-2 focus:ring-primary-400 focus:border-transparent transition-all"
                     placeholder="0.00"
                   />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-navy-700 mb-2">Dia do Vencimento *</label>
-                  <input 
-                    name="vencimentoDia" 
-                    type="number" 
-                    min="1" 
-                    max="31" 
-                    required 
-                    defaultValue="5" 
+                  <input
+                    name="vencimentoDia"
+                    type="number"
+                    min="1"
+                    max="31"
+                    required
+                    defaultValue="5"
                     maxLength="2"
-                    className="w-full rounded-lg border border-offwhite-300 bg-white px-4 py-2.5 outline-none focus:ring-2 focus:ring-primary-400 focus:border-transparent transition-all" 
+                    className="w-full rounded-lg border border-offwhite-300 bg-white px-4 py-2.5 outline-none focus:ring-2 focus:ring-primary-400 focus:border-transparent transition-all"
                     placeholder="5"
                   />
                 </div>
@@ -316,7 +316,7 @@ export function CadastroAlunos() {
             {/* Responsáveis */}
             <div className="border-t border-offwhite-200 pt-6">
               <h2 className="text-lg font-semibold text-navy-900 mb-4">Responsáveis</h2>
-              
+
               {responsaveis.map((r, i) => (
                 <div key={i} className="mb-6 p-6 bg-offwhite-50 rounded-xl border border-offwhite-200">
                   <div className="flex items-center justify-between mb-4">
@@ -500,7 +500,7 @@ export function CadastroAlunos() {
             </div>
 
             <style>
-{`
+              {`
   @media (max-width: 640px) {
     .botoes-mobile-stack {
       flex-direction: column-reverse !important;
@@ -523,7 +523,7 @@ export function CadastroAlunos() {
     }
   }
 `}
-</style>
+            </style>
           </form>
         </div>
       </div>

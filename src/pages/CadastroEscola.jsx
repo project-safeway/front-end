@@ -17,7 +17,8 @@ export function CadastroEscola() {
     bairro: '',
     cidade: '',
     uf: '',
-    cep: ''
+    cep: '',
+    tipo: 'ESCOLA',
   })
 
   const handleCEPChange = (e) => {
@@ -27,7 +28,7 @@ export function CadastroEscola() {
 
   const handleCEPBlur = async () => {
     const cepLimpo = endereco.cep.replace(/\D/g, '')
-    
+
     if (cepLimpo.length !== 8) return
 
     if (buscandoCEP) return // Evita múltiplas chamadas simultâneas
@@ -42,13 +43,13 @@ export function CadastroEscola() {
 
     try {
       const dados = await buscarEnderecoPorCEP(cepLimpo)
-      
+
       setEndereco(prev => ({
         ...prev,
         logradouro: dados.logradouro || prev.logradouro,
         bairro: dados.bairro || prev.bairro,
         cidade: dados.cidade || prev.cidade,
-        uf: dados.uf || prev.uf
+        uf: dados.uf || prev.uf,
       }))
 
       toast.success('Endereço encontrado!', { theme: 'colored' })
@@ -77,7 +78,8 @@ export function CadastroEscola() {
         uf: endereco.uf,
         cep: endereco.cep.replace(/\D/g, ''),
         latitude: 0,
-        longitude: 0
+        longitude: 0,
+        tipo: 'ESCOLA',
       },
     }
 
@@ -254,8 +256,8 @@ export function CadastroEscola() {
         </div>
       </div>
 
-          <style>
-          {`
+      <style>
+        {`
             @media (max-width: 640px) {
               .botoes-mobile-stack {
                 flex-direction: column-reverse !important;
@@ -269,8 +271,8 @@ export function CadastroEscola() {
               }
             }
           `}
-          </style>
-      
+      </style>
+
     </div>
   )
 }
