@@ -26,7 +26,7 @@ const cards = [
     description: 'Controle financeiro e pagamentos',
     icon: <AttachMoneyIcon fontSize="large" />,
     route: '/financeiro',
-  }
+  },
 ]
 
 export default function Home() {
@@ -99,8 +99,8 @@ export default function Home() {
           <EventsPanel selectedMonth={selectedMonth} selectedYear={selectedYear} />
         </div>
       </div>
-        <style>
-      {`
+      <style>
+        {`
         @media (max-width: 640px) {
           .home h1 {
             font-size: 1.5rem;
@@ -122,7 +122,7 @@ export default function Home() {
           
         }
       `}
-    </style>
+      </style>
     </div>
   )
 }

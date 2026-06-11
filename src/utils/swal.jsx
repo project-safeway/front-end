@@ -57,18 +57,18 @@ function CustomConfirmDialog({
     danger: {
       icon: 'text-red-500',
       iconBg: 'bg-red-50',
-      button: 'bg-red-500 hover:bg-red-600 focus:ring-red-500'
+      button: 'bg-red-500 hover:bg-red-600 focus:ring-red-500',
     },
     warning: {
       icon: 'text-yellow-500',
       iconBg: 'bg-yellow-50',
-      button: 'bg-yellow-500 hover:bg-yellow-600 focus:ring-yellow-500'
+      button: 'bg-yellow-500 hover:bg-yellow-600 focus:ring-yellow-500',
     },
     success: {
       icon: 'text-green-600',
       iconBg: 'bg-green-100',
-      button: 'bg-green-600 hover:bg-green-700 focus:ring-green-600'
-    }
+      button: 'bg-green-600 hover:bg-green-700 focus:ring-green-600',
+    },
   }
 
   const colors = colorClasses[type] || colorClasses.danger
@@ -131,7 +131,7 @@ function CustomConfirmDialog({
         </div>
       </div>
 
-      <style jsx>{`
+      <style>{`
         @keyframes fadeIn {
           from {
             opacity: 0;
@@ -161,7 +161,7 @@ function CustomConfirmDialog({
         }
       `}</style>
     </div>,
-    document.body
+    document.body,
   )
 }
 
@@ -177,11 +177,6 @@ export async function showSwal(options = {}) {
     const handleConfirm = () => {
       modalRoot.render(null)
       resolve({ isConfirmed: true })
-    }
-
-    const handleCancel = () => {
-      modalRoot.render(null)
-      resolve({ isConfirmed: false })
     }
 
     const handleClose = () => {
@@ -208,7 +203,7 @@ export async function showSwal(options = {}) {
         cancelText={options.cancelButtonText || 'Cancelar'}
         type={type}
         showCancel={shouldShowCancel}
-      />
+      />,
     )
   })
 }

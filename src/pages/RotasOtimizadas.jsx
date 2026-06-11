@@ -1,53 +1,52 @@
-import { GoogleMap, Marker, DirectionsRenderer, useJsApiLoader } from '@react-google-maps/api';
-import { useState, useEffect } from 'react';
-import { useSearchParams, Link } from 'react-router-dom';
-import ArrowBackIcon from '@mui/icons-material/ArrowBack';
-import DirectionsCarIcon from '@mui/icons-material/DirectionsCar';
-import AccessTimeIcon from '@mui/icons-material/AccessTime';
-import PlaceIcon from '@mui/icons-material/Place';
-import SchoolIcon from '@mui/icons-material/School';
-import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
-import RestoreIcon from '@mui/icons-material/Restore';
-import rotasService from '../services/rotasService';
-import alunosService from '../services/alunosService';
-import escolasService from '../services/escolasService';
-import { toast } from 'react-toastify';
+import { GoogleMap, Marker, DirectionsRenderer, useJsApiLoader } from '@react-google-maps/api'
+import { useState, useEffect } from 'react'
+import { useSearchParams, Link } from 'react-router-dom'
+import ArrowBackIcon from '@mui/icons-material/ArrowBack'
+import DirectionsCarIcon from '@mui/icons-material/DirectionsCar'
+import AccessTimeIcon from '@mui/icons-material/AccessTime'
+import PlaceIcon from '@mui/icons-material/Place'
+import SchoolIcon from '@mui/icons-material/School'
+import HelpOutlineIcon from '@mui/icons-material/HelpOutline'
+import RestoreIcon from '@mui/icons-material/Restore'
+import rotasService from '../services/rotasService'
+import alunosService from '../services/alunosService'
+import escolasService from '../services/escolasService'
+import { toast } from 'react-toastify'
 
 function RotasOtimizadas() {
-  const [searchParams] = useSearchParams();
-  const itinerarioIdUrl = searchParams.get('itinerarioId');
+  const [searchParams] = useSearchParams()
+  const itinerarioIdUrl = searchParams.get('itinerarioId')
 
-  const [rota, setRota] = useState(null);
-  const [rotaOriginal, setRotaOriginal] = useState(null); // Guardar rota original
-  const [itinerario, setItinerario] = useState(null);
-  const [alunosItinerario, setAlunosItinerario] = useState([]);
-  const [escolasItinerario, setEscolasItinerario] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [erro, setErro] = useState('');
-  const [center, setCenter] = useState({ lat: -23.55, lng: -46.63 });
-  const [directionsResponse, setDirectionsResponse] = useState(null);
-  const [userLocation, setUserLocation] = useState(null);
-  const [map, setMap] = useState(null);
-  const [modoNavegacao, setModoNavegacao] = useState(false);
-  const [usandoRotaOtimizada, setUsandoRotaOtimizada] = useState(false); // Controlar se está usando rota otimizada
-  const googleMapsApiKey = (import.meta.env.VITE_GOOGLE_MAPS_API_KEY || '').trim();
-  const mapaSemConfiguracao = !googleMapsApiKey;
+  const [rota, setRota] = useState(null)
+  const [rotaOriginal, setRotaOriginal] = useState(null) // Guardar rota original
+  const [alunosItinerario, setAlunosItinerario] = useState([])
+  const [escolasItinerario, setEscolasItinerario] = useState([])
+  const [loading, setLoading] = useState(false)
+  const [erro, setErro] = useState('')
+  const [center, setCenter] = useState({ lat: -23.55, lng: -46.63 })
+  const [directionsResponse, setDirectionsResponse] = useState(null)
+  const [userLocation, setUserLocation] = useState(null)
+  const [map, setMap] = useState(null)
+  const [modoNavegacao, setModoNavegacao] = useState(false)
+  const [usandoRotaOtimizada, setUsandoRotaOtimizada] = useState(false) // Controlar se está usando rota otimizada
+  const googleMapsApiKey = (import.meta.env.VITE_GOOGLE_MAPS_API_KEY || '').trim()
+  const mapaSemConfiguracao = !googleMapsApiKey
 
   const { isLoaded } = useJsApiLoader({
     googleMapsApiKey,
-    libraries: ['places', 'geometry']
-  });
+    libraries: ['places', 'geometry'],
+  })
 
   useEffect(() => {
     if (itinerarioIdUrl) {
-      carregarDadosItinerario();
+      carregarDadosItinerario()
     }
-  }, [itinerarioIdUrl]);
+  }, [itinerarioIdUrl])
 
   // Rastrear localização do usuário em tempo real
   useEffect(() => {
     if (!navigator.geolocation) {
-      return;
+      return
     }
 
     const watchId = navigator.geolocation.watchPosition(
@@ -56,74 +55,74 @@ function RotasOtimizadas() {
           lat: position.coords.latitude,
           lng: position.coords.longitude,
           heading: position.coords.heading || 0,
-          speed: position.coords.speed || 0
-        };
+          speed: position.coords.speed || 0,
+        }
 
-        setUserLocation(newLocation);
+        setUserLocation(newLocation)
 
         // Se modo navegação estiver ativo, atualizar câmera
         if (modoNavegacao && map) {
-          map.panTo(newLocation);
+          map.panTo(newLocation)
           if (position.coords.heading) {
-            map.setHeading(position.coords.heading);
+            map.setHeading(position.coords.heading)
           }
         }
       },
       (error) => {
-        toast.error('Não foi possível obter sua localização', { theme: 'colored' });
+        toast.error('Não foi possível obter sua localização', { theme: 'colored' })
+        console.log(error)
       },
       {
         enableHighAccuracy: true,
         timeout: 5000,
-        maximumAge: 0
-      }
-    );
+        maximumAge: 0,
+      },
+    )
 
-    return () => navigator.geolocation.clearWatch(watchId);
-  }, [modoNavegacao, map]);
+    return () => navigator.geolocation.clearWatch(watchId)
+  }, [modoNavegacao, map])
 
   // Recalcular direções quando localização do usuário for obtida
   useEffect(() => {
     if (userLocation && rota && rota.paradas && rota.paradas.length > 0) {
-      buscarDirecoesReais(rota.paradas);
+      buscarDirecoesReais(rota.paradas)
     }
-  }, [userLocation]);
+  }, [userLocation])
 
   const carregarDadosItinerario = async () => {
-    setLoading(true);
-    setErro('');
+    setLoading(true)
+    setErro('')
 
     try {
       // Busca dados completos do itinerário (inclui alunos e escolas com ordemGlobal)
-      const itData = await rotasService.buscarItinerario(itinerarioIdUrl);
-      setItinerario(itData);
+      const itData = await rotasService.buscarItinerario(itinerarioIdUrl)
 
       // Usar alunos e escolas do itinerário completo (têm ordemGlobal)
-      const alunosData = itData.alunos || [];
-      const escolasData = itData.escolas || [];
+      const alunosData = itData.alunos || []
+      const escolasData = itData.escolas || []
 
-      setAlunosItinerario(alunosData);
-      setEscolasItinerario(escolasData);
+      setAlunosItinerario(alunosData)
+      setEscolasItinerario(escolasData)
 
-      console.log('[Carregamento] Alunos do itinerário:', alunosData);
-      console.log('[Carregamento] Escolas do itinerário:', escolasData);
+      console.log('[Carregamento] Alunos do itinerário:', alunosData)
+      console.log('[Carregamento] Escolas do itinerário:', escolasData)
 
       if (alunosData.length === 0 && escolasData.length === 0) {
-        setErro('Este itinerário não possui alunos ou escolas cadastradas');
-        toast.warning('Adicione alunos ou escolas ao itinerário antes de visualizar a rota', { theme: 'colored' });
-        return;
+        setErro('Este itinerário não possui alunos ou escolas cadastradas')
+        toast.warning('Adicione alunos ou escolas ao itinerário antes de visualizar a rota', { theme: 'colored' })
+        return
       }
 
       // Otimiza a rota automaticamente
-      await otimizarRota(alunosData, escolasData);
+      await otimizarRota(alunosData, escolasData)
     } catch (error) {
-      console.error('Erro ao carregar dados:', error);
-      setErro(error.message || 'Erro ao carregar dados do itinerário');
-      toast.error('Erro ao carregar dados do itinerário', { theme: 'colored' });
+      console.error('Erro ao carregar dados:', error)
+      setErro(error.message || 'Erro ao carregar dados do itinerário')
+      toast.error('Erro ao carregar dados do itinerário', { theme: 'colored' })
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
-  };
+  }
 
   const otimizarRota = async (alunos, escolas = [], forcarOtimizacao = false) => {
     try {
@@ -132,31 +131,31 @@ function RotasOtimizadas() {
         ...alunos.map(aluno => ({
           ...aluno,
           tipo: 'aluno',
-          ordem: aluno.ordemGlobal || aluno.ordemEmbarque || 0
+          ordem: aluno.ordemGlobal || aluno.ordemEmbarque || 0,
         })),
         ...escolas.map(escola => ({
           ...escola,
           tipo: 'escola',
-          ordem: escola.ordemGlobal || escola.ordemVisita || 0
-        }))
-      ];
+          ordem: escola.ordemGlobal || escola.ordemVisita || 0,
+        })),
+      ]
 
       // Log para debug
-      console.log('===== ORDEM DOS ITENS =====');
+      console.log('===== ORDEM DOS ITENS =====')
       itensUnificados.forEach(item => {
-        const nome = item.tipo === 'aluno' ? item.nomeAluno : item.nome;
-        console.log(`${item.tipo.toUpperCase()}: ${nome} - ordemGlobal: ${item.ordemGlobal}, ordemEspecifica: ${item.tipo === 'aluno' ? item.ordemEmbarque : item.ordemVisita}, ordem usada: ${item.ordem}`);
-      });
+        const nome = item.tipo === 'aluno' ? item.nomeAluno : item.nome
+        console.log(`${item.tipo.toUpperCase()}: ${nome} - ordemGlobal: ${item.ordemGlobal}, ordemEspecifica: ${item.tipo === 'aluno' ? item.ordemEmbarque : item.ordemVisita}, ordem usada: ${item.ordem}`)
+      })
 
       // Ordenar pela ordem global (prioriza ordemGlobal, senão usa ordem específica)
-      itensUnificados.sort((a, b) => a.ordem - b.ordem);
+      itensUnificados.sort((a, b) => a.ordem - b.ordem)
 
-      console.log('===== ORDEM APÓS SORT =====');
+      console.log('===== ORDEM APÓS SORT =====')
       itensUnificados.forEach((item, idx) => {
-        const nome = item.tipo === 'aluno' ? item.nomeAluno : (item.nome || item.nomeEscola);
-        console.log(`${idx + 1}. ${item.tipo.toUpperCase()}: ${nome} - ordem: ${item.ordem}`);
-      });
-      console.log('===========================');
+        const nome = item.tipo === 'aluno' ? item.nomeAluno : (item.nome || item.nomeEscola)
+        console.log(`${idx + 1}. ${item.tipo.toUpperCase()}: ${nome} - ordem: ${item.ordem}`)
+      })
+      console.log('===========================')
 
       // Buscar coordenadas para cada item na ordem correta
       const itensComCoordenadas = await Promise.all(
@@ -165,59 +164,60 @@ function RotasOtimizadas() {
             if (item.tipo === 'aluno') {
               // Processar aluno
               if (!item.enderecoId) {
-                return null;
+                return null
               }
 
-              const endereco = await alunosService.getEnderecoById(item.enderecoId);
+              const endereco = await alunosService.getEnderecoById(item.enderecoId)
 
               return {
                 ...item,
                 endereco: endereco,
                 enderecoCompleto: `${endereco.logradouro}, ${endereco.numero} - ${endereco.bairro}`,
                 latitude: endereco.latitude,
-                longitude: endereco.longitude
-              };
+                longitude: endereco.longitude,
+              }
             } else {
               // Processar escola
-              const escolaId = item.escolaId;
+              const escolaId = item.escolaId
 
               if (!escolaId) {
-                return null;
+                return null
               }
 
-              const endereco = await escolasService.getEnderecoEscola(escolaId);
+              const endereco = await escolasService.getEnderecoEscola(escolaId)
 
               return {
                 ...item,
                 endereco: endereco,
                 enderecoCompleto: `${endereco.logradouro}, ${endereco.numero} - ${endereco.bairro}`,
                 latitude: endereco.latitude,
-                longitude: endereco.longitude
-              };
+                longitude: endereco.longitude,
+              }
             }
           } catch (error) {
-            const nome = item.tipo === 'aluno' ? item.nomeAluno : (item.nome || item.nomeEscola);
-            toast.error(`Não foi possível obter o endereço de ${nome}`, { theme: 'colored' });
-            return null;
+            const nome = item.tipo === 'aluno' ? item.nomeAluno : (item.nome || item.nomeEscola)
+            toast.error(`Não foi possível obter o endereço de ${nome}`, { theme: 'colored' })
+            console.log(error)
+            return null
           }
-        })
-      );
+        }),
+      )
 
       // Filtrar itens válidos e converter para pontos de parada
-      const itensValidos = itensComCoordenadas.filter(item => item !== null);
+      const itensValidos = itensComCoordenadas.filter(item => item !== null)
 
       if (itensValidos.length === 0) {
-        throw new Error('Nenhum ponto possui endereço com coordenadas válidas');
+        throw new Error('Nenhum ponto possui endereço com coordenadas válidas')
       }
 
       // Converter para pontos de parada mantendo a ordem
-      const pontosParada = [];
+      const pontosParada = []
 
-      itensValidos.forEach((item, index) => {
-        const lat = parseFloat(item.latitude);
-        const lng = parseFloat(item.longitude);
+      itensValidos.forEach((item) => {
+        const lat = parseFloat(item.latitude)
+        const lng = parseFloat(item.longitude)
 
-        const nome = item.tipo === 'aluno' ? item.nomeAluno : (item.nome || item.nomeEscola);
+        const nome = item.tipo === 'aluno' ? item.nomeAluno : (item.nome || item.nomeEscola)
 
         if (!isNaN(lat) && !isNaN(lng) && lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180) {
           const ponto = {
@@ -225,63 +225,63 @@ function RotasOtimizadas() {
             endereco: item.enderecoCompleto,
             localizacao: { lat, lng },
             tipo: item.tipo,
-            ordem: item.ordem
-          };
+            ordem: item.ordem,
+          }
 
           // Adicionar dados específicos do tipo
           if (item.tipo === 'aluno') {
-            ponto.aluno = item;
+            ponto.aluno = item
           } else {
-            ponto.escola = item;
+            ponto.escola = item
           }
 
-          pontosParada.push(ponto);
+          pontosParada.push(ponto)
         } else {
-          toast.error(`${item.tipo === 'aluno' ? 'Aluno' : 'Escola'} ${nome} não possui endereço com coordenadas válidas`, { theme: 'colored' });
+          toast.error(`${item.tipo === 'aluno' ? 'Aluno' : 'Escola'} ${nome} não possui endereço com coordenadas válidas`, { theme: 'colored' })
         }
-      });
+      })
 
       if (pontosParada.length === 0) {
-        throw new Error('Nenhum ponto de parada válido encontrado');
+        throw new Error('Nenhum ponto de parada válido encontrado')
       }
 
-      console.log('===== PONTOS DE PARADA ENVIADOS =====');
+      console.log('===== PONTOS DE PARADA ENVIADOS =====')
       pontosParada.forEach((p, idx) => {
-        console.log(`${idx + 1}. ${p.id} - ordem: ${p.ordem}`);
-      });
-      console.log('======================================');
+        console.log(`${idx + 1}. ${p.id} - ordem: ${p.ordem}`)
+      })
+      console.log('======================================')
 
       const request = {
         veiculo: {
-          id: "VAN-ESCOLAR-01",
+          id: 'VAN-ESCOLAR-01',
           localizacaoInicial: pontosParada[0].localizacao,
-          localizacaoFinal: pontosParada[pontosParada.length - 1].localizacao
+          localizacaoFinal: pontosParada[pontosParada.length - 1].localizacao,
         },
         pontosParada: pontosParada,
-        otimizarOrdem: forcarOtimizacao // Usar parâmetro para decidir se otimiza ou mantém ordem
-      };
+        otimizarOrdem: forcarOtimizacao, // Usar parâmetro para decidir se otimiza ou mantém ordem
+      }
 
-      const resultado = await rotasService.otimizarRota(request);
+      const resultado = await rotasService.otimizarRota(request)
 
-      console.log('===== PARADAS RETORNADAS PELO BACKEND =====');
+      console.log('===== PARADAS RETORNADAS PELO BACKEND =====')
       resultado.paradas.forEach((p, idx) => {
-        console.log(`${idx + 1}. ${p.idParada}`);
-      });
-      console.log('===========================================');
+        console.log(`${idx + 1}. ${p.idParada}`)
+      })
+      console.log('===========================================')
 
       // O backend retorna: { distanciaTotal, tempoTotal, paradas, metricas, provedor }
       // Mas as coordenadas das paradas estão zeradas, então precisamos preenchê-las
 
       const paradasComCoordenadas = resultado.paradas.map(parada => {
         // Encontrar o ponto original correspondente pelo ID
-        const pontoOriginal = pontosParada.find(p => p.id === parada.idParada);
+        const pontoOriginal = pontosParada.find(p => p.id === parada.idParada)
 
         return {
           ...parada,
           localizacao: pontoOriginal ? pontoOriginal.localizacao : parada.localizacao,
-          tipo: pontoOriginal ? pontoOriginal.tipo : 'aluno' // Preservar tipo do ponto original
-        };
-      });
+          tipo: pontoOriginal ? pontoOriginal.tipo : 'aluno', // Preservar tipo do ponto original
+        }
+      })
 
       // Montar estrutura de rota com coordenadas corretas
       const rotaOtimizada = {
@@ -291,71 +291,71 @@ function RotasOtimizadas() {
         duracaoMinutos: Math.round(resultado.tempoTotal / 60),
         paradas: paradasComCoordenadas,
         metricas: resultado.metricas,
-        provedor: resultado.provedor
-      };
+        provedor: resultado.provedor,
+      }
 
-      setRota(rotaOtimizada);
+      setRota(rotaOtimizada)
 
       // Salvar rota original na primeira vez (sem otimização)
       if (!forcarOtimizacao && !rotaOriginal) {
-        setRotaOriginal(rotaOtimizada);
+        setRotaOriginal(rotaOtimizada)
       }
 
       // Buscar direções reais (caminho pelas ruas) após otimizar
-      await buscarDirecoesReais(paradasComCoordenadas);
+      await buscarDirecoesReais(paradasComCoordenadas)
 
       // Centraliza o mapa no primeiro ponto
       if (rotaOtimizada.paradas && rotaOtimizada.paradas.length > 0) {
-        const primeiroPonto = rotaOtimizada.paradas[0].localizacao;
+        const primeiroPonto = rotaOtimizada.paradas[0].localizacao
         if (primeiroPonto.lat !== 0 || primeiroPonto.lng !== 0) {
-          setCenter(primeiroPonto);
+          setCenter(primeiroPonto)
         }
       }
 
       const mensagem = forcarOtimizacao
         ? `Rota otimizada pelo Google! ${rotaOtimizada.distanciaKm.toFixed(2)} km em ${rotaOtimizada.duracaoMinutos} min`
-        : `Rota calculada! ${rotaOtimizada.distanciaKm.toFixed(2)} km em ${rotaOtimizada.duracaoMinutos} min`;
+        : `Rota calculada! ${rotaOtimizada.distanciaKm.toFixed(2)} km em ${rotaOtimizada.duracaoMinutos} min`
 
-      toast.success(mensagem, { theme: 'colored' });
+      toast.success(mensagem, { theme: 'colored' })
     } catch (error) {
-      console.error('[RotasOtimizadas] Erro ao otimizar rota:', error);
-      setErro(error.message || 'Erro ao calcular rota otimizada');
-      toast.error(error.message || 'Erro ao calcular rota otimizada', { theme: 'colored' });
+      console.error('[RotasOtimizadas] Erro ao otimizar rota:', error)
+      setErro(error.message || 'Erro ao calcular rota otimizada')
+      toast.error(error.message || 'Erro ao calcular rota otimizada', { theme: 'colored' })
     }
-  };
+  }
 
   const buscarDirecoesReais = async (paradas) => {
-    if (!window.google || paradas.length < 2) return;
+    if (!window.google || paradas.length < 2) return
 
     try {
-      const directionsService = new window.google.maps.DirectionsService();
+      const directionsService = new window.google.maps.DirectionsService()
 
       // Se tiver localização do usuário, sempre iniciar a rota da localização atual
-      let origin;
-      let waypoints;
+      let origin
+      let waypoints
 
       if (userLocation) {
         // Iniciar da localização do usuário
-        origin = userLocation;
+        origin = userLocation
         // Todas as paradas viram waypoints (exceto a última que é o destino)
         waypoints = paradas.slice(0, -1).map(parada => ({
           location: new window.google.maps.LatLng(parada.localizacao.lat, parada.localizacao.lng),
-          stopover: true
-        }));
+          stopover: true,
+        }))
 
       } else {
         // Sem localização: primeira parada é origem
-        origin = paradas[0].localizacao;
+        origin = paradas[0].localizacao
         // Paradas intermediárias são waypoints
         waypoints = paradas.slice(1, -1).map(parada => ({
           location: new window.google.maps.LatLng(parada.localizacao.lat, parada.localizacao.lng),
-          stopover: true
-        }));
+          stopover: true,
+        }))
 
       }
 
       // Ponto de destino (última parada)
-      const destination = paradas[paradas.length - 1].localizacao;
+      const destination = paradas[paradas.length - 1].localizacao
 
       const result = await directionsService.route({
         origin: new window.google.maps.LatLng(origin.lat, origin.lng),
@@ -363,95 +363,98 @@ function RotasOtimizadas() {
         waypoints: waypoints,
         optimizeWaypoints: false, // Já otimizamos antes
         travelMode: window.google.maps.TravelMode.DRIVING,
-      });
+      })
 
-      setDirectionsResponse(result);
+      setDirectionsResponse(result)
 
     } catch (error) {
-      toast.warning('Não foi possível carregar o caminho nas ruas', { theme: 'colored' });
+      toast.warning('Não foi possível carregar o caminho nas ruas', { theme: 'colored' })
+      console.log(error)
     }
-  };
+  }
 
   const iniciarNavegacao = async () => {
     if (!userLocation) {
-      toast.error('Aguardando localização...', { theme: 'colored' });
-      return;
+      toast.error('Aguardando localização...', { theme: 'colored' })
+      return
     }
 
-    setModoNavegacao(true);
+    setModoNavegacao(true)
 
     if (map) {
       // Configurar câmera em perspectiva (como Waze/Google Maps)
-      map.setZoom(18);
-      map.setMapTypeId('roadmap'); // Garantir que está em modo satélite/roadmap que suporta tilt
+      map.setZoom(18)
+      map.setMapTypeId('roadmap') // Garantir que está em modo satélite/roadmap que suporta tilt
 
       // Aguardar um frame para aplicar tilt
       setTimeout(() => {
         if (map) {
-          map.setTilt(45); // Ângulo de inclinação
-          map.panTo(userLocation);
+          map.setTilt(45) // Ângulo de inclinação
+          map.panTo(userLocation)
 
           if (userLocation.heading) {
-            map.setHeading(userLocation.heading);
+            map.setHeading(userLocation.heading)
           }
         }
-      }, 100);
+      }, 100)
     }
 
     // Recalcular rota incluindo localização do usuário
     if (rota && rota.paradas) {
-      await buscarDirecoesReais(rota.paradas);
+      await buscarDirecoesReais(rota.paradas)
     }
 
-    toast.success('Navegação iniciada!', { theme: 'colored' });
-  };
+    toast.success('Navegação iniciada!', { theme: 'colored' })
+  }
 
   const pararNavegacao = () => {
-    setModoNavegacao(false);
+    setModoNavegacao(false)
 
     if (map) {
-      map.setTilt(0); // Voltar para visão de cima
-      map.setZoom(13);
+      map.setTilt(0) // Voltar para visão de cima
+      map.setZoom(13)
     }
 
-    toast.info('Navegação encerrada', { theme: 'colored' });
-  };
+    toast.info('Navegação encerrada', { theme: 'colored' })
+  }
 
   const sugerirMelhorRota = async () => {
     if (!alunosItinerario.length && !escolasItinerario.length) {
-      toast.warning('Não há dados para otimizar', { theme: 'colored' });
-      return;
+      toast.warning('Não há dados para otimizar', { theme: 'colored' })
+      return
     }
 
-    setLoading(true);
+    setLoading(true)
     try {
-      toast.info('Calculando melhor rota...', { theme: 'colored' });
-      await otimizarRota(alunosItinerario, escolasItinerario, true); // forcarOtimizacao = true
-      setUsandoRotaOtimizada(true);
+      toast.info('Calculando melhor rota...', { theme: 'colored' })
+      await otimizarRota(alunosItinerario, escolasItinerario, true) // forcarOtimizacao = true
+      setUsandoRotaOtimizada(true)
     } catch (error) {
-      toast.error('Erro ao calcular melhor rota', { theme: 'colored' });
+      toast.error('Erro ao calcular melhor rota', { theme: 'colored' })
+      console.log(error)
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
-  };
+  }
 
   const voltarRotaOriginal = async () => {
     if (!alunosItinerario.length && !escolasItinerario.length) {
-      toast.warning('Não há dados para recalcular', { theme: 'colored' });
-      return;
+      toast.warning('Não há dados para recalcular', { theme: 'colored' })
+      return
     }
 
-    setLoading(true);
+    setLoading(true)
     try {
-      toast.info('Voltando para ordem cadastrada...', { theme: 'colored' });
-      await otimizarRota(alunosItinerario, escolasItinerario, false); // forcarOtimizacao = false
-      setUsandoRotaOtimizada(false);
+      toast.info('Voltando para ordem cadastrada...', { theme: 'colored' })
+      await otimizarRota(alunosItinerario, escolasItinerario, false) // forcarOtimizacao = false
+      setUsandoRotaOtimizada(false)
     } catch (error) {
-      toast.error('Erro ao recalcular rota', { theme: 'colored' });
+      toast.error('Erro ao recalcular rota', { theme: 'colored' })
+      console.log(error)
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
-  };
+  }
 
   if (mapaSemConfiguracao) {
     return (
@@ -463,7 +466,7 @@ function RotasOtimizadas() {
           </div>
         </div>
       </div>
-    );
+    )
   }
 
   if (!isLoaded) {
@@ -471,7 +474,7 @@ function RotasOtimizadas() {
       <div className="flex justify-center items-center h-screen">
         <div className="text-[#34435F] text-xl">Carregando mapa...</div>
       </div>
-    );
+    )
   }
 
   return (
@@ -509,7 +512,7 @@ function RotasOtimizadas() {
           {/* Resumo da Rota - O card agora ocupa o espaço até o final */}
           {rota && (
             <div className="bg-white rounded-lg shadow flex-1 flex flex-col overflow-hidden mx-5 md:mx-0 mb-5 md:mb-0">
-              
+
               {/* 1. CABEÇALHO E INFORMAÇÕES (NÃO ROLA) */}
               <div className="p-4 border-b border-gray-200 flex-shrink-0">
                 <h3 className="text-[#172848] font-bold text-lg mb-3">Resumo da Rota</h3>
@@ -537,7 +540,7 @@ function RotasOtimizadas() {
                 <h4 className="text-[#34435F] font-semibold text-sm mb-2">Ordem de Paradas:</h4>
                 <ol className="space-y-2 pb-2">
                   {rota.paradas.map((parada, idx) => {
-                    const isEscola = parada.tipo === 'escola';
+                    const isEscola = parada.tipo === 'escola'
                     return (
                       <li key={idx} className="text-[#34435F] flex items-center gap-3 text-sm">
                         {isEscola ? (
@@ -549,14 +552,14 @@ function RotasOtimizadas() {
                           {parada.idParada.replace('Escola: ', '')}
                         </span>
                       </li>
-                    );
+                    )
                   })}
                 </ol>
               </div>
 
               {/* 3. RODAPÉ COM LEGENDA E BOTÕES (NÃO ROLA) */}
               <div className="p-4 border-t border-gray-200 flex-shrink-0">
-                
+
                 {/* LEGENDA */}
                 <div className="mb-4">
                   <p className="text-xs text-[#34435F] font-semibold mb-2">Legenda:</p>
@@ -628,7 +631,7 @@ function RotasOtimizadas() {
               streetViewControl: true,
               fullscreenControl: true,
               rotateControl: modoNavegacao,
-              tilt: modoNavegacao ? 45 : 0
+              tilt: modoNavegacao ? 45 : 0,
             }}
           >
             {/* Marcador do usuário/veículo */}
@@ -642,7 +645,7 @@ function RotasOtimizadas() {
                   fillOpacity: 1,
                   strokeColor: 'white',
                   strokeWeight: 2,
-                  rotation: userLocation.heading || 0
+                  rotation: userLocation.heading || 0,
                 }}
                 title="Sua localização"
                 zIndex={1000}
@@ -650,18 +653,18 @@ function RotasOtimizadas() {
             )}
 
             {rota?.paradas.map((parada, idx) => {
-              const isFirst = idx === 0;
-              const isLast = idx === rota.paradas.length - 1;
-              const isEscola = parada.idParada?.includes('Escola:');
+              const isFirst = idx === 0
+              const isLast = idx === rota.paradas.length - 1
+              const isEscola = parada.idParada?.includes('Escola:')
 
               // Cores diferentes para alunos e escolas
-              let corMarcador = '#FB923C'; // Laranja padrão para alunos
+              let corMarcador = '#FB923C' // Laranja padrão para alunos
               if (isEscola) {
-                corMarcador = '#22C55E'; // Verde para escolas
+                corMarcador = '#22C55E' // Verde para escolas
               } else if (isFirst) {
-                corMarcador = '#4CCE5B'; // Verde claro para primeiro
+                corMarcador = '#4CCE5B' // Verde claro para primeiro
               } else if (isLast) {
-                corMarcador = '#F04848'; // Vermelho para último
+                corMarcador = '#F04848' // Vermelho para último
               }
 
               return (
@@ -671,7 +674,7 @@ function RotasOtimizadas() {
                   label={{
                     text: `${idx + 1}`,
                     color: 'white',
-                    fontWeight: 'bold'
+                    fontWeight: 'bold',
                   }}
                   title={parada.idParada}
                   icon={{
@@ -680,10 +683,10 @@ function RotasOtimizadas() {
                     fillColor: corMarcador,
                     fillOpacity: 1,
                     strokeColor: 'white',
-                    strokeWeight: 2
+                    strokeWeight: 2,
                   }}
                 />
-              );
+              )
             })}
 
             {/* DirectionsRenderer para mostrar caminho nas ruas */}
@@ -701,12 +704,12 @@ function RotasOtimizadas() {
                       icon: {
                         path: 'M 0,-1 0,1',
                         strokeOpacity: 1,
-                        scale: 3
+                        scale: 3,
                       },
                       offset: '0',
-                      repeat: '15px'
-                    }]
-                  }
+                      repeat: '15px',
+                    }],
+                  },
                 }}
               />
             )}
@@ -714,14 +717,7 @@ function RotasOtimizadas() {
         </div>
       </div>
     </>
-  );
-}
-
-function gerarLinkGoogleMaps(rota) {
-  const waypoints = rota.paradas
-    .map(p => `${p.localizacao.lat},${p.localizacao.lng}`)
-    .join('/');
-  return `https://www.google.com/maps/dir/${waypoints}`;
+  )
 }
 
 const responsiveStyles = `
@@ -742,12 +738,12 @@ const responsiveStyles = `
       font-weight: 600;
     }
   }
-`;
+`
 
 // Injetar estilos no head do documento
-const styleSheet = document.createElement("style");
-styleSheet.type = "text/css";
-styleSheet.innerText = responsiveStyles;
-document.head.appendChild(styleSheet);
+const styleSheet = document.createElement('style')
+styleSheet.type = 'text/css'
+styleSheet.innerText = responsiveStyles
+document.head.appendChild(styleSheet)
 
-export default RotasOtimizadas;
+export default RotasOtimizadas

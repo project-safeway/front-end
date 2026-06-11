@@ -214,7 +214,7 @@ export async function buscarEnderecoPorCEP(cep) {
     }
 
     const response = await axios.get(`https://viacep.com.br/ws/${cleanCEP}/json/`, {
-      timeout: 3000 // Timeout de 3 segundos
+      timeout: 3000, // Timeout de 3 segundos
     })
 
     const data = response.data
@@ -233,7 +233,7 @@ export async function buscarEnderecoPorCEP(cep) {
       ibge: data.ibge,
       gia: data.gia,
       ddd: data.ddd,
-      siafi: data.siafi
+      siafi: data.siafi,
     }
   } catch (error) {
     if (error.code === 'ECONNABORTED' || error.message.includes('timeout')) {

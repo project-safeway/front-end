@@ -28,7 +28,7 @@ itinerarioAxios.interceptors.response.use(
     }
 
     return Promise.reject(error)
-  }
+  },
 )
 
 class ItinerarioService {
@@ -36,55 +36,55 @@ class ItinerarioService {
   async _executarComRetry(fn, tentativas = 3, delay = 1000) {
     for (let i = 0; i < tentativas; i++) {
       try {
-        return await fn();
+        return await fn()
       } catch (error) {
-        if (i === tentativas - 1) throw error;
+        if (i === tentativas - 1) throw error
 
         if (error.response && error.response.status >= 400 && error.response.status < 500) {
-          throw error;
+          throw error
         }
 
-        await new Promise(resolve => setTimeout(resolve, delay));
+        await new Promise(resolve => setTimeout(resolve, delay))
       }
     }
   }
 
   _formatarHorario(horario) {
-    if (!horario) return null;
-    if (horario.split(':').length === 3) return horario;
-    return `${horario}:00`;
+    if (!horario) return null
+    if (horario.split(':').length === 3) return horario
+    return `${horario}:00`
   }
 
   _prepararDados(itinerarioData) {
-    const dados = { ...itinerarioData };
-    
+    const dados = { ...itinerarioData }
+
     if (dados.horarioInicio) {
-      dados.horarioInicio = this._formatarHorario(dados.horarioInicio);
+      dados.horarioInicio = this._formatarHorario(dados.horarioInicio)
     }
-    
+
     if (dados.horarioFim) {
-      dados.horarioFim = this._formatarHorario(dados.horarioFim);
+      dados.horarioFim = this._formatarHorario(dados.horarioFim)
     }
-    
-    return dados;
+
+    return dados
   }
 
   async listarTodos() {
     return this._executarComRetry(async () => {
-      const response = await itinerarioAxios.get('/itinerarios');
-      return response.data;
-    });
+      const response = await itinerarioAxios.get('/itinerarios')
+      return response.data
+    })
   }
 
   async buscarPorId(id) {
     return this._executarComRetry(async () => {
-      const response = await itinerarioAxios.get(`/itinerarios/${id}`);
-      return response.data;
+      const response = await itinerarioAxios.get(`/itinerarios/${id}`)
+      return response.data
     })
   }
 
   async criar(itinerarioData) {
-    const dataFormatada = this._prepararDados(itinerarioData);
+    const dataFormatada = this._prepararDados(itinerarioData)
 
     return this._executarComRetry(async () => {
       const response = await itinerarioAxios.post('/itinerarios', dataFormatada)
@@ -93,7 +93,7 @@ class ItinerarioService {
   }
 
   async atualizar(id, itinerarioData) {
-    const dataFormatada = this._prepararDados(itinerarioData);
+    const dataFormatada = this._prepararDados(itinerarioData)
 
     return this._executarComRetry(async () => {
       const response = await itinerarioAxios.put(`/itinerarios/${id}`, dataFormatada)
@@ -123,7 +123,7 @@ class ItinerarioService {
   async reordenarAlunos(itinerarioId, novaOrdemIds) {
     return this._executarComRetry(async () => {
       const response = await itinerarioAxios.patch(`/itinerarios/${itinerarioId}/alunos/ordem`, novaOrdemIds)
-      return response.data;
+      return response.data
     })
   }
 
@@ -167,52 +167,52 @@ class ItinerarioService {
   async reordenarEscolas(itinerarioId, novaOrdemIds) {
     return this._executarComRetry(async () => {
       const response = await itinerarioAxios.patch(`/itinerarios/${itinerarioId}/escolas/ordem`, novaOrdemIds)
-      return response.data;
+      return response.data
     })
   }
 
   _tratarErro(error, mensagemPadrao) {
-    let mensagemUsuario = mensagemPadrao;
+    let mensagemUsuario = mensagemPadrao
 
     if (error.response) {
-      const status = error.response.status;
+      const status = error.response.status
 
       switch (status) {
-        case 400:
-          mensagemUsuario = 'Dados inválidos. Verifique as informações enviadas.';
-          break;
-        case 401:
-          mensagemUsuario = 'Sessão expirada. Faça login novamente.';
-          window.location.href = '/login';
-          break;
-        case 403:
-          mensagemUsuario = 'Você não tem permissão para realizar esta ação.';
-          break;
-        case 404:
-          mensagemUsuario = 'Recurso não encontrado.';
-          break;
-        case 422:
-          mensagemUsuario = error.response.data?.message || 'Dados inválidos.';
-          break;
-        case 500:
-          mensagemUsuario = 'Erro no servidor. Tente novamente mais tarde.';
-          break;
-        case 503:
-          mensagemUsuario = 'Serviço temporariamente indisponível.';
-          break;
-        default:
-          mensagemUsuario = error.response.data?.message || mensagemPadrao;
+      case 400:
+        mensagemUsuario = 'Dados inválidos. Verifique as informações enviadas.'
+        break
+      case 401:
+        mensagemUsuario = 'Sessão expirada. Faça login novamente.'
+        window.location.href = '/login'
+        break
+      case 403:
+        mensagemUsuario = 'Você não tem permissão para realizar esta ação.'
+        break
+      case 404:
+        mensagemUsuario = 'Recurso não encontrado.'
+        break
+      case 422:
+        mensagemUsuario = error.response.data?.message || 'Dados inválidos.'
+        break
+      case 500:
+        mensagemUsuario = 'Erro no servidor. Tente novamente mais tarde.'
+        break
+      case 503:
+        mensagemUsuario = 'Serviço temporariamente indisponível.'
+        break
+      default:
+        mensagemUsuario = error.response.data?.message || mensagemPadrao
       }
     } else if (error.request) {
-      mensagemUsuario = 'Sem resposta do servidor. Verifique sua conexão.';
+      mensagemUsuario = 'Sem resposta do servidor. Verifique sua conexão.'
     } else {
-      mensagemUsuario = error.message || mensagemPadrao;
+      mensagemUsuario = error.message || mensagemPadrao
     }
 
-    const errorObj = new Error(mensagemUsuario);
-    errorObj.status = error.response?.status;
-    errorObj.originalError = error;
-    throw errorObj;
+    const errorObj = new Error(mensagemUsuario)
+    errorObj.status = error.response?.status
+    errorObj.originalError = error
+    throw errorObj
   }
 }
 

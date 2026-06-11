@@ -1,13 +1,13 @@
-import PropTypes from "prop-types";
-import { ArrowUpward, ArrowDownward } from "@mui/icons-material";
-import DeleteIcon from "@mui/icons-material/Delete";
+import PropTypes from 'prop-types'
+import { ArrowUpward, ArrowDownward } from '@mui/icons-material'
+import DeleteIcon from '@mui/icons-material/Delete'
 
-export function TabelaEdicaoItinerario({ 
-  cabecalho = [], 
-  dados = [], 
-  fields = null, 
+export function TabelaEdicaoItinerario({
+  cabecalho = [],
+  dados = [],
+  fields = null,
   onMover = null,
-  onRemover = null 
+  onRemover = null,
 }) {
   return (
     <div className="w-full mx-auto overflow-x-auto rounded-2xl shadow-lg bg-white">
@@ -44,7 +44,7 @@ export function TabelaEdicaoItinerario({
                   key={cidx}
                   className="px-4 py-3 text-sm text-center text-gray-700"
                 >
-                  {row[key] ?? "-"}
+                  {row[key] ?? '-'}
                 </td>
               ))}
 
@@ -54,24 +54,24 @@ export function TabelaEdicaoItinerario({
                   <span className="inline-flex items-center justify-center w-8 h-8 bg-primary-100 text-primary-700 rounded-full font-semibold text-sm mr-2">
                     {index + 1}º
                   </span>
-                  
+
                   <button
                     className="p-1 rounded-full hover:bg-gray-100 transition"
-                    onClick={() => onMover && onMover(index, "up")}
+                    onClick={() => onMover && onMover(index, 'up')}
                     title="Mover para cima (prioridade maior)"
                     disabled={index === 0}
                   >
                     <ArrowUpward
                       fontSize="small"
                       className={`${
-                        index === 0 ? "text-gray-300" : "text-gray-600"
+                        index === 0 ? 'text-gray-300' : 'text-gray-600'
                       }`}
                     />
                   </button>
 
                   <button
                     className="p-1 rounded-full hover:bg-gray-100 transition"
-                    onClick={() => onMover && onMover(index, "down")}
+                    onClick={() => onMover && onMover(index, 'down')}
                     title="Mover para baixo (prioridade menor)"
                     disabled={index === dados.length - 1}
                   >
@@ -79,8 +79,8 @@ export function TabelaEdicaoItinerario({
                       fontSize="small"
                       className={`${
                         index === dados.length - 1
-                          ? "text-gray-300"
-                          : "text-gray-600"
+                          ? 'text-gray-300'
+                          : 'text-gray-600'
                       }`}
                     />
                   </button>
@@ -115,7 +115,7 @@ export function TabelaEdicaoItinerario({
         </tbody>
       </table>
     </div>
-  );
+  )
 }
 
 TabelaEdicaoItinerario.propTypes = {
@@ -124,4 +124,4 @@ TabelaEdicaoItinerario.propTypes = {
   fields: PropTypes.arrayOf(PropTypes.string).isRequired,
   onMover: PropTypes.func.isRequired,
   onRemover: PropTypes.func,
-};
+}

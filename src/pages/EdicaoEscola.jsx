@@ -30,7 +30,7 @@ export function EdicaoEscola() {
     async function bootstrap() {
       try {
         setCarregando(true)
-        
+
         const dados = await escolasService.getEscolaById(id)
         if (!alive) return
 
@@ -51,7 +51,7 @@ export function EdicaoEscola() {
         if (alive) {
           const mensagemErro = err.response?.data?.message || err.message || 'Erro ao carregar dados da escola'
           toast.error(mensagemErro, { theme: 'colored' })
-          
+
           // Se for erro 404 ou 403, redirecionar para listagem
           if (err.response?.status === 404 || err.response?.status === 403) {
             navigate('/alunos')
@@ -76,7 +76,7 @@ export function EdicaoEscola() {
 
   const handleCEPBlur = async () => {
     const cepLimpo = escola.cep.replace(/\D/g, '')
-    
+
     if (cepLimpo.length !== 8) return
 
     if (buscandoCEP) return // Evita múltiplas chamadas simultâneas
@@ -91,13 +91,13 @@ export function EdicaoEscola() {
 
     try {
       const dados = await buscarEnderecoPorCEP(cepLimpo)
-      
+
       setEscola(prev => ({
         ...prev,
         logradouro: dados.logradouro || prev.logradouro,
         bairro: dados.bairro || prev.bairro,
         cidade: dados.cidade || prev.cidade,
-        uf: dados.uf || prev.uf
+        uf: dados.uf || prev.uf,
       }))
 
       toast.success('Endereço encontrado!', { theme: 'colored' })
@@ -122,8 +122,8 @@ export function EdicaoEscola() {
           bairro: escola.bairro,
           cidade: escola.cidade,
           uf: escola.uf,
-          cep: escola.cep.replace(/\D/g, '')
-        }
+          cep: escola.cep.replace(/\D/g, ''),
+        },
       }
 
       await escolasService.updateEscola(id, escolaPayload)

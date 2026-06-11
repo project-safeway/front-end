@@ -2,15 +2,15 @@ import { createPortal } from 'react-dom'
 import WarningIcon from '@mui/icons-material/Warning'
 import CloseIcon from '@mui/icons-material/Close'
 
-export default function ConfirmDialog({ 
-  isOpen, 
-  onClose, 
-  onConfirm, 
+export default function ConfirmDialog({
+  isOpen,
+  onClose,
+  onConfirm,
   title = 'Confirmar ação',
   message = 'Tem certeza que deseja continuar?',
   confirmText = 'Confirmar',
   cancelText = 'Cancelar',
-  type = 'danger' // 'danger' ou 'warning'
+  type = 'danger', // 'danger' ou 'warning'
 }) {
   if (!isOpen) return null
 
@@ -18,13 +18,13 @@ export default function ConfirmDialog({
     danger: {
       icon: 'text-red-500',
       iconBg: 'bg-red-50',
-      button: 'bg-red-500 hover:bg-red-600 focus:ring-red-500'
+      button: 'bg-red-500 hover:bg-red-600 focus:ring-red-500',
     },
     warning: {
       icon: 'text-yellow-500',
       iconBg: 'bg-yellow-50',
-      button: 'bg-yellow-500 hover:bg-yellow-600 focus:ring-yellow-500'
-    }
+      button: 'bg-yellow-500 hover:bg-yellow-600 focus:ring-yellow-500',
+    },
   }
 
   const colors = colorClasses[type] || colorClasses.danger
@@ -35,11 +35,11 @@ export default function ConfirmDialog({
   }
 
   return createPortal(
-    <div 
+    <div
       className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fadeIn"
       onClick={onClose}
     >
-      <div 
+      <div
         className="bg-white rounded-2xl shadow-2xl max-w-md w-full overflow-hidden animate-scaleIn"
         onClick={(e) => e.stopPropagation()}
       >
@@ -52,7 +52,7 @@ export default function ConfirmDialog({
           >
             <CloseIcon className="text-navy-600" fontSize="small" />
           </button>
-          
+
           <div className="flex items-center gap-4">
             <div className={`p-3 ${colors.iconBg} rounded-xl`}>
               <WarningIcon className={`${colors.icon} text-3xl`} />
@@ -87,7 +87,7 @@ export default function ConfirmDialog({
         </div>
       </div>
 
-      <style jsx>{`
+      <style>{`
         @keyframes fadeIn {
           from {
             opacity: 0;
@@ -117,6 +117,6 @@ export default function ConfirmDialog({
         }
       `}</style>
     </div>,
-    document.body
+    document.body,
   )
 }

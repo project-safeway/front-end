@@ -10,6 +10,7 @@ import 'react-toastify/dist/ReactToastify.css'
 
 export default function Historico() {
   const [searchParams, setSearchParams] = useSearchParams()
+  setSearchParams()
   const itinerarioId = searchParams.get('itinerarioId')
 
   const [filtros, setFiltros] = useState({
@@ -67,7 +68,7 @@ export default function Historico() {
       const chamadas = historicoResponse.content || []
       console.log('Chamadas encontradas:', chamadas)
 
-      const dadosProcessados = processarDadosHistorico(chamadas, itinerarioData)
+      const dadosProcessados = processarDadosHistorico(chamadas)
       console.log('Dados processados:', dadosProcessados)
 
       setHistoricoData(dadosProcessados)
@@ -87,7 +88,7 @@ export default function Historico() {
     }
   }
 
-  const processarDadosHistorico = (chamadas, itinerarioData) => {
+  const processarDadosHistorico = (chamadas) => {
     const dados = []
 
     chamadas.forEach((chamada) => {

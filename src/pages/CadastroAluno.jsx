@@ -28,6 +28,7 @@ export function CadastroAlunos() {
         if (!alive) return
         setEscolas(Array.isArray(lista) ? lista : [])
       } catch (error) {
+        console.log(error)
         if (alive) toast.error('Erro ao carregar escolas')
       }
     })()
@@ -163,7 +164,7 @@ export function CadastroAlunos() {
 
     try {
       const idAluno = await alunosService.createAluno(payload)
-      toast.success('Aluno cadastrado com sucesso!')
+      toast.success('Aluno cadastrado com sucesso! ID: ' + idAluno)
       navigate('/alunos')
     } catch (error) {
       const mensagem = error.response?.data?.message || 'Erro ao cadastrar aluno'

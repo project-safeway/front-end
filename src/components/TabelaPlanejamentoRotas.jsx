@@ -1,13 +1,13 @@
-import PropTypes from "prop-types";
-import { useSortable } from "@dnd-kit/sortable";
-import { CSS } from "@dnd-kit/utilities";
-import DeleteIcon from "@mui/icons-material/Delete";
-import DragIndicatorIcon from "@mui/icons-material/DragIndicator";
+import PropTypes from 'prop-types'
+import { useSortable } from '@dnd-kit/sortable'
+import { CSS } from '@dnd-kit/utilities'
+import DeleteIcon from '@mui/icons-material/Delete'
+import DragIndicatorIcon from '@mui/icons-material/DragIndicator'
 
 // Componente para cada item/linha da lista
 function SortableItem({ item, index, onRemover }) {
-  const isEscola = item.tipo === 'escola';
-  
+  const isEscola = item.tipo === 'escola'
+
   const {
     attributes,
     listeners,
@@ -15,14 +15,14 @@ function SortableItem({ item, index, onRemover }) {
     transform,
     transition,
     isDragging,
-  } = useSortable({ id: item.id });
+  } = useSortable({ id: item.id })
 
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
     zIndex: isDragging ? 10 : 'auto',
     opacity: isDragging ? 0.7 : 1,
-  };
+  }
 
   return (
     <tr
@@ -32,8 +32,8 @@ function SortableItem({ item, index, onRemover }) {
     >
       {/* Coluna de Arrastar (agora com os listeners do dnd-kit) */}
       <td className="px-4 py-3" data-label="Arrastar">
-        <button 
-          {...attributes} 
+        <button
+          {...attributes}
           {...listeners}
           className="cursor-grab touch-none flex items-center justify-center w-full"
         >
@@ -80,14 +80,14 @@ function SortableItem({ item, index, onRemover }) {
         </td>
       )}
     </tr>
-  );
+  )
 }
 
 SortableItem.propTypes = {
   item: PropTypes.object.isRequired,
   index: PropTypes.number.isRequired,
   onRemover: PropTypes.func,
-};
+}
 
 
 // Componente principal da Tabela
@@ -148,10 +148,10 @@ export function TabelaPlanejamentoRotas({ dados = [], onRemover }) {
         </table>
       </div>
     </>
-  );
+  )
 }
 
 TabelaPlanejamentoRotas.propTypes = {
   dados: PropTypes.array.isRequired,
   onRemover: PropTypes.func,
-};
+}

@@ -7,8 +7,6 @@ import LocationOnIcon from '@mui/icons-material/LocationOn'
 import PersonIcon from '@mui/icons-material/Person'
 import PhoneIcon from '@mui/icons-material/Phone'
 import EmailIcon from '@mui/icons-material/Email'
-import AttachMoneyIcon from '@mui/icons-material/AttachMoney'
-import DirectionsBusIcon from '@mui/icons-material/DirectionsBus'
 import { GoogleMap, Marker, useJsApiLoader } from '@react-google-maps/api'
 
 import escolasService from '../services/escolasService'
@@ -26,7 +24,7 @@ export default function AlunoDetalhe() {
 
   const { isLoaded } = useJsApiLoader({
     googleMapsApiKey,
-    libraries: ['places', 'geometry']
+    libraries: ['places', 'geometry'],
   })
 
   const [aluno, setAluno] = useState({
@@ -74,55 +72,55 @@ export default function AlunoDetalhe() {
     if (!responsaveis.length) return null
     const resp = responsaveis[responsavelSelecionado]
     if (!resp?.endereco?.latitude || !resp?.endereco?.longitude) return null
-    
+
     return {
       lat: parseFloat(resp.endereco.latitude),
-      lng: parseFloat(resp.endereco.longitude)
+      lng: parseFloat(resp.endereco.longitude),
     }
   }, [responsaveis, responsavelSelecionado])
 
   useEffect(() => {
     let alive = true
       ; (async () => {
-        try {
-          setCarregando(true)
-          const [listaEscolas, dadosAluno] = await Promise.all([
-            escolasService.getEscolas(),
-            alunosService.getAlunoById(id),
-          ])
+      try {
+        setCarregando(true)
+        const [listaEscolas, dadosAluno] = await Promise.all([
+          escolasService.getEscolas(),
+          alunosService.getAlunoById(id),
+        ])
 
-          if (!alive) return
-          setEscolas(Array.isArray(listaEscolas) ? listaEscolas : (listaEscolas?.items ?? []))
+        if (!alive) return
+        setEscolas(Array.isArray(listaEscolas) ? listaEscolas : (listaEscolas?.items ?? []))
 
-          setAluno({
-            nomeAluno: dadosAluno?.nome ?? '',
-            nascimento: (dadosAluno?.dtNascimento || '').slice(0, 10),
-            escola: dadosAluno?.escola ?? '',
-            sala: dadosAluno?.sala ?? '',
-            serie: String(dadosAluno?.serie ?? ''),
-            turno: dadosAluno?.turno ?? '',
-            professor: dadosAluno?.professor ?? '',
-            endereco: dadosAluno?.escola?.endereco?.logradouro ?? '',
-            bairro: dadosAluno?.escola?.endereco?.bairro ?? '',
-            cidade: dadosAluno?.escola?.endereco?.cidade ?? '',
-            cep: dadosAluno?.escola?.endereco?.cep ?? '',
-            mensalidade: String(dadosAluno?.valorPadraoMensalidade ?? ''),
-            vencimentoDia: String(dadosAluno?.diaVencimento ?? ''),
-            pontoEmbarque: dadosAluno?.pontoEmbarque ?? '',
-            horarioIda: dadosAluno?.horarioIda ?? '',
-            horarioVolta: dadosAluno?.horarioVolta ?? '',
-            observacoes: dadosAluno?.observacoes ?? '',
-          })
+        setAluno({
+          nomeAluno: dadosAluno?.nome ?? '',
+          nascimento: (dadosAluno?.dtNascimento || '').slice(0, 10),
+          escola: dadosAluno?.escola ?? '',
+          sala: dadosAluno?.sala ?? '',
+          serie: String(dadosAluno?.serie ?? ''),
+          turno: dadosAluno?.turno ?? '',
+          professor: dadosAluno?.professor ?? '',
+          endereco: dadosAluno?.escola?.endereco?.logradouro ?? '',
+          bairro: dadosAluno?.escola?.endereco?.bairro ?? '',
+          cidade: dadosAluno?.escola?.endereco?.cidade ?? '',
+          cep: dadosAluno?.escola?.endereco?.cep ?? '',
+          mensalidade: String(dadosAluno?.valorPadraoMensalidade ?? ''),
+          vencimentoDia: String(dadosAluno?.diaVencimento ?? ''),
+          pontoEmbarque: dadosAluno?.pontoEmbarque ?? '',
+          horarioIda: dadosAluno?.horarioIda ?? '',
+          horarioVolta: dadosAluno?.horarioVolta ?? '',
+          observacoes: dadosAluno?.observacoes ?? '',
+        })
 
-          setResponsaveis(
-            Array.isArray(dadosAluno?.responsaveis) ? dadosAluno.responsaveis : []
-          )
-        } catch (e) {
-          console.error('[AlunoDetalhe] Erro ao carregar:', e)
-        } finally {
-          if (alive) setCarregando(false)
-        }
-      })()
+        setResponsaveis(
+          Array.isArray(dadosAluno?.responsaveis) ? dadosAluno.responsaveis : [],
+        )
+      } catch (e) {
+        console.error('[AlunoDetalhe] Erro ao carregar:', e)
+      } finally {
+        if (alive) setCarregando(false)
+      }
+    })()
     return () => { alive = false }
   }, [id])
 
@@ -252,7 +250,7 @@ export default function AlunoDetalhe() {
                           fillColor: '#F04848',
                           fillOpacity: 1,
                           strokeColor: 'white',
-                          strokeWeight: 2
+                          strokeWeight: 2,
                         }}
                       />
                     </GoogleMap>
@@ -291,11 +289,11 @@ export default function AlunoDetalhe() {
               {responsaveis?.length ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {responsaveis.map((r, i) => (
-                    <div 
-                      key={i} 
+                    <div
+                      key={i}
                       className={`rounded-xl p-5 border-2 transition-all cursor-pointer ${
-                        responsavelSelecionado === i 
-                          ? 'border-primary-400 bg-primary-50 shadow-md' 
+                        responsavelSelecionado === i
+                          ? 'border-primary-400 bg-primary-50 shadow-md'
                           : 'border-offwhite-200 bg-offwhite-50 hover:border-primary-200'
                       }`}
                       onClick={() => setResponsavelSelecionado(i)}
@@ -306,7 +304,7 @@ export default function AlunoDetalhe() {
                         </div>
                         <p className="font-bold text-navy-900">{r.nome}</p>
                       </div>
-                      
+
                       <div className="space-y-2 text-sm">
                         <div className="flex items-start gap-2">
                           <PhoneIcon fontSize="small" className="text-navy-400 mt-0.5" />
@@ -352,7 +350,7 @@ export default function AlunoDetalhe() {
         </div>
       </div>
       <style>
-      {`
+        {`
         @media (max-width: 640px) {
           .aluno-detalhe-container {
             padding: 0.5rem !important;

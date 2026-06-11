@@ -35,6 +35,8 @@ export function EdicaoAlunos() {
 
   const [responsaveis, setResponsaveis] = useState([])
 
+  console.log(dadosOriginais)
+
   // carregar dados (aluno + escolas) via services
   useEffect(() => {
     let alive = true

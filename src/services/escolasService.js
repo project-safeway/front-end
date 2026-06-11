@@ -27,7 +27,7 @@ escolasAxios.interceptors.response.use(
       window.location.href = '/login'
     }
     return Promise.reject(error)
-  }
+  },
 )
 
 class EscolasService {
@@ -49,7 +49,7 @@ class EscolasService {
     return this._executarComRetry(async () => {
       const usuarioId = localStorage.getItem('userId')
       const response = await escolasAxios.post('/escolas', escolaData, {
-        params: { usuarioId }
+        params: { usuarioId },
       })
       return response.data
     })

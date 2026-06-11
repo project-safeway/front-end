@@ -1,13 +1,13 @@
-import api from "./api";
+import api from './api'
 
 /**
  * Lista todos os funcionários
  */
 export async function listarFuncionarios() {
   console.log('[funcionarioService] listarFuncionarios')
-  const res = await api.get("/funcionario");
+  const res = await api.get('/funcionario')
   // res é um axios response; retorna o payload (res.data) para consumo no front
-  return res.data;
+  return res.data
 }
 
 /**
@@ -25,8 +25,8 @@ export async function criarFuncionario(payload) {
  * @param {number} id
  */
 export async function obterFuncionario(id) {
-  const res = await api.get(`/funcionario/${id}`);
-  return res.data;
+  const res = await api.get(`/funcionario/${id}`)
+  return res.data
 }
 
 /**
@@ -35,8 +35,8 @@ export async function obterFuncionario(id) {
  * @param {object} payload
  */
 export async function atualizarFuncionario(id, payload) {
-  const res = await api.put(`/funcionario/${id}`, payload);
-  return res.data;
+  const res = await api.put(`/funcionario/${id}`, payload)
+  return res.data
 }
 
 /**
@@ -44,6 +44,6 @@ export async function atualizarFuncionario(id, payload) {
  * @param {number} id
  */
 export async function excluirFuncionario(id) {
-  const res = await api.delete(`/funcionario/${id}`);
-  return res.data;
+  const res = await api.delete(`/funcionario/${id}`)
+  return res.data
 }

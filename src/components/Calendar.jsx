@@ -78,11 +78,6 @@ export default function Calendar({ onMonthChange }) {
     setIsModalOpen(true)
   }
 
-  const handleEditEvent = (event) => {
-    setSelectedEvent(event)
-    setIsModalOpen(true)
-  }
-
   const handleSaveEvent = async (eventData) => {
     try {
       if (selectedEvent) {

@@ -1,168 +1,168 @@
-import { useState, useEffect } from "react";
-import { useAuth } from '../contexts/AuthContext';
-import PropTypes from "prop-types";
-import CloseIcon from "@mui/icons-material/Close";
-import SaveIcon from "@mui/icons-material/Save";
-import DeleteIcon from "@mui/icons-material/Delete";
-import AccessTimeIcon from "@mui/icons-material/AccessTime";
-import DirectionsBusIcon from "@mui/icons-material/DirectionsBus";
-import RouteIcon from "@mui/icons-material/Route";
-import { showSwal } from '../utils/swal.jsx';
+import { useState, useEffect } from 'react'
+import { useAuth } from '../contexts/AuthContext'
+import PropTypes from 'prop-types'
+import CloseIcon from '@mui/icons-material/Close'
+import SaveIcon from '@mui/icons-material/Save'
+import DeleteIcon from '@mui/icons-material/Delete'
+import AccessTimeIcon from '@mui/icons-material/AccessTime'
+import DirectionsBusIcon from '@mui/icons-material/DirectionsBus'
+import RouteIcon from '@mui/icons-material/Route'
+import { showSwal } from '../utils/swal.jsx'
 
-export default function ItinerarioModal({ 
-  isOpen, 
-  onClose, 
-  onSave, 
-  onDelete, 
-  itinerario 
+export default function ItinerarioModal({
+  isOpen,
+  onClose,
+  onSave,
+  onDelete,
+  itinerario,
 }) {
-  const { user } = useAuth();
-  const transporteId = user?.transportId || user?.idTransporte || 1;
+  const { user } = useAuth()
+  const transporteId = user?.transportId || user?.idTransporte || 1
   const [formData, setFormData] = useState({
-    nome: "",
+    nome: '',
     transporteId,
-    horarioInicio: "",
-    horarioFim: "",
-    tipoViagem: "SO_IDA",
-  });
+    horarioInicio: '',
+    horarioFim: '',
+    tipoViagem: 'SO_IDA',
+  })
 
-  const [errors, setErrors] = useState({});
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errors, setErrors] = useState({})
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
   const horariosComuns = [
-    "06:00", "06:30", "07:00", "07:30", "08:00",
-    "12:00", "12:30", "13:00", "13:30", "14:00",
-    "17:00", "17:30", "18:00", "18:30", "19:00"
-  ];
+    '06:00', '06:30', '07:00', '07:30', '08:00',
+    '12:00', '12:30', '13:00', '13:30', '14:00',
+    '17:00', '17:30', '18:00', '18:30', '19:00',
+  ]
 
   useEffect(() => {
     if (itinerario) {
       setFormData({
-        nome: itinerario.nome || "",
+        nome: itinerario.nome || '',
         transporteId: itinerario.transporteId || transporteId,
-        horarioInicio: itinerario.horarioInicio || "",
-        horarioFim: itinerario.horarioFim || "",
-        tipoViagem: itinerario.tipoViagem || "SO_IDA",
-      });
+        horarioInicio: itinerario.horarioInicio || '',
+        horarioFim: itinerario.horarioFim || '',
+        tipoViagem: itinerario.tipoViagem || 'SO_IDA',
+      })
     } else {
       setFormData({
-        nome: "",
+        nome: '',
         transporteId,
-        horarioInicio: "",
-        horarioFim: "",
-        tipoViagem: "SO_IDA",
-      });
+        horarioInicio: '',
+        horarioFim: '',
+        tipoViagem: 'SO_IDA',
+      })
     }
-    setErrors({});
-  }, [itinerario, isOpen, transporteId]);
+    setErrors({})
+  }, [itinerario, isOpen, transporteId])
 
   const handleChange = (e) => {
-    const { name, value } = e.target;
+    const { name, value } = e.target
     setFormData((prev) => ({
       ...prev,
       [name]: value,
-    }));
+    }))
 
     if (errors[name]) {
-      setErrors((prev) => ({ ...prev, [name]: "" }));
+      setErrors((prev) => ({ ...prev, [name]: '' }))
     }
-  };
+  }
 
   const handleHorarioRapido = (campo, horario) => {
     setFormData((prev) => ({
       ...prev,
       [campo]: horario,
-    }));
-    
+    }))
+
     if (errors[campo]) {
-      setErrors((prev) => ({ ...prev, [campo]: "" }));
+      setErrors((prev) => ({ ...prev, [campo]: '' }))
     }
-  };
+  }
 
   const validate = () => {
-    const newErrors = {};
-    
+    const newErrors = {}
+
     if (!formData.nome.trim()) {
-      newErrors.nome = "Nome é obrigatório";
+      newErrors.nome = 'Nome é obrigatório'
     }
-    
+
     if (!formData.horarioInicio) {
-      newErrors.horarioInicio = "Horário de início é obrigatório";
+      newErrors.horarioInicio = 'Horário de início é obrigatório'
     }
-    
+
     if (!formData.horarioFim) {
-      newErrors.horarioFim = "Horário de fim é obrigatório";
+      newErrors.horarioFim = 'Horário de fim é obrigatório'
     }
-    
+
     if (formData.horarioInicio && formData.horarioFim) {
       if (formData.horarioFim <= formData.horarioInicio) {
-        newErrors.horarioFim = "Horário de fim deve ser maior que o início";
+        newErrors.horarioFim = 'Horário de fim deve ser maior que o início'
       }
     }
-    
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
+
+    setErrors(newErrors)
+    return Object.keys(newErrors).length === 0
+  }
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!validate()) return;
+    e.preventDefault()
+    if (!validate()) return
 
-    setIsSubmitting(true);
+    setIsSubmitting(true)
     try {
-      await onSave({ ...formData, transporteId });
-      handleClose();
+      await onSave({ ...formData, transporteId })
+      handleClose()
     } catch (error) {
-      console.error("Erro ao salvar itinerário:", error);
-      setErrors({ submit: error.message || "Erro ao salvar itinerário. Tente novamente." });
+      console.error('Erro ao salvar itinerário:', error)
+      setErrors({ submit: error.message || 'Erro ao salvar itinerário. Tente novamente.' })
     } finally {
-      setIsSubmitting(false);
+      setIsSubmitting(false)
     }
-  };
+  }
 
   const handleDelete = async () => {
-    if (!itinerario?.id) return;
-      const result = await showSwal({
-        title: 'Excluir itinerário',
-        text: `Tem certeza que deseja excluir o itinerário "${itinerario.nome}"?\n\nEsta ação não pode ser desfeita.`,
-        icon: 'warning',
-        confirmButtonText: 'Sim, excluir',
-        cancelButtonText: 'Cancelar'
-      });
-      if (!result.isConfirmed) return;
+    if (!itinerario?.id) return
+    const result = await showSwal({
+      title: 'Excluir itinerário',
+      text: `Tem certeza que deseja excluir o itinerário "${itinerario.nome}"?\n\nEsta ação não pode ser desfeita.`,
+      icon: 'warning',
+      confirmButtonText: 'Sim, excluir',
+      cancelButtonText: 'Cancelar',
+    })
+    if (!result.isConfirmed) return
 
-    setIsSubmitting(true);
+    setIsSubmitting(true)
     try {
-      await onDelete(itinerario.id);
-      handleClose();
+      await onDelete(itinerario.id)
+      handleClose()
     } catch (error) {
-      console.error("Erro ao deletar itinerário:", error);
-      setErrors({ submit: error.message || "Erro ao deletar itinerário. Tente novamente." });
+      console.error('Erro ao deletar itinerário:', error)
+      setErrors({ submit: error.message || 'Erro ao deletar itinerário. Tente novamente.' })
     } finally {
-      setIsSubmitting(false);
+      setIsSubmitting(false)
     }
-  };
+  }
 
   const handleClose = () => {
-    if (isSubmitting) return;
+    if (isSubmitting) return
     setFormData({
-      nome: "",
+      nome: '',
       transporteId,
-      horarioInicio: "",
-      horarioFim: "",
-      tipoViagem: "SO_IDA",
-    });
-    setErrors({});
-    onClose();
-  };
+      horarioInicio: '',
+      horarioFim: '',
+      tipoViagem: 'SO_IDA',
+    })
+    setErrors({})
+    onClose()
+  }
 
-  if (!isOpen) return null;
-  
+  if (!isOpen) return null
+
   return (
-    <div 
+    <div
       className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
       onClick={(e) => {
-        if (e.target === e.currentTarget && !isSubmitting) handleClose();
+        if (e.target === e.currentTarget && !isSubmitting) handleClose()
       }}
     >
       <div className="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
@@ -174,10 +174,10 @@ export default function ItinerarioModal({
             </div>
             <div>
               <h2 className="text-xl font-semibold text-navy-900">
-                {itinerario ? "Editar Itinerário" : "Novo Itinerário"}
+                {itinerario ? 'Editar Itinerário' : 'Novo Itinerário'}
               </h2>
               <p className="text-sm text-navy-600">
-                {itinerario ? "Atualize as informações do itinerário" : "Preencha os dados do novo itinerário"}
+                {itinerario ? 'Atualize as informações do itinerário' : 'Preencha os dados do novo itinerário'}
               </p>
             </div>
           </div>
@@ -208,7 +208,7 @@ export default function ItinerarioModal({
                 value={formData.nome}
                 onChange={handleChange}
                 className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-primary-400 focus:border-transparent outline-none transition-all ${
-                  errors.nome ? "border-red-400 bg-red-50" : "border-offwhite-300"
+                  errors.nome ? 'border-red-400 bg-red-50' : 'border-offwhite-300'
                 }`}
                 placeholder="Ex: Rota Centro - Matutino"
                 disabled={isSubmitting}
@@ -229,11 +229,11 @@ export default function ItinerarioModal({
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 tipo-viagem-mobile">
                 <button
                   type="button"
-                  onClick={() => setFormData(prev => ({ ...prev, tipoViagem: "SO_IDA" }))}
+                  onClick={() => setFormData(prev => ({ ...prev, tipoViagem: 'SO_IDA' }))}
                   className={`p-4 border-2 rounded-lg transition-all ${
-                    formData.tipoViagem === "SO_IDA"
-                      ? "border-primary-400 bg-primary-50 text-primary-700"
-                      : "border-offwhite-300 hover:border-primary-200"
+                    formData.tipoViagem === 'SO_IDA'
+                      ? 'border-primary-400 bg-primary-50 text-primary-700'
+                      : 'border-offwhite-300 hover:border-primary-200'
                   }`}
                   disabled={isSubmitting}
                 >
@@ -242,11 +242,11 @@ export default function ItinerarioModal({
                 </button>
                 <button
                   type="button"
-                  onClick={() => setFormData(prev => ({ ...prev, tipoViagem: "SO_VOLTA" }))}
+                  onClick={() => setFormData(prev => ({ ...prev, tipoViagem: 'SO_VOLTA' }))}
                   className={`p-4 border-2 rounded-lg transition-all ${
-                    formData.tipoViagem === "SO_VOLTA"
-                      ? "border-primary-400 bg-primary-50 text-primary-700"
-                      : "border-offwhite-300 hover:border-primary-200"
+                    formData.tipoViagem === 'SO_VOLTA'
+                      ? 'border-primary-400 bg-primary-50 text-primary-700'
+                      : 'border-offwhite-300 hover:border-primary-200'
                   }`}
                   disabled={isSubmitting}
                 >
@@ -277,7 +277,7 @@ export default function ItinerarioModal({
                   value={formData.horarioInicio}
                   onChange={handleChange}
                   className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary-400 focus:border-transparent outline-none text-lg font-mono ${
-                    errors.horarioInicio ? "border-red-400 bg-red-50" : "border-offwhite-300"
+                    errors.horarioInicio ? 'border-red-400 bg-red-50' : 'border-offwhite-300'
                   }`}
                   disabled={isSubmitting}
                 />
@@ -286,7 +286,7 @@ export default function ItinerarioModal({
                     <span>⚠️</span> {errors.horarioInicio}
                   </p>
                 )}
-                
+
                 {/* Horários rápidos início */}
                 <div className="mt-3">
                   <p className="text-xs text-navy-600 mb-2">Horários comuns:</p>
@@ -318,7 +318,7 @@ export default function ItinerarioModal({
                   value={formData.horarioFim}
                   onChange={handleChange}
                   className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary-400 focus:border-transparent outline-none text-lg font-mono ${
-                    errors.horarioFim ? "border-red-400 bg-red-50" : "border-offwhite-300"
+                    errors.horarioFim ? 'border-red-400 bg-red-50' : 'border-offwhite-300'
                   }`}
                   disabled={isSubmitting}
                 />
@@ -327,7 +327,7 @@ export default function ItinerarioModal({
                     <span>⚠️</span> {errors.horarioFim}
                   </p>
                 )}
-                
+
                 {/* Horários rápidos fim */}
                 <div className="mt-3">
                   <p className="text-xs text-navy-600 mb-2">Horários comuns:</p>
@@ -403,7 +403,7 @@ export default function ItinerarioModal({
         </form>
       </div>
       <style>
-      {`
+        {`
         @media (max-width: 640px) {
           .tipo-viagem-mobile {
             grid-template-columns: 1fr !important;
@@ -432,7 +432,7 @@ export default function ItinerarioModal({
       `}
       </style>
     </div>
-  );
+  )
 }
 
 ItinerarioModal.propTypes = {
@@ -441,4 +441,4 @@ ItinerarioModal.propTypes = {
   onSave: PropTypes.func.isRequired,
   onDelete: PropTypes.func.isRequired,
   itinerario: PropTypes.object,
-};
+}

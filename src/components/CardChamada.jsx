@@ -1,7 +1,7 @@
-import PropTypes from "prop-types";
-import CheckCircleIcon from "@mui/icons-material/CheckCircle";
-import CancelIcon from "@mui/icons-material/Cancel";
-import NavigateNextIcon from "@mui/icons-material/NavigateNext";
+import PropTypes from 'prop-types'
+import CheckCircleIcon from '@mui/icons-material/CheckCircle'
+import CancelIcon from '@mui/icons-material/Cancel'
+import NavigateNextIcon from '@mui/icons-material/NavigateNext'
 
 export function CardChamada({
   aluno,
@@ -12,7 +12,9 @@ export function CardChamada({
   onProximo,
   isUltimoAluno = false,
 }) {
-  const jaRegistrado = aluno.presente !== null;
+  const jaRegistrado = aluno.presente !== null
+  console.log(indiceAtual)
+  console.log(totalAlunos)
 
   return (
     <div className="bg-white rounded-xl shadow-lg px-8 py-8 border border-offwhite-200">
@@ -97,7 +99,7 @@ export function CardChamada({
         </div>
       </div>
     </div>
-  );
+  )
 }
 
 CardChamada.propTypes = {
@@ -116,4 +118,4 @@ CardChamada.propTypes = {
   onAusente: PropTypes.func.isRequired,
   onProximo: PropTypes.func.isRequired,
   isUltimoAluno: PropTypes.bool,
-};
+}

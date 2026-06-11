@@ -1,114 +1,114 @@
-import React, { useState, useEffect } from "react";
-import { showSwal } from '../utils/swal.jsx';
-import { Link, useSearchParams, useNavigate } from "react-router-dom";
-import AssignmentTurnedInIcon from "@mui/icons-material/AssignmentTurnedIn";
-import ArrowBackIcon from "@mui/icons-material/ArrowBack";
-import { CardChamada } from "../components/CardChamada";
-import { TabelaChamada } from "../components/TabelaChamada";
-import ItinerarioService from "../services/itinerarioService";
-import ChamadaService from "../services/chamadaService";
-import { toast } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
+import { useState, useEffect } from 'react'
+import { showSwal } from '../utils/swal.jsx'
+import { Link, useSearchParams, useNavigate } from 'react-router-dom'
+import AssignmentTurnedInIcon from '@mui/icons-material/AssignmentTurnedIn'
+import ArrowBackIcon from '@mui/icons-material/ArrowBack'
+import { CardChamada } from '../components/CardChamada'
+import { TabelaChamada } from '../components/TabelaChamada'
+import ItinerarioService from '../services/itinerarioService'
+import ChamadaService from '../services/chamadaService'
+import { toast } from 'react-toastify'
+import 'react-toastify/dist/ReactToastify.css'
 
 export default function Chamada() {
-  const [searchParams] = useSearchParams();
-  const navigate = useNavigate();
-  const itinerarioId = searchParams.get("itinerarioId");
+  const [searchParams] = useSearchParams()
+  const navigate = useNavigate()
+  const itinerarioId = searchParams.get('itinerarioId')
 
-  const [alunos, setAlunos] = useState([]);
-  const [indiceAtual, setIndiceAtual] = useState(0);
-  const [chamadaId, setChamadaId] = useState(null);
-  const [itinerario, setItinerario] = useState(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isFinalizando, setIsFinalizando] = useState(false);
-  const [chamadaFinalizada, setChamadaFinalizada] = useState(false);
+  const [alunos, setAlunos] = useState([])
+  const [indiceAtual, setIndiceAtual] = useState(0)
+  const [chamadaId, setChamadaId] = useState(null)
+  const [itinerario, setItinerario] = useState(null)
+  const [isLoading, setIsLoading] = useState(true)
+  const [isFinalizando, setIsFinalizando] = useState(false)
+  const [chamadaFinalizada, setChamadaFinalizada] = useState(false)
 
   useEffect(() => {
     if (!itinerarioId) {
-      toast.error("ID do itinerário não fornecido", { theme: "colored" });
-      navigate("/itinerarios");
-      return;
+      toast.error('ID do itinerário não fornecido', { theme: 'colored' })
+      navigate('/itinerarios')
+      return
     }
-    inicializarChamada();
-  }, [itinerarioId]);
+    inicializarChamada()
+  }, [itinerarioId])
 
   const inicializarChamada = async () => {
-    setIsLoading(true);
+    setIsLoading(true)
     try {
-      const itinerarioData = await ItinerarioService.buscarPorId(itinerarioId);
-      setItinerario(itinerarioData);
+      const itinerarioData = await ItinerarioService.buscarPorId(itinerarioId)
+      setItinerario(itinerarioData)
 
       if (!itinerarioData.alunos || itinerarioData.alunos.length === 0) {
-        toast.warning("Este itinerário não possui alunos cadastrados.", {
-          theme: "colored",
-        });
-        setTimeout(() => navigate("/itinerarios"), 2000);
-        return;
+        toast.warning('Este itinerário não possui alunos cadastrados.', {
+          theme: 'colored',
+        })
+        setTimeout(() => navigate('/itinerarios'), 2000)
+        return
       }
 
-      const chamadaResponse = await ChamadaService.iniciarChamada(itinerarioId);
-      setChamadaId(chamadaResponse.id);
+      const chamadaResponse = await ChamadaService.iniciarChamada(itinerarioId)
+      setChamadaId(chamadaResponse.id)
 
       const rawAlunos =
         itinerarioData.alunos ||
         (itinerarioData.itinerario && itinerarioData.itinerario.alunos) ||
-        [];
+        []
 
       const alunosFormatados = rawAlunos
         .slice()
         .sort((a, b) => (a.ordemEmbarque ?? a.ordemGlobal ?? 0) - (b.ordemEmbarque ?? b.ordemGlobal ?? 0))
         .map((aluno) => ({
           id: aluno.alunoId,
-          nomeAluno: aluno.nomeAluno || aluno.nome || "Sem nome",
-          responsavel: aluno.nomeResponsavel || aluno.responsavel || "Não informado",
-          escola: aluno.nomeEscola || "Não informado",
+          nomeAluno: aluno.nomeAluno || aluno.nome || 'Sem nome',
+          responsavel: aluno.nomeResponsavel || aluno.responsavel || 'Não informado',
+          escola: aluno.nomeEscola || 'Não informado',
           sala: aluno.sala || null,
           ordemEmbarque: aluno.ordemEmbarque ?? aluno.ordemGlobal ?? 0,
           presente: null,
-        }));
+        }))
 
-      setAlunos(alunosFormatados);
-      toast.success("Chamada iniciada com sucesso!", { theme: "colored" });
+      setAlunos(alunosFormatados)
+      toast.success('Chamada iniciada com sucesso!', { theme: 'colored' })
     } catch (error) {
-      if (error.message.includes("já existe uma chamada em andamento")) {
+      if (error.message.includes('já existe uma chamada em andamento')) {
         toast.error(
-          "Já existe uma chamada em andamento para este itinerário. Finalize a chamada anterior primeiro.",
-          { theme: "colored", autoClose: 5000 }
-        );
+          'Já existe uma chamada em andamento para este itinerário. Finalize a chamada anterior primeiro.',
+          { theme: 'colored', autoClose: 5000 },
+        )
       } else {
         toast.error(`Erro ao iniciar chamada: ${error.message}`, {
-          theme: "colored",
-        });
+          theme: 'colored',
+        })
       }
-      
-      setTimeout(() => navigate("/itinerarios"), 2000);
+
+      setTimeout(() => navigate('/itinerarios'), 2000)
     } finally {
-      setIsLoading(false);
+      setIsLoading(false)
     }
-  };
+  }
 
   const marcarPresenca = (presente) => {
-    const alunoAtual = alunos[indiceAtual];
+    const alunoAtual = alunos[indiceAtual]
     const atualizados = alunos.map((a) =>
-      a.id === alunoAtual.id ? { ...a, presente } : a
-    );
-    setAlunos(atualizados);
-    proximoAluno();
-  };
+      a.id === alunoAtual.id ? { ...a, presente } : a,
+    )
+    setAlunos(atualizados)
+    proximoAluno()
+  }
 
   const proximoAluno = () => {
     if (indiceAtual < alunos.length - 1) {
-      setIndiceAtual(indiceAtual + 1);
+      setIndiceAtual(indiceAtual + 1)
     } else {
-      toast.info("Último aluno registrado! Finalize a chamada.", {
-        theme: "colored",
-      });
+      toast.info('Último aluno registrado! Finalize a chamada.', {
+        theme: 'colored',
+      })
     }
-  };
+  }
 
   const finalizarChamada = async () => {
-    const alunosNaoRegistrados = alunos.filter((a) => a.presente === null);
-    
+    const alunosNaoRegistrados = alunos.filter((a) => a.presente === null)
+
     if (alunosNaoRegistrados.length > 0) {
       const { isConfirmed } = await showSwal({
         title: 'Finalizar chamada',
@@ -116,37 +116,37 @@ export default function Chamada() {
         icon: 'warning',
         confirmButtonText: 'Sim, finalizar',
         cancelButtonText: 'Cancelar',
-        showCancelButton: true
-      });
-      if (!isConfirmed) return;
+        showCancelButton: true,
+      })
+      if (!isConfirmed) return
     }
 
-    setIsFinalizando(true);
+    setIsFinalizando(true)
     try {
-      const presencas = {};
+      const presencas = {}
       alunos.forEach((aluno) => {
         if (aluno.presente !== null) {
-          presencas[aluno.id] = aluno.presente ? "PRESENTE" : "AUSENTE";
+          presencas[aluno.id] = aluno.presente ? 'PRESENTE' : 'AUSENTE'
         }
-      });
+      })
 
-      await ChamadaService.registrarPresenca(chamadaId, presencas);
-      await ChamadaService.alterarStatusChamada(itinerarioId, "FINALIZADA");
+      await ChamadaService.registrarPresenca(chamadaId, presencas)
+      await ChamadaService.alterarStatusChamada(itinerarioId, 'FINALIZADA')
 
-      setChamadaFinalizada(true);
-      toast.success("Chamada finalizada com sucesso!", { theme: "colored" });
+      setChamadaFinalizada(true)
+      toast.success('Chamada finalizada com sucesso!', { theme: 'colored' })
 
       setTimeout(() => {
-        navigate("/itinerarios");
-      }, 2000);
+        navigate('/itinerarios')
+      }, 2000)
     } catch (error) {
       toast.error(`Erro ao finalizar chamada: ${error.message}`, {
-        theme: "colored",
-      });
+        theme: 'colored',
+      })
     } finally {
-      setIsFinalizando(false);
+      setIsFinalizando(false)
     }
-  };
+  }
 
   const cancelarChamada = async () => {
     const { isConfirmed } = await showSwal({
@@ -155,20 +155,20 @@ export default function Chamada() {
       icon: 'warning',
       confirmButtonText: 'Sim, cancelar',
       cancelButtonText: 'Voltar',
-      showCancelButton: true
-    });
-    if (!isConfirmed) return;
+      showCancelButton: true,
+    })
+    if (!isConfirmed) return
 
     try {
-      await ChamadaService.alterarStatusChamada(itinerarioId, "CANCELADA");
-      toast.info("Chamada cancelada.", { theme: "colored" });
-      navigate("/itinerarios");
+      await ChamadaService.alterarStatusChamada(itinerarioId, 'CANCELADA')
+      toast.info('Chamada cancelada.', { theme: 'colored' })
+      navigate('/itinerarios')
     } catch (error) {
       toast.error(`Erro ao cancelar chamada: ${error.message}`, {
-        theme: "colored",
-      });
+        theme: 'colored',
+      })
     }
-  };
+  }
 
   const responsiveStyles = `
     @media (max-width: 768px) {
@@ -232,7 +232,7 @@ export default function Chamada() {
         color: #111827; 
       }
     }
-  `;
+  `
 
   if (isLoading) {
     return (
@@ -242,13 +242,13 @@ export default function Chamada() {
           <p className="mt-4 text-navy-600">Iniciando chamada...</p>
         </div>
       </div>
-    );
+    )
   }
 
-  const alunoAtual = alunos[indiceAtual];
-  const totalPresentes = alunos.filter((a) => a.presente === true).length;
-  const totalAusentes = alunos.filter((a) => a.presente === false).length;
-  const totalRegistrados = totalPresentes + totalAusentes;
+  const alunoAtual = alunos[indiceAtual]
+  const totalPresentes = alunos.filter((a) => a.presente === true).length
+  const totalAusentes = alunos.filter((a) => a.presente === false).length
+  const totalRegistrados = totalPresentes + totalAusentes
 
   return (
     <>
@@ -271,7 +271,7 @@ export default function Chamada() {
           <div className="flex-1">
             <h1 className="text-3xl font-bold text-navy-900">Chamada</h1>
             <p className="text-navy-600">
-              {itinerario?.nome || "Registre a presença dos alunos"}
+              {itinerario?.nome || 'Registre a presença dos alunos'}
             </p>
           </div>
         </div>
@@ -303,7 +303,7 @@ export default function Chamada() {
                 className="px-6 py-2.5 bg-primary-400 hover:bg-primary-500 text-white rounded-lg transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
                 disabled={isFinalizando || totalRegistrados === 0}
               >
-                {isFinalizando ? "Finalizando..." : "Finalizar Chamada"}
+                {isFinalizando ? 'Finalizando...' : 'Finalizar Chamada'}
               </button>
             </div>
           </div>
@@ -331,11 +331,11 @@ export default function Chamada() {
             alunos={alunos}
             onRowClick={(aluno, index) => {
               if (!chamadaFinalizada) {
-                setIndiceAtual(index);
+                setIndiceAtual(index)
                 toast.info(`Navegando para ${aluno.nomeAluno}`, {
-                  theme: "colored",
+                  theme: 'colored',
                   autoClose: 1500,
-                });
+                })
               }
             }}
             alunoAtualId={alunoAtual?.id}
@@ -343,5 +343,5 @@ export default function Chamada() {
         </div>
       </div>
     </>
-  );
+  )
 }

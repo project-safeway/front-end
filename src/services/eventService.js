@@ -59,11 +59,11 @@ const eventService = {
       // Formata a data como YYYY-MM-DD no horário local para evitar problemas de timezone
       const formattedData = {
         ...eventData,
-        date: eventData.date instanceof Date 
-          ? eventData.date.getFullYear() + '-' + 
-            String(eventData.date.getMonth() + 1).padStart(2, '0') + '-' + 
+        date: eventData.date instanceof Date
+          ? eventData.date.getFullYear() + '-' +
+            String(eventData.date.getMonth() + 1).padStart(2, '0') + '-' +
             String(eventData.date.getDate()).padStart(2, '0')
-          : eventData.date
+          : eventData.date,
       }
       const response = await api.post('/eventos', formattedData)
       return response.data || response
@@ -84,11 +84,11 @@ const eventService = {
       // Formata a data como YYYY-MM-DD no horário local para evitar problemas de timezone
       const formattedData = {
         ...eventData,
-        date: eventData.date instanceof Date 
-          ? eventData.date.getFullYear() + '-' + 
-            String(eventData.date.getMonth() + 1).padStart(2, '0') + '-' + 
+        date: eventData.date instanceof Date
+          ? eventData.date.getFullYear() + '-' +
+            String(eventData.date.getMonth() + 1).padStart(2, '0') + '-' +
             String(eventData.date.getDate()).padStart(2, '0')
-          : eventData.date
+          : eventData.date,
       }
       const response = await api.put(`/eventos/${eventId}`, formattedData)
       return response.data || response

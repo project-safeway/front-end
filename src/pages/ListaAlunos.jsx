@@ -25,26 +25,27 @@ export default function ListaAlunos() {
   useEffect(() => {
     let alive = true
       ; (async () => {
-        try {
-          setCarregando(true)
-          const dados = await escolasService.getEscolas()
+      try {
+        setCarregando(true)
+        const dados = await escolasService.getEscolas()
 
-          if (!alive) return
+        if (!alive) return
 
-          const lista = Array.isArray(dados) ? dados : []
+        const lista = Array.isArray(dados) ? dados : []
 
-          if (lista.length == 0) {
-            toast.info('Não há nenhuma escola cadastrada, clique em "Cadastrar Escola"')
-          }
-
-          setEscolasComAlunos(lista)
-          setAberto(lista.reduce((acc, item) => ({ ...acc, [item.escola?.id || item.id]: true }), {}))
-        } catch (error) {
-          if (alive) toast.error('Erro ao carregar dados')
-        } finally {
-          if (alive) setCarregando(false)
+        if (lista.length == 0) {
+          toast.info('Não há nenhuma escola cadastrada, clique em "Cadastrar Escola"')
         }
-      })()
+
+        setEscolasComAlunos(lista)
+        setAberto(lista.reduce((acc, item) => ({ ...acc, [item.escola?.id || item.id]: true }), {}))
+      } catch (error) {
+        if (alive) toast.error('Erro ao carregar dados')
+        console.log(error)
+      } finally {
+        if (alive) setCarregando(false)
+      }
+    })()
     return () => { alive = false }
   }, [])
 
@@ -55,8 +56,8 @@ export default function ListaAlunos() {
   // Filtrar alunos por nome
   const filtrarAlunos = (alunos) => {
     if (!busca.trim()) return alunos
-    return alunos.filter(aluno => 
-      aluno.nome?.toLowerCase().includes(busca.toLowerCase())
+    return alunos.filter(aluno =>
+      aluno.nome?.toLowerCase().includes(busca.toLowerCase()),
     )
   }
 
@@ -69,63 +70,63 @@ export default function ListaAlunos() {
         icon: 'warning',
         confirmButtonText: 'Ok',
         showCancelButton: false,
-      });
-      return;
+      })
+      return
     }
 
     const swalResult = await showSwal({
       title: 'Excluir Escola',
       message: (
         <>
-          Tem certeza que deseja excluir a escola <strong>"{escolaNome}"</strong>? Esta ação não poderá ser desfeita.
+          Tem certeza que deseja excluir a escola <strong>&quot{escolaNome}&quot</strong>? Esta ação não poderá ser desfeita.
         </>
       ),
       icon: 'warning',
       confirmButtonText: 'Excluir',
       cancelButtonText: 'Cancelar',
       showCancelButton: true,
-    });
-    if (!swalResult.isConfirmed) return;
+    })
+    if (!swalResult.isConfirmed) return
     try {
-      await escolasService.deleteEscola(escolaId);
-      toast.success('Escola excluída com sucesso!');
+      await escolasService.deleteEscola(escolaId)
+      toast.success('Escola excluída com sucesso!')
       setEscolasComAlunos(prev => prev.filter(item => {
-        const escola = item.escola || item;
-        return escola.id !== escolaId;
-      }));
+        const escola = item.escola || item
+        return escola.id !== escolaId
+      }))
     } catch (error) {
-      console.error('Erro ao excluir escola:', error);
-      const mensagemErro = error.response?.data?.message || error.message || 'Erro ao excluir escola';
-      toast.error(mensagemErro);
+      console.error('Erro ao excluir escola:', error)
+      const mensagemErro = error.response?.data?.message || error.message || 'Erro ao excluir escola'
+      toast.error(mensagemErro)
     }
   }
 
   const handleDeleteAluno = async (alunoId, alunoNome, e) => {
-    e.stopPropagation();
+    e.stopPropagation()
     const swalResult = await showSwal({
       title: 'Excluir Aluno',
       message: (
         <>
-          Tem certeza que deseja excluir o aluno <strong>"{alunoNome}"</strong>? Esta ação não poderá ser desfeita.
+          Tem certeza que deseja excluir o aluno <strong>&quot{alunoNome}&quot</strong>? Esta ação não poderá ser desfeita.
         </>
       ),
       icon: 'warning',
       confirmButtonText: 'Excluir',
       cancelButtonText: 'Cancelar',
       showCancelButton: true,
-    });
-    if (!swalResult.isConfirmed) return;
+    })
+    if (!swalResult.isConfirmed) return
     try {
-      await alunosService.deleteAluno(alunoId);
-      toast.success('Aluno excluído com sucesso!');
+      await alunosService.deleteAluno(alunoId)
+      toast.success('Aluno excluído com sucesso!')
       setEscolasComAlunos(prev => prev.map(item => {
-        const alunos = (item.alunos || []).filter(a => a.id !== alunoId);
-        return { ...item, alunos };
-      }));
+        const alunos = (item.alunos || []).filter(a => a.id !== alunoId)
+        return { ...item, alunos }
+      }))
     } catch (error) {
-      console.error('Erro ao excluir aluno:', error);
-      const mensagemErro = error.response?.data?.message || error.message || 'Erro ao excluir aluno';
-      toast.error(mensagemErro);
+      console.error('Erro ao excluir aluno:', error)
+      const mensagemErro = error.response?.data?.message || error.message || 'Erro ao excluir aluno'
+      toast.error(mensagemErro)
     }
   }
 
