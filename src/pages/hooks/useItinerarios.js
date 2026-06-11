@@ -1,44 +1,44 @@
-import { useState, useEffect } from 'react';
-import config from '../../config/config';
+import { useState, useEffect } from 'react'
+import config from '../../config/config'
 
-const API_BASE_URL = config.API_BASE_URL;
+const API_BASE_URL = config.API_BASE_URL
 
 /**
  * Hook para buscar todos os itinerários
  * Útil em: Listagem de itinerários, seletores
  */
 export function useItinerarios() {
-  const [itinerarios, setItinerarios] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [itinerarios, setItinerarios] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
 
   const fetchItinerarios = async () => {
-    setLoading(true);
-    setError(null);
-    
+    setLoading(true)
+    setError(null)
+
     try {
-      const response = await fetch(`${API_BASE_URL}/itinerarios`);
-      
+      const response = await fetch(`${API_BASE_URL}/itinerarios`)
+
       if (!response.ok) {
-        throw new Error('Erro ao buscar itinerários');
+        throw new Error('Erro ao buscar itinerários')
       }
-      
-      const data = await response.json();
-      setItinerarios(data);
+
+      const data = await response.json()
+      setItinerarios(data)
     } catch (err) {
-      console.error('Erro ao carregar itinerários:', err);
-      setError(err.message);
-      setItinerarios([]);
+      console.error('Erro ao carregar itinerários:', err)
+      setError(err.message)
+      setItinerarios([])
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
-  };
+  }
 
   useEffect(() => {
-    fetchItinerarios();
-  }, []);
+    fetchItinerarios()
+  }, [])
 
-  return { itinerarios, loading, error, refresh: fetchItinerarios };
+  return { itinerarios, loading, error, refresh: fetchItinerarios }
 }
 
 /**
@@ -46,42 +46,42 @@ export function useItinerarios() {
  * Útil em: Páginas de detalhes, edição
  */
 export function useItinerario(itinerarioId) {
-  const [itinerario, setItinerario] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
+  const [itinerario, setItinerario] = useState(null)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState(null)
 
   useEffect(() => {
     if (!itinerarioId) {
-      setItinerario(null);
-      return;
+      setItinerario(null)
+      return
     }
 
     const fetchItinerario = async () => {
-      setLoading(true);
-      setError(null);
-      
+      setLoading(true)
+      setError(null)
+
       try {
-        const response = await fetch(`${API_BASE_URL}/itinerarios/${itinerarioId}`);
-        
+        const response = await fetch(`${API_BASE_URL}/itinerarios/${itinerarioId}`)
+
         if (!response.ok) {
-          throw new Error('Itinerário não encontrado');
+          throw new Error('Itinerário não encontrado')
         }
-        
-        const data = await response.json();
-        setItinerario(data);
+
+        const data = await response.json()
+        setItinerario(data)
       } catch (err) {
-        console.error('Erro ao carregar itinerário:', err);
-        setError(err.message);
-        setItinerario(null);
+        console.error('Erro ao carregar itinerário:', err)
+        setError(err.message)
+        setItinerario(null)
       } finally {
-        setLoading(false);
+        setLoading(false)
       }
-    };
+    }
 
-    fetchItinerario();
-  }, [itinerarioId]);
+    fetchItinerario()
+  }, [itinerarioId])
 
-  return { itinerario, loading, error };
+  return { itinerario, loading, error }
 }
 
 /**
@@ -89,40 +89,40 @@ export function useItinerario(itinerarioId) {
  * Útil em: Visualização de rotas, chamada, gestão de paradas
  */
 export function useAlunosItinerario(itinerarioId) {
-  const [alunos, setAlunos] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
+  const [alunos, setAlunos] = useState([])
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState(null)
 
   const fetchAlunos = async () => {
     if (!itinerarioId) {
-      setAlunos([]);
-      return;
+      setAlunos([])
+      return
     }
 
-    setLoading(true);
-    setError(null);
-    
+    setLoading(true)
+    setError(null)
+
     try {
-      const response = await fetch(`${API_BASE_URL}/itinerarios/${itinerarioId}/alunos`);
-      
+      const response = await fetch(`${API_BASE_URL}/itinerarios/${itinerarioId}/alunos`)
+
       if (!response.ok) {
-        throw new Error('Erro ao buscar alunos do itinerário');
+        throw new Error('Erro ao buscar alunos do itinerário')
       }
-      
-      const data = await response.json();
-      setAlunos(data);
+
+      const data = await response.json()
+      setAlunos(data)
     } catch (err) {
-      console.error('Erro ao carregar alunos do itinerário:', err);
-      setError(err.message);
-      setAlunos([]);
+      console.error('Erro ao carregar alunos do itinerário:', err)
+      setError(err.message)
+      setAlunos([])
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
-  };
+  }
 
   useEffect(() => {
-    fetchAlunos();
-  }, [itinerarioId]);
+    fetchAlunos()
+  }, [itinerarioId])
 
-  return { alunos, loading, error, refresh: fetchAlunos };
+  return { alunos, loading, error, refresh: fetchAlunos }
 }

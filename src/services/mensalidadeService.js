@@ -28,14 +28,14 @@ const mensalidadeService = {
       return {
         pendentes: [],
         atrasadas: [],
-        pagas: []
+        pagas: [],
       }
     }
-    
+
     return {
       pendentes: mensalidades.filter(m => m.status === 'PENDENTE'),
       atrasadas: mensalidades.filter(m => m.status === 'ATRASADO'),
-      pagas: mensalidades.filter(m => m.status === 'PAGO')
+      pagas: mensalidades.filter(m => m.status === 'PAGO'),
     }
   },
 
@@ -47,27 +47,27 @@ const mensalidadeService = {
         totalPago: 0,
         quantidadePendente: 0,
         quantidadeAtrasado: 0,
-        quantidadePago: 0
+        quantidadePago: 0,
       }
     }
-    
+
     const grupos = mensalidadeService.agruparPorStatus(mensalidades)
-    
+
     return {
       totalPendente: grupos.pendentes.reduce((sum, m) => sum + Number(m.valorMensalidade || 0), 0),
       totalAtrasado: grupos.atrasadas.reduce((sum, m) => sum + Number(m.valorMensalidade || 0), 0),
       totalPago: grupos.pagas.reduce((sum, m) => sum + Number(m.valorMensalidade || 0), 0),
       quantidadePendente: grupos.pendentes.length,
       quantidadeAtrasado: grupos.atrasadas.length,
-      quantidadePago: grupos.pagas.length
+      quantidadePago: grupos.pagas.length,
     }
-  }
+  },
 }
 
 export async function listarMensalidades(params = {}) {
   try {
     console.log('[listarMensalidades] Chamando API com params:', params)
-    const data = await api.get("/api/v1/mensalidades", { params })
+    const data = await api.get('/api/v1/mensalidades', { params })
     console.log('[listarMensalidades] Resposta da API:', data)
     return data
   } catch (error) {
@@ -101,7 +101,7 @@ export async function cancelarMensalidade(id) {
 export async function criarMensalidade(payload) {
   try {
     console.log('[criarMensalidade] Payload:', payload)
-    const data = await api.post("/api/v1/mensalidades/criar", payload)
+    const data = await api.post('/api/v1/mensalidades/criar', payload)
     return data
   } catch (error) {
     console.error('[criarMensalidade] Erro:', error)

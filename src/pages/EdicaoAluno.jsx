@@ -29,11 +29,13 @@ export function EdicaoAlunos() {
     sala: '',
     valorMensalidade: '',
     diaVencimento: '',
-    fkEscola: '',
+    escolaId: '',
     fkTransporte: 1,
   })
 
   const [responsaveis, setResponsaveis] = useState([])
+
+  console.log(dadosOriginais)
 
   // carregar dados (aluno + escolas) via services
   useEffect(() => {
@@ -44,9 +46,9 @@ export function EdicaoAlunos() {
 
         // Carregar transporte do usuário primeiro
         const transportes = await transporteService.listarTransportesUsuario()
-        
+
         if (!alive) return
-        
+
         if (!Array.isArray(transportes) || transportes.length === 0) {
           toast.error('Você não possui um transporte cadastrado', { theme: 'colored' })
           navigate('/alunos')
@@ -63,7 +65,7 @@ export function EdicaoAlunos() {
         ])
 
         if (!alive) return
-        
+
         // VALIDAÇÃO: Verificar se o aluno pertence ao transporte do usuário
         if (dadosAluno?.fkTransporte && dadosAluno.fkTransporte !== idTransporte) {
           toast.error('Você não tem permissão para editar este aluno', { theme: 'colored' })
@@ -79,31 +81,31 @@ export function EdicaoAlunos() {
         setEscolas(escolasArray)
 
         // Extrair fkEscola
-        let fkEscola = ''
+        let escolaId = ''
         if (dadosAluno?.escola) {
           // Se escola vier com id direto
           if (typeof dadosAluno.escola === 'object' && dadosAluno.escola.id) {
-            fkEscola = String(dadosAluno.escola.id)
-          } 
+            escolaId = String(dadosAluno.escola.id)
+          }
           // Se vier como número
           else if (typeof dadosAluno.escola === 'number') {
-            fkEscola = String(dadosAluno.escola)
-          } 
+            escolaId = String(dadosAluno.escola)
+          }
           // Se vier como objeto com nome (mas sem id) ou como string
           else {
-            const nomeEscola = typeof dadosAluno.escola === 'object' 
-              ? dadosAluno.escola.nome 
+            const nomeEscola = typeof dadosAluno.escola === 'object'
+              ? dadosAluno.escola.nome
               : dadosAluno.escola
-            
+
             // Procurar escola na lista pelo nome
             const escolaEncontrada = escolasArray.find(e => {
               const escola = e.escola || e
               return escola.nome === nomeEscola
             })
-            
+
             if (escolaEncontrada) {
               const escolaObj = escolaEncontrada.escola || escolaEncontrada
-              fkEscola = String(escolaObj.id)
+              escolaId = String(escolaObj.id)
             }
           }
         }
@@ -117,7 +119,7 @@ export function EdicaoAlunos() {
           sala: dadosAluno?.sala || '',
           valorMensalidade: dadosAluno?.valorMensalidade?.toString() || dadosAluno?.valorPadraoMensalidade?.toString() || dadosAluno?.mensalidade?.toString() || '',
           diaVencimento: dadosAluno?.diaVencimento?.toString() || dadosAluno?.vencimentoDia?.toString() || '',
-          fkEscola: fkEscola,
+          escolaId: escolaId,
           fkTransporte: idTransporte, // Sempre usar o transporte do usuário logado
         })
 
@@ -196,8 +198,8 @@ export function EdicaoAlunos() {
           cep: '',
           tipo: 'RESIDENCIAL',
           latitude: 0,
-          longitude: 0
-        }
+          longitude: 0,
+        },
       },
     ])
     setBuscandoCEPs(prev => [...prev, false])
@@ -252,14 +254,14 @@ export function EdicaoAlunos() {
 
     try {
       const dados = await buscarEnderecoPorCEP(cepLimpo)
-      
+
       const novosResponsaveis = [...responsaveis]
       novosResponsaveis[i].endereco = {
         ...novosResponsaveis[i].endereco,
         logradouro: dados.logradouro || novosResponsaveis[i].endereco.logradouro,
         bairro: dados.bairro || novosResponsaveis[i].endereco.bairro,
         cidade: dados.cidade || novosResponsaveis[i].endereco.cidade,
-        uf: dados.uf || novosResponsaveis[i].endereco.uf
+        uf: dados.uf || novosResponsaveis[i].endereco.uf,
       }
       setResponsaveis(novosResponsaveis)
 
@@ -284,7 +286,7 @@ export function EdicaoAlunos() {
       toast.error('Nome do aluno é obrigatório')
       return
     }
-    if (!aluno.fkEscola) {
+    if (!aluno.escolaId) {
       toast.error('Selecione uma escola')
       return
     }
@@ -346,7 +348,7 @@ export function EdicaoAlunos() {
           latitude: parseFloat(r.endereco?.latitude) || 0,
           longitude: parseFloat(r.endereco?.longitude) || 0,
           tipo: r.endereco?.tipo || 'RESIDENCIAL',
-        }
+        },
       }))
 
       // 3. Preparar payload completo do aluno
@@ -361,7 +363,7 @@ export function EdicaoAlunos() {
         sala: aluno.sala?.trim() || null,
         valorMensalidade: parseFloat(aluno.valorMensalidade) || 0,
         diaVencimento: parseInt(aluno.diaVencimento) || 1,
-        fkEscola: aluno.fkEscola, // UUID - enviar como string
+        escolaId: aluno.escolaId, // UUID - enviar como string
         fkTransporte: transporteId || aluno.fkTransporte, // Sempre usar o transporteId do usuário logado
         responsaveis: responsaveisPayload,
       }
@@ -398,14 +400,14 @@ export function EdicaoAlunos() {
   }
 
   function formatDate(value) {
-    const numbers = value.replace(/\D/g, "").slice(0, 8);
+    const numbers = value.replace(/\D/g, '').slice(0, 8)
 
-    const parts = [];
-    if (numbers.length > 0) parts.push(numbers.slice(0, 2));
-    if (numbers.length > 2) parts.push(numbers.slice(2, 4));
-    if (numbers.length > 4) parts.push(numbers.slice(4, 8));
+    const parts = []
+    if (numbers.length > 0) parts.push(numbers.slice(0, 2))
+    if (numbers.length > 2) parts.push(numbers.slice(2, 4))
+    if (numbers.length > 4) parts.push(numbers.slice(4, 8))
 
-    return parts.join("/");
+    return parts.join('/')
   }
 
 
@@ -507,8 +509,8 @@ export function EdicaoAlunos() {
                 <div className="md:col-span-2">
                   <label className="block text-sm font-medium text-navy-700 mb-2">Escola *</label>
                   <select
-                    value={aluno.fkEscola}
-                    onChange={e => setCampo('fkEscola', e.target.value)}
+                    value={aluno.escolaId}
+                    onChange={e => setCampo('escolaId', e.target.value)}
                     required
                     className="w-full rounded-lg border border-offwhite-300 bg-white px-4 py-2.5 outline-none focus:ring-2 focus:ring-primary-400 focus:border-transparent transition-all"
                   >

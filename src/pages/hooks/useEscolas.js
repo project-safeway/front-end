@@ -1,44 +1,44 @@
-import { useState, useEffect } from 'react';
-import config from '../../config/config';
+import { useState, useEffect } from 'react'
+import config from '../../config/config'
 
-const API_BASE_URL = config.API_BASE_URL;
+const API_BASE_URL = config.API_BASE_URL
 
 /**
  * Hook para buscar todas as escolas
  * Útil em: Seletores, listagens, cadastros
  */
 export function useEscolas() {
-  const [escolas, setEscolas] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [escolas, setEscolas] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
 
   const fetchEscolas = async () => {
-    setLoading(true);
-    setError(null);
-    
+    setLoading(true)
+    setError(null)
+
     try {
-      const response = await fetch(`${API_BASE_URL}/escolas`);
-      
+      const response = await fetch(`${API_BASE_URL}/escolas`)
+
       if (!response.ok) {
-        throw new Error('Erro ao buscar escolas');
+        throw new Error('Erro ao buscar escolas')
       }
-      
-      const data = await response.json();
-      setEscolas(data);
+
+      const data = await response.json()
+      setEscolas(data)
     } catch (err) {
-      console.error('Erro ao carregar escolas:', err);
-      setError(err.message);
-      setEscolas([]);
+      console.error('Erro ao carregar escolas:', err)
+      setError(err.message)
+      setEscolas([])
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
-  };
+  }
 
   useEffect(() => {
-    fetchEscolas();
-  }, []);
+    fetchEscolas()
+  }, [])
 
-  return { escolas, loading, error, refresh: fetchEscolas };
+  return { escolas, loading, error, refresh: fetchEscolas }
 }
 
 /**
@@ -46,40 +46,40 @@ export function useEscolas() {
  * Útil em: Páginas de detalhes, edição
  */
 export function useEscola(escolaId) {
-  const [escola, setEscola] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
+  const [escola, setEscola] = useState(null)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState(null)
 
   useEffect(() => {
     if (!escolaId) {
-      setEscola(null);
-      return;
+      setEscola(null)
+      return
     }
 
     const fetchEscola = async () => {
-      setLoading(true);
-      setError(null);
-      
+      setLoading(true)
+      setError(null)
+
       try {
-        const response = await fetch(`${API_BASE_URL}/escolas/${escolaId}`);
-        
+        const response = await fetch(`${API_BASE_URL}/escolas/${escolaId}`)
+
         if (!response.ok) {
-          throw new Error('Escola não encontrada');
+          throw new Error('Escola não encontrada')
         }
-        
-        const data = await response.json();
-        setEscola(data);
+
+        const data = await response.json()
+        setEscola(data)
       } catch (err) {
-        console.error('Erro ao carregar escola:', err);
-        setError(err.message);
-        setEscola(null);
+        console.error('Erro ao carregar escola:', err)
+        setError(err.message)
+        setEscola(null)
       } finally {
-        setLoading(false);
+        setLoading(false)
       }
-    };
+    }
 
-    fetchEscola();
-  }, [escolaId]);
+    fetchEscola()
+  }, [escolaId])
 
-  return { escola, loading, error };
+  return { escola, loading, error }
 }

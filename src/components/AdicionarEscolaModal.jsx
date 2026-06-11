@@ -1,92 +1,92 @@
-import { useState, useEffect } from "react";
-import PropTypes from "prop-types";
-import CloseIcon from "@mui/icons-material/Close";
-import SchoolIcon from "@mui/icons-material/School";
-import SearchIcon from "@mui/icons-material/Search";
-import LocationOnIcon from "@mui/icons-material/LocationOn";
-import AddLocationIcon from "@mui/icons-material/AddLocation";
-import escolasService from "../services/escolasService";
+import { useState, useEffect } from 'react'
+import PropTypes from 'prop-types'
+import CloseIcon from '@mui/icons-material/Close'
+import SchoolIcon from '@mui/icons-material/School'
+import SearchIcon from '@mui/icons-material/Search'
+import LocationOnIcon from '@mui/icons-material/LocationOn'
+import AddLocationIcon from '@mui/icons-material/AddLocation'
+import escolasService from '../services/escolasService'
 
-export default function AdicionarEscolaModal({ 
-  isOpen, 
-  onClose, 
-  onAdd, 
+export default function AdicionarEscolaModal({
+  isOpen,
+  onClose,
+  onAdd,
   escolasDisponiveis,
-  escolasJaAdicionadas 
+  escolasJaAdicionadas,
 }) {
-  const [busca, setBusca] = useState("");
-  const [escolaSelecionada, setEscolaSelecionada] = useState(null);
-  const [enderecoEscola, setEnderecoEscola] = useState(null);
-  const [isLoadingEndereco, setIsLoadingEndereco] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [busca, setBusca] = useState('')
+  const [escolaSelecionada, setEscolaSelecionada] = useState(null)
+  const [enderecoEscola, setEnderecoEscola] = useState(null)
+  const [isLoadingEndereco, setIsLoadingEndereco] = useState(false)
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
   // Filtrar escolas que já estão no itinerário
   const escolasFiltradas = escolasDisponiveis
     .filter(escola => !escolasJaAdicionadas.some(e => e.id === escola.id))
-    .filter(escola => 
+    .filter(escola =>
       escola.nome?.toLowerCase().includes(busca.toLowerCase()) ||
-      escola.cidade?.toLowerCase().includes(busca.toLowerCase())
-    );
+      escola.cidade?.toLowerCase().includes(busca.toLowerCase()),
+    )
 
   useEffect(() => {
     if (!isOpen) {
-      setBusca("");
-      setEscolaSelecionada(null);
-      setEnderecoEscola(null);
+      setBusca('')
+      setEscolaSelecionada(null)
+      setEnderecoEscola(null)
     }
-  }, [isOpen]);
+  }, [isOpen])
 
   // Buscar endereço quando uma escola for selecionada
   useEffect(() => {
     if (escolaSelecionada) {
-      carregarEnderecoEscola(escolaSelecionada.id);
+      carregarEnderecoEscola(escolaSelecionada.id)
     } else {
-      setEnderecoEscola(null);
+      setEnderecoEscola(null)
     }
-  }, [escolaSelecionada]);
+  }, [escolaSelecionada])
 
   const carregarEnderecoEscola = async (escolaId) => {
-    setIsLoadingEndereco(true);
+    setIsLoadingEndereco(true)
     try {
-      const endereco = await escolasService.getEnderecoEscola(escolaId);
-      setEnderecoEscola(endereco);
+      const endereco = await escolasService.getEnderecoEscola(escolaId)
+      setEnderecoEscola(endereco)
     } catch (error) {
-      console.error("Erro ao carregar endereço da escola:", error);
-      setEnderecoEscola(null);
+      console.error('Erro ao carregar endereço da escola:', error)
+      setEnderecoEscola(null)
     } finally {
-      setIsLoadingEndereco(false);
+      setIsLoadingEndereco(false)
     }
-  };
+  }
 
   const handleAdd = async () => {
-    if (!escolaSelecionada || !enderecoEscola) return;
+    if (!escolaSelecionada || !enderecoEscola) return
 
-    setIsSubmitting(true);
+    setIsSubmitting(true)
     try {
-      await onAdd(escolaSelecionada, enderecoEscola);
-      handleClose();
+      await onAdd(escolaSelecionada, enderecoEscola)
+      handleClose()
     } catch (error) {
-      console.error("Erro ao adicionar escola:", error);
+      console.error('Erro ao adicionar escola:', error)
     } finally {
-      setIsSubmitting(false);
+      setIsSubmitting(false)
     }
-  };
+  }
 
   const handleClose = () => {
-    if (isSubmitting) return;
-    setBusca("");
-    setEscolaSelecionada(null);
-    setEnderecoEscola(null);
-    onClose();
-  };
+    if (isSubmitting) return
+    setBusca('')
+    setEscolaSelecionada(null)
+    setEnderecoEscola(null)
+    onClose()
+  }
 
-  if (!isOpen) return null;
+  if (!isOpen) return null
 
   return (
-    <div 
+    <div
       className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
       onClick={(e) => {
-        if (e.target === e.currentTarget && !isSubmitting) handleClose();
+        if (e.target === e.currentTarget && !isSubmitting) handleClose()
       }}
     >
       <div className="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden flex flex-col">
@@ -136,10 +136,10 @@ export default function AdicionarEscolaModal({
             <div className="text-center py-12">
               <SchoolIcon className="text-navy-300 text-6xl mx-auto mb-4" />
               <p className="text-navy-600 mb-2">
-                {"Nenhuma escola encontrada"}
+                {'Nenhuma escola encontrada'}
               </p>
               <p className="text-sm text-navy-500">
-                {busca ? "Tente buscar por outro termo" : "Não há mais escolas disponíveis"}
+                {busca ? 'Tente buscar por outro termo' : 'Não há mais escolas disponíveis'}
               </p>
             </div>
           ) : (
@@ -151,8 +151,8 @@ export default function AdicionarEscolaModal({
                   onClick={() => setEscolaSelecionada(escola)}
                   className={`w-full text-left p-4 border-2 rounded-lg transition-all ${
                     escolaSelecionada?.id === escola.id
-                      ? "border-green-500 bg-green-50"
-                      : "border-offwhite-300 hover:border-green-300 hover:bg-offwhite-50"
+                      ? 'border-green-500 bg-green-50'
+                      : 'border-offwhite-300 hover:border-green-300 hover:bg-offwhite-50'
                   }`}
                   disabled={isSubmitting}
                 >
@@ -195,7 +195,7 @@ export default function AdicionarEscolaModal({
                 <LocationOnIcon className="text-green-500" />
                 Endereço da Escola
               </h3>
-              
+
               {isLoadingEndereco ? (
                 <div className="text-center py-8">
                   <div className="animate-spin inline-block w-8 h-8 border-4 border-green-500 border-t-transparent rounded-full"></div>
@@ -263,7 +263,7 @@ export default function AdicionarEscolaModal({
         </div>
       </div>
     </div>
-  );
+  )
 }
 
 AdicionarEscolaModal.propTypes = {
@@ -272,4 +272,4 @@ AdicionarEscolaModal.propTypes = {
   onAdd: PropTypes.func.isRequired,
   escolasDisponiveis: PropTypes.array.isRequired,
   escolasJaAdicionadas: PropTypes.array.isRequired,
-};
+}

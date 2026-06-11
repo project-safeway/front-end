@@ -1,65 +1,63 @@
-import { useState, useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import MapIcon from "@mui/icons-material/Map";
-import { showSwal } from '../utils/swal.jsx';
-import ArrowBackIcon from "@mui/icons-material/ArrowBack";
-import { CardItinerario } from "../components/CardItinerario";
-import { Botao } from "../components/Botao";
-import ItinerarioModal from "../components/ItinerarioModal";
-import ItinerarioService from '../services/itinerarioService';
+import { useState, useEffect } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
+import MapIcon from '@mui/icons-material/Map'
+import { showSwal } from '../utils/swal.jsx'
+import ArrowBackIcon from '@mui/icons-material/ArrowBack'
+import { CardItinerario } from '../components/CardItinerario'
+import ItinerarioModal from '../components/ItinerarioModal'
+import ItinerarioService from '../services/itinerarioService'
 import { toast } from 'react-toastify'
 import 'react-toastify/dist/ReactToastify.css'
 
 export default function Itinerarios() {
-  const navigate = useNavigate();
+  const navigate = useNavigate()
 
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [itinerarioSelecionado, setItinerarioSelecionado] = useState(null);
-  const [itinerarios, setItinerarios] = useState([]);
-  const [isMobile, setIsMobile] = useState(window.innerWidth < 896);
-  const [isLoading, setIsLoading] = useState(false);
-  const [isDeleting, setIsDeleting] = useState(null);
+  const [isModalOpen, setIsModalOpen] = useState(false)
+  const [itinerarioSelecionado, setItinerarioSelecionado] = useState(null)
+  const [itinerarios, setItinerarios] = useState([])
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 896)
+  const [isLoading, setIsLoading] = useState(false)
 
   useEffect(() => {
-    const handleResize = () => setIsMobile(window.innerWidth < 896);
-    window.addEventListener("resize", handleResize);
-    carregarItinerarios();
-    return () => window.removeEventListener("resize", handleResize);
-  }, []);
+    const handleResize = () => setIsMobile(window.innerWidth < 896)
+    window.addEventListener('resize', handleResize)
+    carregarItinerarios()
+    return () => window.removeEventListener('resize', handleResize)
+  }, [])
 
   const carregarItinerarios = async () => {
-    setIsLoading(true);
+    setIsLoading(true)
     try {
-      const data = await ItinerarioService.listarTodos();
+      const data = await ItinerarioService.listarTodos()
 
       if (data.length === 0) {
         toast.info(
           'Nenhum itinerário cadastrado. Clique em "Cadastrar Itinerário" para começar!',
-          { theme: "colored", toastId: "sem-itinerarios" }
-        );
+          { theme: 'colored', toastId: 'sem-itinerarios' },
+        )
       }
 
-      setItinerarios(data);
+      setItinerarios(data)
     } catch (error) {
-      toast.error(`Erro ao carregar itinerários: ${error.message}`, { theme: "colored" });
+      toast.error(`Erro ao carregar itinerários: ${error.message}`, { theme: 'colored' })
     } finally {
-      setIsLoading(false);
+      setIsLoading(false)
     }
   }
 
   const handleSaveItinerario = async (novo) => {
     try {
       if (itinerarioSelecionado) {
-        await ItinerarioService.atualizar(itinerarioSelecionado.id, novo);
-        toast.success("Itinerário atualizado com sucesso!", { theme: "colored" });
+        await ItinerarioService.atualizar(itinerarioSelecionado.id, novo)
+        toast.success('Itinerário atualizado com sucesso!', { theme: 'colored' })
       } else {
-        await ItinerarioService.criar(novo);
-        toast.success("Itinerário criado com sucesso!", { theme: "colored" });
+        await ItinerarioService.criar(novo)
+        toast.success('Itinerário criado com sucesso!', { theme: 'colored' })
       }
-      await carregarItinerarios();
-      setIsModalOpen(false);
+      await carregarItinerarios()
+      setIsModalOpen(false)
     } catch (error) {
-      toast.error(`Erro ao salvar itinerário: ${error.message}`, { theme: "colored" });
+      toast.error(`Erro ao salvar itinerário: ${error.message}`, { theme: 'colored' })
     }
   }
 
@@ -70,19 +68,16 @@ export default function Itinerarios() {
       icon: 'warning',
       confirmButtonText: 'Sim, excluir',
       cancelButtonText: 'Cancelar',
-      showCancelButton: true
-    });
-    if (!isConfirmed) return;
+      showCancelButton: true,
+    })
+    if (!isConfirmed) return
 
-    setIsDeleting(id);
     try {
-      await ItinerarioService.desativar(id);
-      toast.success("Itinerário excluído com sucesso!", { theme: "colored" });
-      await carregarItinerarios();
+      await ItinerarioService.desativar(id)
+      toast.success('Itinerário excluído com sucesso!', { theme: 'colored' })
+      await carregarItinerarios()
     } catch (error) {
-      toast.error(`Erro ao excluir itinerário: ${error.message}`, { theme: "colored" });
-    } finally {
-      setIsDeleting(null);
+      toast.error(`Erro ao excluir itinerário: ${error.message}`, { theme: 'colored' })
     }
   }
 
@@ -94,7 +89,7 @@ export default function Itinerarios() {
           <p className="mt-4 text-navy-600">Carregando itinerários...</p>
         </div>
       </div>
-    );
+    )
   }
 
   return (
@@ -123,8 +118,8 @@ export default function Itinerarios() {
             </div>
             <button
               onClick={() => {
-                setItinerarioSelecionado(null);
-                setIsModalOpen(true);
+                setItinerarioSelecionado(null)
+                setIsModalOpen(true)
               }}
               className="px-5 py-2.5 rounded-lg bg-primary-400 hover:bg-primary-500 text-white font-semibold transition-all shadow-sm hover:shadow-md self-center sm:self-auto"
             >
@@ -137,31 +132,31 @@ export default function Itinerarios() {
         <div
           className={`grid gap-4 ${
             isMobile
-              ? "grid-cols-1 place-items-center"
-              : "grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
-            }`}
+              ? 'grid-cols-1 place-items-center'
+              : 'grid-cols-2 lg:grid-cols-3 xl:grid-cols-4'
+          }`}
         >
-        {itinerarios.map((itinerario) => (
-          <CardItinerario
-            key={itinerario.id}
-            label={itinerario.nome}
-            tamanho="w-full sm:w-72 h-48"
-            horarioInicio={itinerario.horarioInicio}
-            horarioFim={itinerario.horarioFim}
-            tipoViagem={itinerario.tipoViagem}
-            onVisualizarRota={() => navigate(`/rotas-otimizadas?itinerarioId=${itinerario.id}`)}
-            onEdit={() =>
-              navigate(`/edicao-itinerario?itinerarioId=${itinerario.id}`)
-            }
-            onDelete={() => handleDeleteItinerario(itinerario.id)}
-            onHistorico={() =>
-              navigate(`/historico?itinerarioId=${itinerario.id}`)
-            }
-            onIniciarPresenca={() =>
-              navigate(`/chamada?itinerarioId=${itinerario.id}`)
-            }
-          />
-        ))}
+          {itinerarios.map((itinerario) => (
+            <CardItinerario
+              key={itinerario.id}
+              label={itinerario.nome}
+              tamanho="w-full sm:w-72 h-48"
+              horarioInicio={itinerario.horarioInicio}
+              horarioFim={itinerario.horarioFim}
+              tipoViagem={itinerario.tipoViagem}
+              onVisualizarRota={() => navigate(`/rotas-otimizadas?itinerarioId=${itinerario.id}`)}
+              onEdit={() =>
+                navigate(`/edicao-itinerario?itinerarioId=${itinerario.id}`)
+              }
+              onDelete={() => handleDeleteItinerario(itinerario.id)}
+              onHistorico={() =>
+                navigate(`/historico?itinerarioId=${itinerario.id}`)
+              }
+              onIniciarPresenca={() =>
+                navigate(`/chamada?itinerarioId=${itinerario.id}`)
+              }
+            />
+          ))}
         </div>
 
         <ItinerarioModal
@@ -173,5 +168,5 @@ export default function Itinerarios() {
         />
       </div>
     </div>
-  );
+  )
 }

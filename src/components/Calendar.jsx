@@ -10,7 +10,7 @@ import eventService from '../services/eventService'
 
 export default function Calendar({ onMonthChange }) {
   const [selectedDate, setSelectedDate] = useState(new Date())
-  const [filter, setFilter] = useState('todos')
+  const [filter, setFilter] = useState('TODOS')
   const [eventos, setEventos] = useState([])
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [selectedEvent, setSelectedEvent] = useState(null)
@@ -78,11 +78,6 @@ export default function Calendar({ onMonthChange }) {
     setIsModalOpen(true)
   }
 
-  const handleEditEvent = (event) => {
-    setSelectedEvent(event)
-    setIsModalOpen(true)
-  }
-
   const handleSaveEvent = async (eventData) => {
     try {
       if (selectedEvent) {
@@ -126,30 +121,30 @@ export default function Calendar({ onMonthChange }) {
   )
 
   // Filtra eventos por tipo
-  const eventosFiltrados = filter === 'todos'
+  const eventosFiltrados = filter === 'TODOS'
     ? eventos
     : eventos.filter((e) => e.type === filter)
 
   const getEventColor = (type) => {
     const colors = {
-      manutencao: 'border-primary-400 bg-primary-50',
-      reuniao: 'border-navy-400 bg-navy-50',
-      vencimento: 'border-red-400 bg-red-50',
-      treinamento: 'border-green-400 bg-green-50',
+      MANUTENCAO: 'border-primary-400 bg-primary-50',
+      REUNIAO: 'border-navy-400 bg-navy-50',
+      VENCIMENTO: 'border-red-400 bg-red-50',
+      TREINAMENTO: 'border-green-400 bg-green-50',
     }
     return colors[type] || 'border-gray-400 bg-gray-50'
   }
 
   const getPriorityBadge = (priority) => {
     const badges = {
-      alta: 'bg-red-100 text-red-700 border-red-300',
-      media: 'bg-yellow-100 text-yellow-700 border-yellow-300',
-      baixa: 'bg-green-100 text-green-700 border-green-300',
+      ALTA: 'bg-red-100 text-red-700 border-red-300',
+      MEDIA: 'bg-yellow-100 text-yellow-700 border-yellow-300',
+      BAIXA: 'bg-green-100 text-green-700 border-green-300',
     }
     const labels = {
-      alta: 'Alta',
-      media: 'Média',
-      baixa: 'Baixa',
+      ALTA: 'Alta',
+      MEDIA: 'Média',
+      BAIXA: 'Baixa',
     }
     return { className: badges[priority] || badges.media, label: labels[priority] || 'Média' }
   }
@@ -362,11 +357,11 @@ export default function Calendar({ onMonthChange }) {
               onChange={(e) => setFilter(e.target.value)}
               className="px-3 py-2 border border-offwhite-300 rounded-lg text-sm text-navy-700 bg-white focus:ring-2 focus:ring-primary-400 focus:border-transparent outline-none"
             >
-              <option value="todos">Todos</option>
-              <option value="manutencao">Manutenção</option>
-              <option value="reuniao">Reuniões</option>
-              <option value="vencimento">Vencimentos</option>
-              <option value="treinamento">Treinamentos</option>
+              <option value="TODOS">Todos</option>
+              <option value="MANUTENCAO">Manutenção</option>
+              <option value="REUNIAO">Reuniões</option>
+              <option value="VENCIMENTO">Vencimentos</option>
+              <option value="TREINAMENTO">Treinamentos</option>
             </select>
             <button
               onClick={handleCreateEvent}
@@ -448,7 +443,7 @@ export default function Calendar({ onMonthChange }) {
                           }}
                         >
                           <div className="flex justify-between items-start">
-                            <div className="flex-1">
+                            <div className="flex-1 min-w-0">
                               <span className="font-medium text-navy-900 block">{evento.title}</span>
                               <div className="flex items-center gap-2 mt-1">
                                 <span className="text-xs text-navy-600 capitalize">
@@ -459,7 +454,7 @@ export default function Calendar({ onMonthChange }) {
                                 </span>
                               </div>
                               {evento.description && (
-                                <p className="text-xs text-navy-500 mt-1">{evento.description}</p>
+                                <p className="text-xs text-navy-500 mt-1 wrap-break-words overflow-hidden">{evento.description}</p>
                               )}
                             </div>
                             <button

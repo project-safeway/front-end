@@ -62,7 +62,7 @@ function Register() {
       const valid = isValidPhone(formatted)
       setTelefoneValidation({
         isValid: valid,
-        message: valid ? 'Telefone válido' : 'Telefone inválido. Informe DDD + número (10 ou 11 dígitos)'
+        message: valid ? 'Telefone válido' : 'Telefone inválido. Informe DDD + número (10 ou 11 dígitos)',
       })
     } else {
       setTelefoneValidation(null)
@@ -112,8 +112,8 @@ function Register() {
         transporte: {
           placa: placaLimpa,
           modelo: modelo || null,
-          capacidade: capacidade ? parseInt(capacidade) : null
-        }
+          capacidade: capacidade ? parseInt(capacidade) : null,
+        },
       }
 
       await register(userData)

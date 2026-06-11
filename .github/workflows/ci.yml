@@ -1,0 +1,80 @@
+name: ci
+
+on:
+  pull_request:
+  push:
+    branches: [ "main", "master" ]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  AWS_REGION: us-east-1
+  ECR_REPOSITORY: safeway-frontend
+
+jobs:
+  build_lint_docker:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+
+      - name: Install
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Build
+        run: npm run build
+
+      - name: Docker build
+        env:
+          VITE_GOOGLE_MAPS_API_KEY: ${{ secrets.VITE_GOOGLE_MAPS_API_KEY }}
+        run: |
+          docker build \
+            --build-arg VITE_API_BASE_URL=/api \
+            --build-arg VITE_API_FINANCEIRO_URL=/api/financeiro \
+            --build-arg VITE_GOOGLE_MAPS_API_KEY="${VITE_GOOGLE_MAPS_API_KEY}" \
+            -t "local/${ECR_REPOSITORY}:${{ github.sha }}" \
+            .
+
+      - name: Configure AWS credentials (OIDC)
+        if: ${{ github.event_name == 'push' && vars.AWS_AUTH_METHOD == 'oidc' }}
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-region: ${{ env.AWS_REGION }}
+          role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
+
+      - name: Configure AWS credentials (access keys)
+        if: ${{ github.event_name == 'push' && vars.AWS_AUTH_METHOD != 'oidc' }}
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-region: ${{ env.AWS_REGION }}
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
+
+      - name: Login to Amazon ECR
+        if: github.event_name == 'push'
+        id: ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Push image to ECR (sha tag)
+        if: github.event_name == 'push'
+        env:
+          ECR_REGISTRY: ${{ steps.ecr.outputs.registry }}
+          SHA_SHORT: ${{ github.sha }}
+        run: |
+          SHA_SHORT="${SHA_SHORT:0:12}"
+          docker tag "local/${ECR_REPOSITORY}:${{ github.sha }}" "${ECR_REGISTRY}/${ECR_REPOSITORY}:sha-${SHA_SHORT}"
+          docker push "${ECR_REGISTRY}/${ECR_REPOSITORY}:sha-${SHA_SHORT}"

@@ -19,10 +19,9 @@ export function isValidEmail(email) {
 export function validatePassword(password, options = {}) {
   const {
     minLength = 8,
-    requireNumbers = true,
     requireSpecialChars = true,
-    requireUppercase = true, 
-    requireLowercase = true,  
+    requireUppercase = true,
+    requireLowercase = true,
   } = options
 
   const result = {

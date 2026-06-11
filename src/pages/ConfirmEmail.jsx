@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { showSwal } from '../utils/swal.jsx';
+import { showSwal } from '../utils/swal.jsx'
 import { useLocation } from 'react-router-dom'
 import config from '../config/config'
 
@@ -20,8 +20,8 @@ function ConfirmEmail() {
       title: 'Confirmação',
       text: data,
       icon: 'warning',
-      confirmButtonText: 'OK'
-    });
+      confirmButtonText: 'OK',
+    })
   }
 
   return (

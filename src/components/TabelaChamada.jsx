@@ -1,7 +1,7 @@
-import PropTypes from "prop-types";
-import CheckCircleIcon from "@mui/icons-material/CheckCircle";
-import CancelIcon from "@mui/icons-material/Cancel";
-import HelpOutlineIcon from "@mui/icons-material/HelpOutline";
+import PropTypes from 'prop-types'
+import CheckCircleIcon from '@mui/icons-material/CheckCircle'
+import CancelIcon from '@mui/icons-material/Cancel'
+import HelpOutlineIcon from '@mui/icons-material/HelpOutline'
 
 export function TabelaChamada({ alunos, onRowClick, alunoAtualId }) {
   const getStatusBadge = (presente) => {
@@ -11,7 +11,7 @@ export function TabelaChamada({ alunos, onRowClick, alunoAtualId }) {
           <CheckCircleIcon fontSize="small" />
           Presente
         </span>
-      );
+      )
     }
     if (presente === false) {
       return (
@@ -19,15 +19,15 @@ export function TabelaChamada({ alunos, onRowClick, alunoAtualId }) {
           <CancelIcon fontSize="small" />
           Ausente
         </span>
-      );
+      )
     }
     return (
       <span className="inline-flex items-center gap-1 px-3 py-1 text-xs font-semibold bg-gray-400 text-white rounded-lg">
         <HelpOutlineIcon fontSize="small" />
         Não registrado
       </span>
-    );
-  };
+    )
+  }
 
   return (
     <div className="tabela-chamada w-full mx-auto overflow-x-auto rounded-2xl shadow-lg bg-white">
@@ -53,23 +53,23 @@ export function TabelaChamada({ alunos, onRowClick, alunoAtualId }) {
         </thead>
         <tbody className="bg-white divide-y divide-gray-200">
           {alunos.map((aluno, index) => {
-            const isAlunoAtual = aluno.id === alunoAtualId;
+            const isAlunoAtual = aluno.id === alunoAtualId
             return (
               <tr
                 key={aluno.id}
                 onClick={() => onRowClick && onRowClick(aluno, index)}
                 className={`transition cursor-pointer ${
                   isAlunoAtual
-                    ? "bg-primary-100 hover:bg-primary-150"
-                    : "hover:bg-primary-50"
+                    ? 'bg-primary-100 hover:bg-primary-150'
+                    : 'hover:bg-primary-50'
                 }`}
               >
                 <td data-label="Ordem" className="px-4 py-3 text-sm text-center">
                   <span
                     className={`inline-flex items-center justify-center w-8 h-8 rounded-full font-semibold text-sm ${
                       isAlunoAtual
-                        ? "bg-primary-400 text-white"
-                        : "bg-gray-200 text-gray-700"
+                        ? 'bg-primary-400 text-white'
+                        : 'bg-gray-200 text-gray-700'
                     }`}
                   >
                     {aluno.ordemEmbarque}
@@ -84,16 +84,16 @@ export function TabelaChamada({ alunos, onRowClick, alunoAtualId }) {
                   )}
                 </td>
                 <td data-label="Escola" className="px-4 py-3 text-sm text-gray-700">
-                  {aluno.escola || "-"}
+                  {aluno.escola || '-'}
                 </td>
                 <td data-label="Responsável" className="px-4 py-3 text-sm text-gray-700">
-                  {aluno.responsavel || "-"}
+                  {aluno.responsavel || '-'}
                 </td>
                 <td data-label="Status" className="px-4 py-3 text-center">
                   {getStatusBadge(aluno.presente)}
                 </td>
               </tr>
-            );
+            )
           })}
           {alunos.length === 0 && (
             <tr>
@@ -143,7 +143,7 @@ export function TabelaChamada({ alunos, onRowClick, alunoAtualId }) {
         </div>
       )}
     </div>
-  );
+  )
 }
 
 TabelaChamada.propTypes = {
@@ -155,8 +155,8 @@ TabelaChamada.propTypes = {
       responsavel: PropTypes.string,
       ordemEmbarque: PropTypes.number,
       presente: PropTypes.bool,
-    })
+    }),
   ).isRequired,
   onRowClick: PropTypes.func,
   alunoAtualId: PropTypes.number,
-};
+}

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react'
 
 export function CadastroAluno() {
   const [form, setForm] = useState({
@@ -15,28 +15,28 @@ export function CadastroAluno() {
     serie: '',
     turma: '',
     periodo: '',
-  });
+  })
 
-  const [status, setStatus] = useState('');
-  const [step, setStep] = useState(1);
+  const [status, setStatus] = useState('')
+  const [step, setStep] = useState(1)
 
   function handleChange(e) {
-    const { name, value } = e.target;
-    setForm(prev => ({ ...prev, [name]: value }));
+    const { name, value } = e.target
+    setForm(prev => ({ ...prev, [name]: value }))
   }
 
   async function handleSubmit(e) {
-    e.preventDefault();
-    setStatus('Enviando...');
+    e.preventDefault()
+    setStatus('Enviando...')
     try {
       // Substitua a URL abaixo pelo endpoint real
       const res = await fetch('https://seu-endpoint.com/alunos', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(form),
-      });
+      })
       if (res.ok) {
-        setStatus('Cadastro realizado com sucesso!');
+        setStatus('Cadastro realizado com sucesso!')
         setForm({
           nome: '',
           dataNascimento: '',
@@ -51,13 +51,13 @@ export function CadastroAluno() {
           serie: '',
           turma: '',
           periodo: '',
-        });
-        setStep(1);
+        })
+        setStep(1)
       } else {
-        setStatus('Erro ao cadastrar.');
+        setStatus('Erro ao cadastrar.')
       }
     } catch {
-      setStatus('Erro de conexão.');
+      setStatus('Erro de conexão.')
     }
   }
 
@@ -229,5 +229,5 @@ export function CadastroAluno() {
       )}
       <div className="mt-4 text-center text-sm text-gray-600">{status}</div>
     </form>
-  );
+  )
 }

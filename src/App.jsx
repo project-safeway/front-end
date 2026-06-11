@@ -11,9 +11,8 @@ import Chamada from './pages/Chamada'
 import Rotas from './pages/Rotas'
 import RotasOtimizadas from './pages/RotasOtimizadas'
 import Itinerarios from './pages/Itinerarios'
-import {Alunos} from './pages/Alunos'
-import {CadastroAlunos} from './pages/CadastroAluno'
-import {EdicaoAlunos} from './pages/EdicaoAluno'
+import { CadastroAlunos } from './pages/CadastroAluno'
+import { EdicaoAlunos } from './pages/EdicaoAluno'
 import ListaAlunos from './pages/ListaAlunos'
 import AlunoDetalhe from './pages/AlunoDetalhe'
 import Historico from './pages/Historico'
@@ -30,7 +29,7 @@ function AppContent() {
   const isAuthPage = location.pathname === '/login' || location.pathname === '/register'
   const [isMobile, setIsMobile] = useState(false)
 
-  useEffect(() => { 
+  useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth < 896)
     window.addEventListener('resize', handleResize)
     return () => window.removeEventListener('resize', handleResize)
@@ -76,7 +75,7 @@ function AppContent() {
             </ProtectedRoute>
           } />
 
-          {/* 
+          {/*
           <Route path="/alunos" element={
             <ProtectedRoute>
               <Alunos />
@@ -91,32 +90,32 @@ function AppContent() {
           } />
 
           <Route path="/alunos/cadastrar" element={
-              <ProtectedRoute>
-                <CadastroAlunos />
-              </ProtectedRoute>
+            <ProtectedRoute>
+              <CadastroAlunos />
+            </ProtectedRoute>
           } />
 
           <Route path="/alunos/:id/editar" element={
-              <ProtectedRoute>
-                <EdicaoAlunos />
-              </ProtectedRoute>
+            <ProtectedRoute>
+              <EdicaoAlunos />
+            </ProtectedRoute>
           } />
 
           <Route path="/alunos/:id" element={
-              <ProtectedRoute>
-                <AlunoDetalhe />
-              </ProtectedRoute>
+            <ProtectedRoute>
+              <AlunoDetalhe />
+            </ProtectedRoute>
           } />
 
           <Route path="/escolas/cadastrar" element={
             <ProtectedRoute>
-                <CadastroEscola />
+              <CadastroEscola />
             </ProtectedRoute>
           } />
 
           <Route path="/escolas/:id/editar" element={
             <ProtectedRoute>
-                <EdicaoEscola />
+              <EdicaoEscola />
             </ProtectedRoute>
           } />
 

@@ -1,104 +1,104 @@
-import { useState, useEffect } from "react";
-import PropTypes from "prop-types";
-import CloseIcon from "@mui/icons-material/Close";
-import PersonAddIcon from "@mui/icons-material/PersonAdd";
-import SearchIcon from "@mui/icons-material/Search";
-import SchoolIcon from "@mui/icons-material/School";
-import HomeIcon from "@mui/icons-material/Home";
-import alunosService from "../services/alunosService";
+import { useState, useEffect } from 'react'
+import PropTypes from 'prop-types'
+import CloseIcon from '@mui/icons-material/Close'
+import PersonAddIcon from '@mui/icons-material/PersonAdd'
+import SearchIcon from '@mui/icons-material/Search'
+import SchoolIcon from '@mui/icons-material/School'
+import HomeIcon from '@mui/icons-material/Home'
+import alunosService from '../services/alunosService'
 
-export default function AdicionarAlunoModal({ 
-  isOpen, 
-  onClose, 
-  onAdd, 
+export default function AdicionarAlunoModal({
+  isOpen,
+  onClose,
+  onAdd,
   alunosDisponiveis,
-  alunosJaAdicionados 
+  alunosJaAdicionados,
 }) {
-  const [busca, setBusca] = useState("");
-  const [alunoSelecionado, setAlunoSelecionado] = useState(null);
-  const [enderecoSelecionado, setEnderecoSelecionado] = useState(null);
-  const [enderecosDisponiveis, setEnderecosDisponiveis] = useState([]);
-  const [isLoadingEnderecos, setIsLoadingEnderecos] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [busca, setBusca] = useState('')
+  const [alunoSelecionado, setAlunoSelecionado] = useState(null)
+  const [enderecoSelecionado, setEnderecoSelecionado] = useState(null)
+  const [enderecosDisponiveis, setEnderecosDisponiveis] = useState([])
+  const [isLoadingEnderecos, setIsLoadingEnderecos] = useState(false)
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
   // Filtrar alunos que já estão no itinerário
   const alunosFiltrados = alunosDisponiveis
     .filter(aluno => !alunosJaAdicionados.some(a => a.id === aluno.id))
-    .filter(aluno => 
+    .filter(aluno =>
       aluno.nomeAluno.toLowerCase().includes(busca.toLowerCase()) ||
       aluno.escola?.toLowerCase().includes(busca.toLowerCase()) ||
-      aluno.responsavel?.toLowerCase().includes(busca.toLowerCase())
-    );
+      aluno.responsavel?.toLowerCase().includes(busca.toLowerCase()),
+    )
 
   useEffect(() => {
     if (!isOpen) {
-      setBusca("");
-      setAlunoSelecionado(null);
-      setEnderecoSelecionado(null);
-      setEnderecosDisponiveis([]);
+      setBusca('')
+      setAlunoSelecionado(null)
+      setEnderecoSelecionado(null)
+      setEnderecosDisponiveis([])
     }
-  }, [isOpen]);
+  }, [isOpen])
 
   // Buscar endereços quando um aluno for selecionado
   useEffect(() => {
     if (alunoSelecionado) {
-      carregarEnderecosDoAluno(alunoSelecionado.id);
+      carregarEnderecosDoAluno(alunoSelecionado.id)
     } else {
-      setEnderecosDisponiveis([]);
-      setEnderecoSelecionado(null);
+      setEnderecosDisponiveis([])
+      setEnderecoSelecionado(null)
     }
-  }, [alunoSelecionado]);
+  }, [alunoSelecionado])
 
   const carregarEnderecosDoAluno = async (id) => {
-    setIsLoadingEnderecos(true);
+    setIsLoadingEnderecos(true)
     try {
-      const enderecos = await alunosService.getEnderecosByAluno(id);
-      setEnderecosDisponiveis(enderecos || []);
-      
+      const enderecos = await alunosService.getEnderecosByAluno(id)
+      setEnderecosDisponiveis(enderecos || [])
+
       // Se houver apenas um endereço, seleciona automaticamente
       if (enderecos && enderecos.length === 1) {
-        setEnderecoSelecionado(enderecos[0]);
+        setEnderecoSelecionado(enderecos[0])
       } else {
-        setEnderecoSelecionado(null);
+        setEnderecoSelecionado(null)
       }
     } catch (error) {
-      console.error("Erro ao carregar endereços:", error);
-      setEnderecosDisponiveis([]);
+      console.error('Erro ao carregar endereços:', error)
+      setEnderecosDisponiveis([])
     } finally {
-      setIsLoadingEnderecos(false);
+      setIsLoadingEnderecos(false)
     }
-  };
+  }
 
   const handleAdd = async () => {
-    if (!alunoSelecionado || !enderecoSelecionado) return;
+    if (!alunoSelecionado || !enderecoSelecionado) return
 
-    setIsSubmitting(true);
+    setIsSubmitting(true)
     try {
-      await onAdd(alunoSelecionado, enderecoSelecionado);
-      handleClose();
+      await onAdd(alunoSelecionado, enderecoSelecionado)
+      handleClose()
     } catch (error) {
-      console.error("Erro ao adicionar aluno:", error);
+      console.error('Erro ao adicionar aluno:', error)
     } finally {
-      setIsSubmitting(false);
+      setIsSubmitting(false)
     }
-  };
+  }
 
   const handleClose = () => {
-    if (isSubmitting) return;
-    setBusca("");
-    setAlunoSelecionado(null);
-    setEnderecoSelecionado(null);
-    setEnderecosDisponiveis([]);
-    onClose();
-  };
+    if (isSubmitting) return
+    setBusca('')
+    setAlunoSelecionado(null)
+    setEnderecoSelecionado(null)
+    setEnderecosDisponiveis([])
+    onClose()
+  }
 
-  if (!isOpen) return null;
+  if (!isOpen) return null
 
   return (
-    <div 
+    <div
       className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
       onClick={(e) => {
-        if (e.target === e.currentTarget && !isSubmitting) handleClose();
+        if (e.target === e.currentTarget && !isSubmitting) handleClose()
       }}
     >
       <div className="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden flex flex-col">
@@ -148,10 +148,10 @@ export default function AdicionarAlunoModal({
             <div className="text-center py-12">
               <SchoolIcon className="text-navy-300 text-6xl mx-auto mb-4" />
               <p className="text-navy-600 mb-2">
-                {"Nenhum aluno encontrado"}
+                {'Nenhum aluno encontrado'}
               </p>
               <p className="text-sm text-navy-500">
-                {busca ? "Tente buscar por outro termo" : "Não há mais alunos disponíveis"}
+                {busca ? 'Tente buscar por outro termo' : 'Não há mais alunos disponíveis'}
               </p>
             </div>
           ) : (
@@ -163,8 +163,8 @@ export default function AdicionarAlunoModal({
                   onClick={() => setAlunoSelecionado(aluno)}
                   className={`w-full text-left p-4 border-2 rounded-lg transition-all ${
                     alunoSelecionado?.id === aluno.id
-                      ? "border-primary-400 bg-primary-50"
-                      : "border-offwhite-300 hover:border-primary-200 hover:bg-offwhite-50"
+                      ? 'border-primary-400 bg-primary-50'
+                      : 'border-offwhite-300 hover:border-primary-200 hover:bg-offwhite-50'
                   }`}
                   disabled={isSubmitting}
                 >
@@ -207,7 +207,7 @@ export default function AdicionarAlunoModal({
                 <HomeIcon className="text-primary-400" />
                 Selecione o Endereço
               </h3>
-              
+
               {isLoadingEnderecos ? (
                 <div className="text-center py-8">
                   <div className="animate-spin inline-block w-8 h-8 border-4 border-primary-400 border-t-transparent rounded-full"></div>
@@ -231,8 +231,8 @@ export default function AdicionarAlunoModal({
                       onClick={() => setEnderecoSelecionado(endereco)}
                       className={`w-full text-left p-3 border-2 rounded-lg transition-all ${
                         enderecoSelecionado?.id === endereco.id
-                          ? "border-primary-400 bg-primary-50"
-                          : "border-offwhite-300 hover:border-primary-200 hover:bg-offwhite-50"
+                          ? 'border-primary-400 bg-primary-50'
+                          : 'border-offwhite-300 hover:border-primary-200 hover:bg-offwhite-50'
                       }`}
                       disabled={isSubmitting}
                     >
@@ -300,7 +300,7 @@ export default function AdicionarAlunoModal({
         </div>
       </div>
     </div>
-  );
+  )
 }
 
 AdicionarAlunoModal.propTypes = {
@@ -309,4 +309,4 @@ AdicionarAlunoModal.propTypes = {
   onAdd: PropTypes.func.isRequired,
   alunosDisponiveis: PropTypes.array.isRequired,
   alunosJaAdicionados: PropTypes.array.isRequired,
-};
+}

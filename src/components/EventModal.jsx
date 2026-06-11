@@ -19,8 +19,8 @@ export default function EventModal({ isOpen, onClose, onSave, onDelete, event, s
   const [formData, setFormData] = useState({
     title: '',
     date: new Date(),
-    type: 'manutencao',
-    priority: 'media',
+    type: 'MANUTENCAO',
+    priority: 'MEDIA',
     description: '',
   })
 
@@ -36,12 +36,12 @@ export default function EventModal({ isOpen, onClose, onSave, onDelete, event, s
       } else if (eventDate instanceof Date) {
         eventDate = new Date(eventDate.getFullYear(), eventDate.getMonth(), eventDate.getDate(), 12, 0, 0)
       }
-      
+
       setFormData({
         title: event.title || '',
         date: eventDate || new Date(),
-        type: event.type || 'manutencao',
-        priority: event.priority || 'media',
+        type: event.type || 'MANUTENCAO',
+        priority: event.priority || 'MEDIA',
         description: event.description || '',
       })
     } else if (selectedDate) {
@@ -49,13 +49,13 @@ export default function EventModal({ isOpen, onClose, onSave, onDelete, event, s
         selectedDate.getFullYear(),
         selectedDate.getMonth(),
         selectedDate.getDate(),
-        12, 0, 0
+        12, 0, 0,
       )
       setFormData({
         title: '',
         date: localDate,
-        type: 'manutencao',
-        priority: 'media',
+        type: 'MANUTENCAO',
+        priority: 'MEDIA',
         description: '',
       })
     }
@@ -115,14 +115,14 @@ export default function EventModal({ isOpen, onClose, onSave, onDelete, event, s
   const handleDelete = async () => {
     if (!event?.id) return
 
-      const result = await showSwal({
-        title: 'Excluir evento',
-        text: 'Tem certeza que deseja excluir este evento?',
-        icon: 'warning',
-        confirmButtonText: 'Sim, excluir',
-        cancelButtonText: 'Cancelar'
-      });
-      if (!result.isConfirmed) return;
+    const result = await showSwal({
+      title: 'Excluir evento',
+      text: 'Tem certeza que deseja excluir este evento?',
+      icon: 'warning',
+      confirmButtonText: 'Sim, excluir',
+      cancelButtonText: 'Cancelar',
+    })
+    if (!result.isConfirmed) return
 
     setIsSubmitting(true)
 
@@ -141,8 +141,8 @@ export default function EventModal({ isOpen, onClose, onSave, onDelete, event, s
     setFormData({
       title: '',
       date: new Date(),
-      type: 'manutencao',
-      priority: 'media',
+      type: 'MANUTENCAO',
+      priority: 'MEDIA',
       description: '',
     })
     setErrors({})
@@ -222,10 +222,10 @@ export default function EventModal({ isOpen, onClose, onSave, onDelete, event, s
               className="w-full px-3 py-2 border border-offwhite-300 rounded-lg focus:ring-2 focus:ring-primary-400 focus:border-transparent outline-none"
               disabled={isSubmitting}
             >
-              <option value="manutencao">Manutenção</option>
-              <option value="reuniao">Reunião</option>
-              <option value="vencimento">Vencimento</option>
-              <option value="treinamento">Treinamento</option>
+              <option value="MANUTENCAO">Manutenção</option>
+              <option value="REUNIAO">Reunião</option>
+              <option value="VENCIMENTO">Vencimento</option>
+              <option value="TREINAMENTO">Treinamento</option>
             </select>
           </div>
 
@@ -242,9 +242,9 @@ export default function EventModal({ isOpen, onClose, onSave, onDelete, event, s
               className="w-full px-3 py-2 border border-offwhite-300 rounded-lg focus:ring-2 focus:ring-primary-400 focus:border-transparent outline-none"
               disabled={isSubmitting}
             >
-              <option value="baixa">Baixa</option>
-              <option value="media">Média</option>
-              <option value="alta">Alta</option>
+              <option value="BAIXA">Baixa</option>
+              <option value="MEDIA">Média</option>
+              <option value="ALTA">Alta</option>
             </select>
           </div>
 

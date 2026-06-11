@@ -48,6 +48,7 @@ export default function Header() {
     bmMenuWrap: {
       position: 'fixed',
       height: '100%',
+      top: '0',
     },
     bmMenu: {
       background: '#0a192f',
@@ -148,7 +149,7 @@ export default function Header() {
                   <div className="mt-6 border-t border-gray-700 pt-4">
                     <div className="flex flex-col items-center gap-2 text-offwhite-100 mb-3">
                       <PersonIcon fontSize="small" />
-                      <span className="text-sm">{user?.nome || 'Usuário'}</span>
+                      <span className="text-sm">{user?.nomeUsuario || 'Usuário'}</span>
                     </div>
                     <button
                       onClick={handleLogout}

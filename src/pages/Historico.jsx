@@ -1,249 +1,223 @@
-import { useState, useEffect } from "react";
-import { useSearchParams, Link } from "react-router-dom";
-import HistoryIcon from "@mui/icons-material/History";
-import ArrowBackIcon from "@mui/icons-material/ArrowBack";
-import { Tabela } from "../components/Tabela";
-import ItinerarioService from "../services/itinerarioService";
-import ChamadaService from "../services/chamadaService";
-import { toast } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
+import { useState, useEffect } from 'react'
+import { useSearchParams, Link } from 'react-router-dom'
+import HistoryIcon from '@mui/icons-material/History'
+import ArrowBackIcon from '@mui/icons-material/ArrowBack'
+import { Tabela } from '../components/Tabela'
+import ItinerarioService from '../services/itinerarioService'
+import ChamadaService from '../services/chamadaService'
+import { toast } from 'react-toastify'
+import 'react-toastify/dist/ReactToastify.css'
 
 export default function Historico() {
-  const [searchParams, setSearchParams] = useSearchParams();
-  const itinerarioId = searchParams.get("itinerarioId");
+  const [searchParams, setSearchParams] = useSearchParams()
+  setSearchParams()
+  const itinerarioId = searchParams.get('itinerarioId')
 
   const [filtros, setFiltros] = useState({
-    dataInicio: "",
-    dataFim: "",
+    dataInicio: '',
+    dataFim: '',
     statusChamada: [],
-    escola: "",
-    ordem: "az",
-  });
+    escola: '',
+    ordem: 'az',
+  })
 
-  const [itinerario, setItinerario] = useState(null);
-  const [itinerarios, setItinerarios] = useState([]);
-  const [historicoData, setHistoricoData] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [itinerario, setItinerario] = useState(null)
+  const [historicoData, setHistoricoData] = useState([])
+  const [isLoading, setIsLoading] = useState(true)
   const [paginacao, setPaginacao] = useState({
     page: 0,
     size: 100,
     totalElements: 0,
     totalPages: 0,
-  });
-
-  // Carrega lista de itinerários para o select
-  useEffect(() => {
-    carregarItinerarios();
-  }, []);
+  })
 
   // Carrega o histórico quando o itinerário ou filtros mudam
   useEffect(() => {
     if (itinerarioId) {
-      carregarHistorico();
+      carregarHistorico()
     }
-  }, [itinerarioId, filtros.statusChamada, paginacao.page]);
-
-  const carregarItinerarios = async () => {
-    try {
-      const response = await ItinerarioService.buscarTodos();
-      const listaItinerarios = response.content || response || [];
-      setItinerarios(listaItinerarios);
-
-      // Se não houver itinerário selecionado, seleciona o primeiro
-      if (!itinerarioId && listaItinerarios.length > 0) {
-        const primeiroId = listaItinerarios[0].id;
-        setSearchParams({ itinerarioId: primeiroId });
-      }
-    } catch (error) {
-      toast.error("Erro ao carregar itinerários", { theme: "colored" });
-    }
-  };
+  }, [itinerarioId, filtros.statusChamada, paginacao.page])
 
   const carregarHistorico = async () => {
-    setIsLoading(true);
+    setIsLoading(true)
     try {
       // Carrega dados do itinerário
-      const itinerarioData = await ItinerarioService.buscarPorId(itinerarioId);
-      setItinerario(itinerarioData);
+      const itinerarioData = await ItinerarioService.buscarPorId(itinerarioId)
+      setItinerario(itinerarioData)
 
       // Carrega histórico de chamadas
       const params = {
         page: paginacao.page,
         size: paginacao.size,
-        sortField: "id",
-        sortDirection: "desc",
-      };
+        sortField: 'id',
+        sortDirection: 'desc',
+      }
 
       if (filtros.statusChamada.length > 0) {
-        params.status = filtros.statusChamada;
+        params.status = filtros.statusChamada
       }
 
       const historicoResponse = await ChamadaService.buscarHistoricoChamadas(
         itinerarioId,
-        params
-      );
+        params,
+      )
 
-      console.log("Histórico Response:", historicoResponse);
+      console.log('Histórico Response:', historicoResponse)
 
       // Processa os dados do histórico
-      const chamadas = historicoResponse.content || [];
-      console.log("Chamadas encontradas:", chamadas);
-      
-      const dadosProcessados = processarDadosHistorico(chamadas, itinerarioData);
-      console.log("Dados processados:", dadosProcessados);
+      const chamadas = historicoResponse.content || []
+      console.log('Chamadas encontradas:', chamadas)
 
-      setHistoricoData(dadosProcessados);
+      const dadosProcessados = processarDadosHistorico(chamadas)
+      console.log('Dados processados:', dadosProcessados)
+
+      setHistoricoData(dadosProcessados)
       setPaginacao({
         page: historicoResponse.number || 0,
         size: historicoResponse.size || 100,
         totalElements: historicoResponse.totalElements || 0,
         totalPages: historicoResponse.totalPages || 0,
-      });
+      })
     } catch (error) {
       toast.error(`Erro ao carregar histórico: ${error.message}`, {
-        theme: "colored",
-      });
-      setHistoricoData([]);
+        theme: 'colored',
+      })
+      setHistoricoData([])
     } finally {
-      setIsLoading(false);
+      setIsLoading(false)
     }
-  };
+  }
 
-  const processarDadosHistorico = (chamadas, itinerarioData) => {
-    const dados = [];
+  const processarDadosHistorico = (chamadas) => {
+    const dados = []
 
     chamadas.forEach((chamada) => {
-      const alunosChamada = chamada.alunos || [];
-      const alunosItinerario = chamada.itinerario?.alunos || [];
+      const alunosChamada = chamada.alunos || []
+      const alunosItinerario = chamada.itinerario?.alunos || []
 
       alunosChamada.forEach((ca) => {
-        const alunoInfo = ca.aluno || {};
-        const escolaInfo = alunoInfo.escola || {};
-        
+        const alunoInfo = ca.aluno || {}
+        const escolaInfo = alunoInfo.escola || {}
+
         // Busca o responsável nos dados do itinerário usando o nome do aluno
         const alunoItinerario = alunosItinerario.find(
-          (a) => a.nomeAluno === alunoInfo.nome
-        );
-        
+          (a) => a.nomeAluno === alunoInfo.nome,
+        )
+
         dados.push({
           id: `${chamada.id}-${alunoInfo.nome}`,
           chamadaId: chamada.id,
-          nomeAluno: alunoInfo.nome || "Sem nome",
-          escola: escolaInfo.nome || "Não informado",
-          responsavel: alunoItinerario?.nomeResponsavel || "Não informado",
-          sala: alunoInfo.sala || "",
+          nomeAluno: alunoInfo.nome || 'Sem nome',
+          escola: escolaInfo.nome || 'Não informado',
+          responsavel: alunoItinerario?.nomeResponsavel || 'Não informado',
+          sala: alunoInfo.sala || '',
           data: formatarData(ca.dataHora),
           horarioRegistro: formatarHorario(ca.dataHora),
-          presente: ca.presenca === "PRESENTE",
+          presente: ca.presenca === 'PRESENTE',
           statusChamada: chamada.status,
           dataCompleta: new Date(ca.dataHora),
-        });
-      });
-    });
+        })
+      })
+    })
 
-    return dados;
-  };
+    return dados
+  }
 
   const formatarData = (dataISO) => {
-    if (!dataISO) return "";
-    const data = new Date(dataISO);
-    return data.toLocaleDateString("pt-BR");
-  };
+    if (!dataISO) return ''
+    const data = new Date(dataISO)
+    return data.toLocaleDateString('pt-BR')
+  }
 
   const formatarHorario = (dataISO) => {
-    if (!dataISO) return "-";
-    const data = new Date(dataISO);
-    return data.toLocaleTimeString("pt-BR", {
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-  };
+    if (!dataISO) return '-'
+    const data = new Date(dataISO)
+    return data.toLocaleTimeString('pt-BR', {
+      hour: '2-digit',
+      minute: '2-digit',
+    })
+  }
 
   // Aplica filtros locais (escola, data, ordem)
   const aplicarFiltrosLocais = (dados) => {
-    console.log("Aplicando filtros locais em:", dados);
-    console.log("Filtros atuais:", filtros);
-    
-    let filtrados = [...dados];
+    console.log('Aplicando filtros locais em:', dados)
+    console.log('Filtros atuais:', filtros)
+
+    let filtrados = [...dados]
 
     // Filtro por escola
     if (filtros.escola) {
-      filtrados = filtrados.filter((d) => d.escola === filtros.escola);
-      console.log("Após filtro escola:", filtrados);
+      filtrados = filtrados.filter((d) => d.escola === filtros.escola)
+      console.log('Após filtro escola:', filtrados)
     }
 
     // Filtro por data início
     if (filtros.dataInicio) {
-      const dataInicio = new Date(filtros.dataInicio);
-      filtrados = filtrados.filter((d) => d.dataCompleta >= dataInicio);
-      console.log("Após filtro data início:", filtrados);
+      const dataInicio = new Date(filtros.dataInicio)
+      filtrados = filtrados.filter((d) => d.dataCompleta >= dataInicio)
+      console.log('Após filtro data início:', filtrados)
     }
 
     // Filtro por data fim
     if (filtros.dataFim) {
-      const dataFim = new Date(filtros.dataFim);
-      dataFim.setHours(23, 59, 59, 999);
-      filtrados = filtrados.filter((d) => d.dataCompleta <= dataFim);
-      console.log("Após filtro data fim:", filtrados);
+      const dataFim = new Date(filtros.dataFim)
+      dataFim.setHours(23, 59, 59, 999)
+      filtrados = filtrados.filter((d) => d.dataCompleta <= dataFim)
+      console.log('Após filtro data fim:', filtrados)
     }
 
     // Ordenação
-    if (filtros.ordem === "az") {
-      filtrados.sort((a, b) => a.nomeAluno.localeCompare(b.nomeAluno));
-    } else if (filtros.ordem === "za") {
-      filtrados.sort((a, b) => b.nomeAluno.localeCompare(a.nomeAluno));
+    if (filtros.ordem === 'az') {
+      filtrados.sort((a, b) => a.nomeAluno.localeCompare(b.nomeAluno))
+    } else if (filtros.ordem === 'za') {
+      filtrados.sort((a, b) => b.nomeAluno.localeCompare(a.nomeAluno))
     }
 
-    console.log("Dados filtrados final:", filtrados);
-    return filtrados;
-  };
+    console.log('Dados filtrados final:', filtrados)
+    return filtrados
+  }
 
-  const dadosFiltrados = aplicarFiltrosLocais(historicoData);
-  console.log("Renderizando com dados filtrados:", dadosFiltrados);
+  const dadosFiltrados = aplicarFiltrosLocais(historicoData)
+  console.log('Renderizando com dados filtrados:', dadosFiltrados)
 
   const handleFiltroChange = (campo, valor) => {
-    setFiltros((prev) => ({ ...prev, [campo]: valor }));
-  };
+    setFiltros((prev) => ({ ...prev, [campo]: valor }))
+  }
 
   const handleStatusChamadaChange = (e) => {
-    const valor = e.target.value;
+    const valor = e.target.value
     if (!valor) {
-      setFiltros((prev) => ({ ...prev, statusChamada: [] }));
+      setFiltros((prev) => ({ ...prev, statusChamada: [] }))
     } else {
-      setFiltros((prev) => ({ ...prev, statusChamada: [valor] }));
+      setFiltros((prev) => ({ ...prev, statusChamada: [valor] }))
     }
-  };
-
-  const handleItinerarioChange = (e) => {
-    const novoId = e.target.value;
-    setSearchParams({ itinerarioId: novoId });
-  };
+  }
 
   const escolasUnicas = [
     ...new Set(historicoData.map((d) => d.escola).filter(Boolean)),
-  ];
+  ]
 
   const cabecalho = [
-    "Nome do aluno",
-    "Escola",
-    "Responsável",
-    "Data",
-    "Horário",
-    "Status",
-  ];
+    'Nome do aluno',
+    'Escola',
+    'Responsável',
+    'Data',
+    'Horário',
+    'Status',
+  ]
   const fields = [
-    "nomeAluno",
-    "escola",
-    "responsavel",
-    "data",
-    "horarioRegistro",
-    "statusChamada",
-  ];
+    'nomeAluno',
+    'escola',
+    'responsavel',
+    'data',
+    'horarioRegistro',
+    'statusChamada',
+  ]
 
   // Estatísticas
-  const totalPresentes = dadosFiltrados.filter((d) => d.presente).length;
-  const totalAusentes = dadosFiltrados.filter((d) => !d.presente).length;
-  const totalRegistros = dadosFiltrados.length;
+  const totalPresentes = dadosFiltrados.filter((d) => d.presente).length
+  const totalAusentes = dadosFiltrados.filter((d) => !d.presente).length
+  const totalRegistros = dadosFiltrados.length
 
   if (isLoading) {
     return (
@@ -253,7 +227,7 @@ export default function Historico() {
           <p className="mt-4 text-navy-600">Carregando histórico...</p>
         </div>
       </div>
-    );
+    )
   }
 
   return (
@@ -312,7 +286,7 @@ export default function Historico() {
             <input
               type="date"
               value={filtros.dataInicio}
-              onChange={(e) => handleFiltroChange("dataInicio", e.target.value)}
+              onChange={(e) => handleFiltroChange('dataInicio', e.target.value)}
               className="w-full border border-offwhite-300 rounded-lg px-3 py-2 text-sm"
             />
           </div>
@@ -323,7 +297,7 @@ export default function Historico() {
             <input
               type="date"
               value={filtros.dataFim}
-              onChange={(e) => handleFiltroChange("dataFim", e.target.value)}
+              onChange={(e) => handleFiltroChange('dataFim', e.target.value)}
               className="w-full border border-offwhite-300 rounded-lg px-3 py-2 text-sm"
             />
           </div>
@@ -332,7 +306,7 @@ export default function Historico() {
               Status Chamada
             </label>
             <select
-              value={filtros.statusChamada[0] || ""}
+              value={filtros.statusChamada[0] || ''}
               onChange={handleStatusChamadaChange}
               className="w-full border border-offwhite-300 rounded-lg px-3 py-2 text-sm"
             >
@@ -348,7 +322,7 @@ export default function Historico() {
             </label>
             <select
               value={filtros.escola}
-              onChange={(e) => handleFiltroChange("escola", e.target.value)}
+              onChange={(e) => handleFiltroChange('escola', e.target.value)}
               className="w-full border border-offwhite-300 rounded-lg px-3 py-2 text-sm"
             >
               <option value="">Todas</option>
@@ -365,27 +339,11 @@ export default function Historico() {
             </label>
             <select
               value={filtros.ordem}
-              onChange={(e) => handleFiltroChange("ordem", e.target.value)}
+              onChange={(e) => handleFiltroChange('ordem', e.target.value)}
               className="w-full border border-offwhite-300 rounded-lg px-3 py-2 text-sm"
             >
               <option value="az">Alunos A–Z</option>
               <option value="za">Alunos Z–A</option>
-            </select>
-          </div>
-          <div>
-            <label className="block text-xs font-medium text-navy-700 mb-1">
-              Itinerário
-            </label>
-            <select
-              value={itinerarioId || ""}
-              onChange={handleItinerarioChange}
-              className="w-full border border-offwhite-300 rounded-lg px-3 py-2 text-sm"
-            >
-              {itinerarios.map((it) => (
-                <option key={it.id} value={it.id}>
-                  {it.nome}
-                </option>
-              ))}
             </select>
           </div>
         </div>
@@ -411,9 +369,9 @@ export default function Historico() {
             Nenhum registro encontrado
           </p>
           <p className="text-navy-600 text-sm">
-            {historicoData.length === 0 
-              ? "Não há histórico de chamadas para este itinerário."
-              : "Tente ajustar os filtros para encontrar registros."}
+            {historicoData.length === 0
+              ? 'Não há histórico de chamadas para este itinerário.'
+              : 'Tente ajustar os filtros para encontrar registros.'}
           </p>
           {historicoData.length === 0 && (
             <p className="text-navy-500 text-xs mt-2">
@@ -423,5 +381,5 @@ export default function Historico() {
         </div>
       )}
     </div>
-  );
+  )
 }

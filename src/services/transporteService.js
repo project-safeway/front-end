@@ -35,7 +35,7 @@ transporteAxios.interceptors.response.use(
     }
 
     return Promise.reject(error)
-  }
+  },
 )
 
 class TransporteService {
@@ -76,9 +76,9 @@ class TransporteService {
     return this._executarComRetry(async () => {
       try {
         const response = await transporteAxios.get(`/transporte/${transporteId}/alunos`)
-        
+
         let alunos = []
-        
+
         if (response.data.alunosTransportes) {
           alunos = response.data.alunosTransportes
         } else if (response.data.alunos) {
@@ -88,24 +88,24 @@ class TransporteService {
         } else {
           throw new Error('Formato de dados inesperado do backend ao listar alunos do transporte')
         }
-        
+
         // Se não encontrou alunos, retorna array vazio
         if (!alunos || alunos.length === 0) {
           return []
         }
-        
+
         // Mapear para formato consistente
         return alunos.map(item => {
           // Se item tem propriedade 'aluno', é alunoTransporte
           const alunoData = item.aluno || item
-          
+
           return {
             id: alunoData.idAluno || alunoData.id,
             nomeAluno: alunoData.nome,
             responsavel: alunoData.nomeResponsavel || alunoData.responsavel,
             escola: alunoData.escola?.nome || alunoData.escola || 'Não informado',
             // Dados completos caso precise
-            ...alunoData
+            ...alunoData,
           }
         })
       } catch (error) {
@@ -134,24 +134,24 @@ class TransporteService {
       const status = error.response.status
 
       switch (status) {
-        case 400:
-          mensagemUsuario = 'Dados inválidos. Verifique as informações enviadas.'
-          break
-        case 401:
-          mensagemUsuario = 'Sessão expirada. Faça login novamente.'
-          window.location.href = '/login'
-          break
-        case 403:
-          mensagemUsuario = 'Você não tem permissão para realizar esta ação.'
-          break
-        case 404:
-          mensagemUsuario = 'Transporte não encontrado.'
-          break
-        case 500:
-          mensagemUsuario = 'Erro no servidor. Tente novamente mais tarde.'
-          break
-        default:
-          mensagemUsuario = error.response.data?.message || mensagemPadrao
+      case 400:
+        mensagemUsuario = 'Dados inválidos. Verifique as informações enviadas.'
+        break
+      case 401:
+        mensagemUsuario = 'Sessão expirada. Faça login novamente.'
+        window.location.href = '/login'
+        break
+      case 403:
+        mensagemUsuario = 'Você não tem permissão para realizar esta ação.'
+        break
+      case 404:
+        mensagemUsuario = 'Transporte não encontrado.'
+        break
+      case 500:
+        mensagemUsuario = 'Erro no servidor. Tente novamente mais tarde.'
+        break
+      default:
+        mensagemUsuario = error.response.data?.message || mensagemPadrao
       }
     } else if (error.request) {
       mensagemUsuario = 'Sem resposta do servidor. Verifique sua conexão.'

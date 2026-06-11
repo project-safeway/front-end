@@ -1,0 +1,140 @@
+name: release
+
+on:
+  push:
+    branches: [ "main", "master" ]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: read
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  AWS_REGION: us-east-1
+  ECR_REPOSITORY: safeway-frontend
+  SEMVER_LABEL_MAJOR: semver:major
+  SEMVER_LABEL_MINOR: semver:minor
+  SEMVER_LABEL_PATCH: semver:patch
+
+jobs:
+  release_and_push:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Resolve semver bump from PR labels
+        id: bump
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const sha = context.sha;
+
+            const pulls = await github.request('GET /repos/{owner}/{repo}/commits/{ref}/pulls', {
+              owner,
+              repo,
+              ref: sha,
+              mediaType: { previews: ['groot'] },
+            });
+
+            const labels = (pulls.data?.[0]?.labels || []).map(l => l.name);
+            const major = process.env.SEMVER_LABEL_MAJOR;
+            const minor = process.env.SEMVER_LABEL_MINOR;
+            const patch = process.env.SEMVER_LABEL_PATCH;
+
+            let bump = 'patch';
+            if (labels.includes(major)) bump = 'major';
+            else if (labels.includes(minor)) bump = 'minor';
+            else if (labels.includes(patch)) bump = 'patch';
+
+            core.setOutput('bump', bump);
+            core.setOutput('labels', labels.join(','));
+
+      - name: Compute next version
+        id: ver
+        env:
+          BUMP: ${{ steps.bump.outputs.bump }}
+        run: |
+          set -euo pipefail
+          git fetch --tags --force
+
+          latest="$(git tag -l 'v[0-9]*.[0-9]*.[0-9]*' --sort=-v:refname | head -n 1)"
+          if [ -z "$latest" ]; then
+            latest="v0.1.0"
+          fi
+          base="${latest#v}"
+          IFS='.' read -r major minor patch <<<"$base"
+
+          case "$BUMP" in
+            major) major=$((major+1)); minor=0; patch=0 ;;
+            minor) minor=$((minor+1)); patch=0 ;;
+            patch|*) patch=$((patch+1)) ;;
+          esac
+
+          next="v${major}.${minor}.${patch}"
+          echo "next=$next" >> "$GITHUB_OUTPUT"
+          echo "latest=$latest" >> "$GITHUB_OUTPUT"
+
+      - name: Create git tag
+        run: |
+          git tag "${{ steps.ver.outputs.next }}"
+          git push origin "${{ steps.ver.outputs.next }}"
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.ver.outputs.next }}
+          name: ${{ steps.ver.outputs.next }}
+          generate_release_notes: true
+
+      - name: Configure AWS credentials (OIDC)
+        if: ${{ vars.AWS_AUTH_METHOD == 'oidc' }}
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-region: ${{ env.AWS_REGION }}
+          role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
+
+      - name: Configure AWS credentials (access keys)
+        if: ${{ vars.AWS_AUTH_METHOD != 'oidc' }}
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-region: ${{ env.AWS_REGION }}
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
+
+      - name: Login to Amazon ECR
+        id: ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build and push image (semver + sha + latest)
+        env:
+          ECR_REGISTRY: ${{ steps.ecr.outputs.registry }}
+          VERSION: ${{ steps.ver.outputs.next }}
+          SHA_SHORT: ${{ github.sha }}
+          VITE_GOOGLE_MAPS_API_KEY: ${{ secrets.VITE_GOOGLE_MAPS_API_KEY }}
+        run: |
+          set -euo pipefail
+          SHA_SHORT="${SHA_SHORT:0:12}"
+          VERSION="${VERSION#v}"
+
+          docker build \
+            --build-arg VITE_API_BASE_URL=/api \
+            --build-arg VITE_API_FINANCEIRO_URL=/api/financeiro \
+            --build-arg VITE_GOOGLE_MAPS_API_KEY="${VITE_GOOGLE_MAPS_API_KEY}" \
+            -t "${ECR_REGISTRY}/${ECR_REPOSITORY}:${VERSION}" \
+            .
+
+          docker tag "${ECR_REGISTRY}/${ECR_REPOSITORY}:${VERSION}" "${ECR_REGISTRY}/${ECR_REPOSITORY}:sha-${SHA_SHORT}"
+          docker tag "${ECR_REGISTRY}/${ECR_REPOSITORY}:${VERSION}" "${ECR_REGISTRY}/${ECR_REPOSITORY}:latest"
+
+          docker push "${ECR_REGISTRY}/${ECR_REPOSITORY}:${VERSION}"
+          docker push "${ECR_REGISTRY}/${ECR_REPOSITORY}:sha-${SHA_SHORT}"
+          docker push "${ECR_REGISTRY}/${ECR_REPOSITORY}:latest"

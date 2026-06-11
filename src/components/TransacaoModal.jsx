@@ -118,14 +118,14 @@ export default function TransacaoModal({
   }
 
   const handleDelete = async () => {
-          const result = await showSwal({
-            title: 'Excluir transação',
-            text: 'Tem certeza que deseja excluir esta transação?',
-            icon: 'warning',
-            confirmButtonText: 'Sim, excluir',
-            cancelButtonText: 'Cancelar'
-          });
-          if (!result.isConfirmed) return;
+    const result = await showSwal({
+      title: 'Excluir transação',
+      text: 'Tem certeza que deseja excluir esta transação?',
+      icon: 'warning',
+      confirmButtonText: 'Sim, excluir',
+      cancelButtonText: 'Cancelar',
+    })
+    if (!result.isConfirmed) return
 
     if (window.confirm('Tem certeza que deseja excluir esta transação?')) {
       setIsSubmitting(true)
@@ -144,7 +144,7 @@ export default function TransacaoModal({
   if (!isOpen) return null
 
   const categoriasFiltradas = categorias.filter(
-    (cat) => cat.tipo === formData.tipo || cat.tipo === 'ambos'
+    (cat) => cat.tipo === formData.tipo || cat.tipo === 'ambos',
   )
 
   return (

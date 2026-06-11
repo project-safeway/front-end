@@ -85,11 +85,6 @@ export default function EventsPanel({ selectedMonth, selectedYear }) {
     }
   }
 
-  const handleCreateEvent = () => {
-    setSelectedEvent(null)
-    setIsModalOpen(true)
-  }
-
   const handleEditEvent = (event) => {
     setSelectedEvent(event)
     setIsModalOpen(true)
@@ -123,37 +118,37 @@ export default function EventsPanel({ selectedMonth, selectedYear }) {
 
   const getIconByType = (type) => {
     switch (type) {
-      case 'manutencao':
-        return <BuildIcon className="text-primary-400" />
-      case 'reuniao':
-        return <GroupIcon className="text-navy-500" />
-      case 'vencimento':
-        return <NotificationsActiveIcon className="text-red-500" />
-      case 'treinamento':
-        return <EventIcon className="text-green-500" />
-      default:
-        return <EventIcon />
+    case 'MANUTENCAO':
+      return <BuildIcon className="text-primary-400" />
+    case 'REUNIAO':
+      return <GroupIcon className="text-navy-500" />
+    case 'VENCIMENTO':
+      return <NotificationsActiveIcon className="text-red-500" />
+    case 'TREINAMENTO':
+      return <EventIcon className="text-green-500" />
+    default:
+      return <EventIcon />
     }
   }
 
   const getPriorityColor = (priority) => {
     switch (priority) {
-      case 'alta':
-        return 'bg-red-100 text-red-700 border-red-300'
-      case 'media':
-        return 'bg-yellow-100 text-yellow-700 border-yellow-300'
-      case 'baixa':
-        return 'bg-green-100 text-green-700 border-green-300'
-      default:
-        return 'bg-gray-100 text-gray-700 border-gray-300'
+    case 'ALTA':
+      return 'bg-red-100 text-red-700 border-red-300'
+    case 'MEDIA':
+      return 'bg-yellow-100 text-yellow-700 border-yellow-300'
+    case 'BAIXA':
+      return 'bg-green-100 text-green-700 border-green-300'
+    default:
+      return 'bg-gray-100 text-gray-700 border-gray-300'
     }
   }
 
   const getPriorityLabel = (priority) => {
     const labels = {
-      alta: 'Alta Prioridade',
-      media: 'Média Prioridade',
-      baixa: 'Baixa Prioridade',
+      ALTA: 'Alta Prioridade',
+      MEDIA: 'Média Prioridade',
+      BAIXA: 'Baixa Prioridade',
     }
     return labels[priority] || 'Média Prioridade'
   }
@@ -192,9 +187,9 @@ export default function EventsPanel({ selectedMonth, selectedYear }) {
             <button
               onClick={() => setActiveTab('eventos')}
               className={`flex-1 px-4 py-3 text-sm font-medium transition-colors flex items-center justify-center gap-2 ${activeTab === 'eventos'
-                  ? 'text-primary-500 border-b-2 border-primary-500 bg-offwhite-100'
-                  : 'text-navy-600 hover:text-navy-900 hover:bg-offwhite-50'
-                }`}
+                ? 'text-primary-500 border-b-2 border-primary-500 bg-offwhite-100'
+                : 'text-navy-600 hover:text-navy-900 hover:bg-offwhite-50'
+              }`}
             >
               <EventIcon fontSize="small" />
               Eventos
@@ -202,9 +197,9 @@ export default function EventsPanel({ selectedMonth, selectedYear }) {
             <button
               onClick={() => setActiveTab('pagamentos')}
               className={`flex-1 px-4 py-3 text-sm font-medium transition-colors flex items-center justify-center gap-2 ${activeTab === 'pagamentos'
-                  ? 'text-primary-500 border-b-2 border-primary-500 bg-offwhite-100'
-                  : 'text-navy-600 hover:text-navy-900 hover:bg-offwhite-50'
-                }`}
+                ? 'text-primary-500 border-b-2 border-primary-500 bg-offwhite-100'
+                : 'text-navy-600 hover:text-navy-900 hover:bg-offwhite-50'
+              }`}
             >
               <AttachMoneyIcon fontSize="small" />
               Pagamentos

@@ -1,29 +1,28 @@
-import React from 'react';
-import WarningIcon from '@mui/icons-material/Warning';
-import CheckCircleIcon from '@mui/icons-material/CheckCircle';
-import ClearIcon from '@mui/icons-material/Clear';
+import WarningIcon from '@mui/icons-material/Warning'
+import CheckCircleIcon from '@mui/icons-material/CheckCircle'
+import ClearIcon from '@mui/icons-material/Clear'
 
-export function ModalConfirmacao({ 
-  aberto, 
-  onFechar, 
-  onConfirmar, 
-  titulo, 
-  mensagem, 
-  tipo = 'warning' 
+export function ModalConfirmacao({
+  aberto,
+  onFechar,
+  onConfirmar,
+  titulo,
+  mensagem,
+  tipo = 'warning',
 }) {
-  if (!aberto) return null;
+  if (!aberto) return null
 
   const cores = {
     warning: 'bg-yellow-100 text-yellow-800 border-yellow-300',
     danger: 'bg-red-100 text-red-800 border-red-300',
-    success: 'bg-green-100 text-green-800 border-green-300'
-  };
+    success: 'bg-green-100 text-green-800 border-green-300',
+  }
 
   const icones = {
     warning: <WarningIcon className="text-yellow-600" fontSize="large" />,
     danger: <WarningIcon className="text-red-600" fontSize="large" />,
-    success: <CheckCircleIcon className="text-green-600" fontSize="large" />
-  };
+    success: <CheckCircleIcon className="text-green-600" fontSize="large" />,
+  }
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
@@ -57,8 +56,8 @@ export function ModalConfirmacao({
               tipo === 'danger'
                 ? 'bg-red-600 text-white hover:bg-red-700'
                 : tipo === 'success'
-                ? 'bg-green-600 text-white hover:bg-green-700'
-                : 'bg-blue-600 text-white hover:bg-blue-700'
+                  ? 'bg-green-600 text-white hover:bg-green-700'
+                  : 'bg-blue-600 text-white hover:bg-blue-700'
             }`}
           >
             <CheckCircleIcon fontSize="small" />
@@ -67,5 +66,5 @@ export function ModalConfirmacao({
         </div>
       </div>
     </div>
-  );
+  )
 }

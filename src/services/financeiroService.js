@@ -106,7 +106,7 @@ const financeiroService = {
   async getTransacoesPorPeriodo(dataInicio, dataFim) {
     try {
       const response = await api.get('/financeiro/transacoes', {
-        params: { dataInicio, dataFim }
+        params: { dataInicio, dataFim },
       })
       return response.data
     } catch (error) {
