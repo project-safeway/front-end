@@ -123,13 +123,13 @@ export default function EventsPanel({ selectedMonth, selectedYear }) {
 
   const getIconByType = (type) => {
     switch (type) {
-      case 'manutencao':
+      case 'MANUTENCAO':
         return <BuildIcon className="text-primary-400" />
-      case 'reuniao':
+      case 'REUNIAO':
         return <GroupIcon className="text-navy-500" />
-      case 'vencimento':
+      case 'VENCIMENTO':
         return <NotificationsActiveIcon className="text-red-500" />
-      case 'treinamento':
+      case 'TREINAMENTO':
         return <EventIcon className="text-green-500" />
       default:
         return <EventIcon />
@@ -138,11 +138,11 @@ export default function EventsPanel({ selectedMonth, selectedYear }) {
 
   const getPriorityColor = (priority) => {
     switch (priority) {
-      case 'alta':
+      case 'ALTA':
         return 'bg-red-100 text-red-700 border-red-300'
-      case 'media':
+      case 'MEDIA':
         return 'bg-yellow-100 text-yellow-700 border-yellow-300'
-      case 'baixa':
+      case 'BAIXA':
         return 'bg-green-100 text-green-700 border-green-300'
       default:
         return 'bg-gray-100 text-gray-700 border-gray-300'
@@ -151,9 +151,9 @@ export default function EventsPanel({ selectedMonth, selectedYear }) {
 
   const getPriorityLabel = (priority) => {
     const labels = {
-      alta: 'Alta Prioridade',
-      media: 'Média Prioridade',
-      baixa: 'Baixa Prioridade',
+      ALTA: 'Alta Prioridade',
+      MEDIA: 'Média Prioridade',
+      BAIXA: 'Baixa Prioridade',
     }
     return labels[priority] || 'Média Prioridade'
   }
