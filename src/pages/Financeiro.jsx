@@ -578,9 +578,9 @@ export default function Financeiro() {
       // Se já está ativo, desativa e volta ao padrão
       limparFiltros()
     } else {
-      const hoje = new Date()
-      const primeiroDia = new Date(hoje.getFullYear(), 0, 1).toISOString().split('T')[0]
-      const ultimoDia = new Date(hoje.getFullYear(), 11, 31).toISOString().split('T')[0]
+      const ano = new Date().getFullYear()
+      const primeiroDia = `${ano}-01-01`
+      const ultimoDia = `${ano}-12-31`
       setFiltroDataInicio(primeiroDia)
       setFiltroDataFim(ultimoDia)
       setAtalhoDataAtivo('ano')
@@ -620,8 +620,7 @@ export default function Financeiro() {
     if (atalhoDataAtivoPag === 'hoje') {
       limparFiltros()
     } else {
-      const hoje = new Date()
-      const dataHoje = hoje.toISOString().split('T')[0]
+      const dataHoje = getDataLocal()
       setFiltroDataInicioPag(dataHoje)
       setFiltroDataFimPag(dataHoje)
       setAtalhoDataAtivoPag('hoje')
@@ -633,9 +632,9 @@ export default function Financeiro() {
     if (atalhoDataAtivoPag === 'ano') {
       limparFiltros()
     } else {
-      const hoje = new Date()
-      const primeiroDia = new Date(hoje.getFullYear(), 0, 1).toISOString().split('T')[0]
-      const ultimoDia = new Date(hoje.getFullYear(), 11, 31).toISOString().split('T')[0]
+      const ano = new Date().getFullYear()
+      const primeiroDia = `${ano}-01-01`
+      const ultimoDia = `${ano}-12-31`
       setFiltroDataInicioPag(primeiroDia)
       setFiltroDataFimPag(ultimoDia)
       setAtalhoDataAtivoPag('ano')
@@ -742,7 +741,7 @@ export default function Financeiro() {
             <div className="p-6 bg-white border border-offwhite-200 rounded-xl shadow-sm">
               <div className="flex items-center gap-2 text-sm text-navy-600 mb-2">
                 <AttachMoneyIcon fontSize="small" className="text-green-600"/>
-                <span>Receita do Mês</span>
+                <span>Receita</span>
               </div>
               <span className="text-2xl font-bold block text-green-600">
                 {kpisData.carregandoKpis ? 'Carregando...' : formatCurrency(kpisData.receitaMes)}
@@ -755,7 +754,7 @@ export default function Financeiro() {
             <div className="p-6 bg-white border border-offwhite-200 rounded-xl shadow-sm">
               <div className="flex items-center gap-2 text-sm text-navy-600 mb-2">
                 <PaymentsIcon fontSize="small" className="text-red-600"/>
-                <span>Despesas do Mês</span>
+                <span>Despesas</span>
               </div>
               <span className="text-2xl font-bold block text-red-600">
                 {kpisData.carregandoKpis ? 'Carregando...' : formatCurrency(kpisData.despesasMes)}
@@ -773,7 +772,7 @@ export default function Financeiro() {
                 ) : (
                   <TrendingDownIcon fontSize="small" className="text-red-700"/>
                 )}
-                <span>Lucro do Mês</span>
+                <span>Saldo final</span>
               </div>
               <span className={`text-2xl font-bold block ${saldoMes >= 0 ? 'text-green-700' : 'text-red-700'}`}>
                 {kpisData.carregandoKpis ? 'Carregando...' : formatCurrency(saldoMes)}
