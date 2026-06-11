@@ -48,6 +48,7 @@ export default function Header() {
     bmMenuWrap: {
       position: 'fixed',
       height: '100%',
+      top: '0',
     },
     bmMenu: {
       background: '#0a192f',
